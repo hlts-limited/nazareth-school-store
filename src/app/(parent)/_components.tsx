@@ -104,12 +104,12 @@ export function UploadReceipt({ action, orderId, due, readOnly, today, label = "
             {preview ? (
               // eslint-disable-next-line @next/next/no-img-element
               preview.startsWith("data:image") ? <img src={preview} alt="Receipt preview" /> : <><Icon name="file" /><b>{fileName}</b></>
-            ) : (<><Icon name="upload" /><b>Choose receipt photo or PDF</b><span className="small muted">JPG, PNG, WebP or PDF, up to 5 MB</span></>)}
+            ) : (<><Icon name="upload" /><b>Choose receipt photo or PDF</b><span className="small muted">JPG, PNG, WebP or PDF, up to 4 MB</span></>)}
           </label>
           <input ref={fileRef} id="rc-file" name="receipt" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" className="hide" onChange={(e) => {
             const f = e.target.files?.[0];
             if (!f) return;
-            if (f.size > 5 * 1024 * 1024) { toast("That file is over 5 MB. Please choose a smaller photo.", false); e.target.value = ""; return; }
+            if (f.size > 4 * 1024 * 1024) { toast("That file is over 4 MB. Please choose a smaller photo.", false); e.target.value = ""; return; }
             setFileName(f.name);
             const r = new FileReader(); r.onload = () => setPreview(String(r.result)); r.readAsDataURL(f);
           }} />

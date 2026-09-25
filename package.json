@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
+    "vercel-build": "prisma generate && DATABASE_URL=${DATABASE_URL_UNPOOLED:-$DATABASE_URL} sh -c \"prisma migrate deploy && npm run db:harden && prisma db seed\" && next build",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",

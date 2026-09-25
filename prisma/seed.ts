@@ -54,9 +54,12 @@ async function main() {
     admin = await db.user.create({
       data: { type: "STAFF", status: "ACTIVE", firstName: "School", lastName: "Admin", email, passwordHash: await bcrypt.hash(password, 12), totpSecret: authenticator.generateSecret(), roles: { create: { roleId: "admin" } } },
     });
-    console.log(`\nSuper Admin created: ${email} / ${password}  (change the password after first sign-in)`);
+    // Never print the password on a hosted build: build logs are kept and shared with the project team
+    console.log(`\nSuper Admin created: ${email}${process.env.VERCEL ? "" : ` / ${password}`}  (change the password after first sign-in)`);
+    console.log(`Super Admin 2FA secret: ${admin.totpSecret}  → add it to an authenticator app now; it's only shown this once.`);
+  } else if (!process.env.VERCEL) {
+    console.log(`Super Admin 2FA secret: ${admin.totpSecret}  → or run "npm run totp -- ${email}" to see the current code.`);
   }
-  console.log(`Super Admin 2FA secret: ${admin.totpSecret}  → add it to an authenticator app, or run "npm run totp -- ${email}" to see the current code.`);
 
   if (process.env.SEED_DEMO === "true") await seedDemo(classes);
   console.log("\nDone.");

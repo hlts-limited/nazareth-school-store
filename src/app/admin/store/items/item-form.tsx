@@ -43,7 +43,7 @@ export function ItemForm({ action, cats, classes, item }: { action: Action; cats
         <input className="input" id="ai-v" name="variants" placeholder="Age 5–6, Age 7–8, Age 9–10" />
         {item?.hasVariants && <span className="hint">Current sizes: {item.variants.map((v) => v.label).join(", ")}</span>}
       </div>
-      <div className="field"><label htmlFor="ai-img">Product photo (JPG, PNG or WebP, up to 5 MB)</label><input className="input" id="ai-img" name="image" type="file" accept="image/jpeg,image/png,image/webp" /><FieldError name="image" /></div>
+      <div className="field"><label htmlFor="ai-img">Product photo (JPG, PNG or WebP, up to 4 MB)</label><input className="input" id="ai-img" name="image" type="file" accept="image/jpeg,image/png,image/webp" /><FieldError name="image" /></div>
       {item && <label className="check"><input type="checkbox" name="isActive" defaultChecked={item.isActive} /> Show in the store</label>}
       <div className="row"><SubmitButton>{item ? "Save item" : "Add item"}</SubmitButton></div>
     </ActionForm>

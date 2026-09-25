@@ -112,6 +112,9 @@ export function storage(): Storage {
   const e = env();
   if (e.S3_ENDPOINT && e.S3_BUCKET && e.S3_ACCESS_KEY_ID && e.S3_SECRET_ACCESS_KEY) {
     instance = new S3Storage({ endpoint: e.S3_ENDPOINT, region: e.S3_REGION, bucket: e.S3_BUCKET, accessKey: e.S3_ACCESS_KEY_ID, secretKey: e.S3_SECRET_ACCESS_KEY });
+  } else if (process.env.VERCEL) {
+    // Vercel has no lasting disk: files saved locally would vanish. Fail loudly instead.
+    throw new Error("File storage isn't set up. On Vercel, set S3_ENDPOINT, S3_BUCKET, S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY (e.g. Cloudflare R2).");
   } else {
     instance = new LocalStorage(path.resolve(e.STORAGE_DIR));
   }
@@ -119,11 +122,12 @@ export function storage(): Storage {
 }
 
 // ---------- Upload validation ----------
-export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+// 4 MB: Vercel rejects request bodies over 4.5 MB, so anything bigger would fail with a confusing error.
+export const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
 
 export async function readUpload(file: File | null, opts: { allowPdf: boolean }) {
   if (!file || file.size === 0) return { error: "Choose a file to upload." } as const;
-  if (file.size > MAX_UPLOAD_BYTES) return { error: "That file is over 5 MB. Please choose a smaller photo." } as const;
+  if (file.size > MAX_UPLOAD_BYTES) return { error: "That file is over 4 MB. Please choose a smaller photo." } as const;
   let buf: Buffer = Buffer.from(await file.arrayBuffer());
   const t = sniffType(buf);
   if (!t || (!opts.allowPdf && t.mime === "application/pdf")) {
