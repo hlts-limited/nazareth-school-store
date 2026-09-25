@@ -145,7 +145,7 @@ The app listens on port 3000 on the server itself. Put a web server such as **Ca
   - Staff accounts are created by invite only.
   - Changing someone's roles or password signs them out everywhere.
 - **Sessions:** sessions are stored on the server, so they can be revoked. Idle timeouts, a maximum length and a limit on devices at once can all be edited in **Super Admin → Sessions**. A warning appears 2 minutes before an idle sign-out.
-- **Pupil sign-in:** after 3 failed attempts a check question appears, and after 5 the login is locked for 15 minutes. Parents can add a PIN. Pupil screens are read-only.
+- **Pupil sign-in:** after 3 failed attempts a check question appears, and after 5 the login is locked for 5 minutes. Parents can add a PIN. Pupil screens are read-only.
 - **Permissions:** every server action checks a permission on the server. Parents can only reach their own children and orders.
 - **Uploads:** receipts are checked by their actual content (JPG, PNG, WebP or PDF, 4 MB max). Location data is removed from photos, and receipts are served only to their owner and to accounts staff.
 - **Audit log:** it can't be edited or deleted (a database trigger blocks it). It records sign-ins, approvals, stock changes, exports, view-as sessions, backups and restores.

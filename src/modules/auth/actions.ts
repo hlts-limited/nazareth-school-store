@@ -16,7 +16,7 @@ import { CAPTCHA_AFTER, checkCaptcha, isLocked, recentFailures, recordAttempt } 
 import { createSession, destroyCurrentSession, revokeAllForUser, revokeSessionById, VIEWAS_COOKIE } from "./session";
 import { auditActor, getViewAs, getViewer, staffFor } from "./current";
 
-const LOCKED_MSG = "Too many attempts. This login is locked for 15 minutes.";
+const LOCKED_MSG = "Too many attempts. This login is locked for 5 minutes.";
 
 export async function loginParent(_: ActionResult, form: FormData): Promise<ActionResult> {
   return runAction(async () => {

@@ -2,7 +2,7 @@ import { db } from "@/shared/lib/db";
 import { env } from "@/shared/config/env";
 import { hmac, safeEqual } from "@/shared/lib/crypto";
 
-const WINDOW_MS = 15 * 60 * 1000;
+const WINDOW_MS = 5 * 60 * 1000; // failures older than this no longer count, so a lock lasts 5 minutes
 export const LOCK_AFTER = 5;
 export const CAPTCHA_AFTER = 3;
 
