@@ -1,0 +1,520 @@
+// Nazareth School Store — database schema
+// Money is stored in whole naira (Int). Paystack amounts are converted to kobo at the edge.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- People & access ----------
+
+enum UserType {
+  PARENT
+  STAFF
+}
+
+enum UserStatus {
+  INVITED
+  ACTIVE
+  DISABLED
+}
+
+model User {
+  id              String     @id @default(uuid())
+  type            UserType
+  status          UserStatus @default(INVITED)
+  title           String?
+  firstName       String
+  lastName        String
+  email           String?    @unique
+  phone           String?    @unique
+  passwordHash    String?
+  totpSecret      String?
+  inviteToken     String?    @unique
+  inviteExpiresAt DateTime?
+  consentAt       DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  roles         UserRole[]
+  guardianships Guardian[]
+  cartItems     CartItem[]
+  orders        Order[]
+  notifications Notification[]
+
+  @@index([lastName])
+}
+
+model Role {
+  id          String     @id // accountant | registrar | secretary | admin
+  name        String
+  permissions String[]
+  users       UserRole[]
+}
+
+model UserRole {
+  userId String
+  roleId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+}
+
+enum SessionKind {
+  PARENT
+  PUPIL
+  STAFF
+}
+
+model Session {
+  id           String      @id // sha256 of the cookie token
+  kind         SessionKind
+  userId       String?
+  pupilId      String?
+  remember     Boolean     @default(false)
+  userAgent    String?
+  ip           String?
+  createdAt    DateTime    @default(now())
+  lastActiveAt DateTime    @default(now())
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  revokeReason String?
+
+  @@index([userId])
+  @@index([pupilId])
+}
+
+model ViewAsSession {
+  id         String    @id @default(uuid())
+  adminId    String
+  sessionId  String // the admin's own session
+  targetKind String // parent | pupil
+  targetId   String
+  reason     String
+  startedAt  DateTime  @default(now())
+  expiresAt  DateTime
+  endedAt    DateTime?
+}
+
+model LoginAttempt {
+  id        String   @id @default(uuid())
+  key       String
+  success   Boolean
+  createdAt DateTime @default(now())
+
+  @@index([key, createdAt])
+}
+
+// ---------- School ----------
+
+model Class {
+  id        String  @id @default(uuid())
+  name      String  @unique
+  sortOrder Int
+  pupils    Pupil[]
+  items     ItemClass[]
+}
+
+enum PupilStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+model Pupil {
+  id          String      @id @default(uuid())
+  firstName   String
+  lastName    String
+  regNumber   String      @unique
+  gender      String?
+  classId     String
+  class       Class       @relation(fields: [classId], references: [id])
+  pinHash     String?
+  status      PupilStatus @default(ACTIVE)
+  deletedAt   DateTime?
+  deletedBy   String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  guardians  Guardian[]
+  lines      OrderLine[]
+  cartItems  CartItem[]
+  wallet     Wallet?
+  wishlist   WishlistItem[]
+
+  @@index([lastName])
+  @@index([classId])
+}
+
+model Guardian {
+  parentId     String
+  pupilId      String
+  relationship String  @default("Parent")
+  isPrimary    Boolean @default(true)
+  parent       User    @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  pupil        Pupil   @relation(fields: [pupilId], references: [id], onDelete: Cascade)
+
+  @@id([parentId, pupilId])
+}
+
+// ---------- Catalogue & stock ----------
+
+model Category {
+  id        String     @id @default(uuid())
+  name      String
+  slug      String     @unique
+  color     String     @default("#4A4446")
+  sortOrder Int        @default(0)
+  parentId  String?
+  parent    Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children  Category[] @relation("CategoryTree")
+  items     Item[]
+}
+
+model Item {
+  id           String        @id @default(uuid())
+  sku          String        @unique
+  name         String
+  description  String?
+  categoryId   String
+  category     Category      @relation(fields: [categoryId], references: [id])
+  price        Int
+  imageKey     String?
+  isActive     Boolean       @default(true)
+  reorderLevel Int           @default(5)
+  hasVariants  Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  variants     ItemVariant[]
+  classes      ItemClass[]
+  wishlist     WishlistItem[]
+
+  @@index([categoryId])
+}
+
+// Which classes an item is for, and whether it is on that class's required booklist
+model ItemClass {
+  itemId       String
+  classId      String
+  isCompulsory Boolean @default(false)
+  qty          Int     @default(1)
+  item         Item    @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  class        Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@id([itemId, classId])
+}
+
+// Every item has at least one variant ("Standard"); sized items have one per size.
+model ItemVariant {
+  id            String          @id @default(uuid())
+  itemId        String
+  item          Item            @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  label         String          @default("Standard")
+  sku           String          @unique
+  priceOverride Int?
+  onHand        Int             @default(0)
+  reserved      Int             @default(0)
+  sortOrder     Int             @default(0)
+  movements     StockMovement[]
+  lines         OrderLine[]
+  cartItems     CartItem[]
+}
+
+enum StockMovementType {
+  RESTOCK
+  SALE
+  ADJUSTMENT
+  RETURN
+}
+
+model StockMovement {
+  id        String            @id @default(uuid())
+  variantId String
+  variant   ItemVariant       @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  type      StockMovementType
+  qty       Int // signed: + adds to on-hand, - removes
+  reason    String?
+  orderId   String?
+  userId    String?
+  createdAt DateTime          @default(now())
+
+  @@index([variantId, createdAt])
+}
+
+// ---------- Cart & orders ----------
+
+model CartItem {
+  id        String      @id @default(uuid())
+  parentId  String
+  pupilId   String
+  variantId String
+  qty       Int
+  createdAt DateTime    @default(now())
+  parent    User        @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  pupil     Pupil       @relation(fields: [pupilId], references: [id], onDelete: Cascade)
+  variant   ItemVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@unique([parentId, pupilId, variantId])
+}
+
+model WishlistItem {
+  pupilId   String
+  itemId    String
+  createdAt DateTime @default(now())
+  pupil     Pupil    @relation(fields: [pupilId], references: [id], onDelete: Cascade)
+  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@id([pupilId, itemId])
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  AWAITING_VERIFICATION
+  PAYMENT_REJECTED
+  PART_PAID
+  PAYMENT_APPROVED
+  PACKING
+  READY
+  PARTIALLY_HANDED_OUT
+  HANDED_OUT
+  CANCELLED
+}
+
+enum PaymentMethod {
+  PAYSTACK
+  TRANSFER
+  WALLET
+}
+
+model Order {
+  id             String        @id @default(uuid())
+  number         Int           @unique @default(autoincrement())
+  parentId       String
+  parent         User          @relation(fields: [parentId], references: [id])
+  status         OrderStatus   @default(PENDING_PAYMENT)
+  method         PaymentMethod
+  subtotal       Int
+  walletUsed     Int           @default(0)
+  amountReceived Int           @default(0)
+  excess         Int           @default(0)
+  pickupCode     String?
+  rejectReason   String?
+  cancelledAt    DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  lines    OrderLine[]
+  payments Payment[]
+  events   OrderEvent[]
+  invoice  Invoice?
+  pickups  Pickup[]
+
+  @@index([parentId, createdAt])
+  @@index([status])
+}
+
+enum LineStatus {
+  PENDING
+  PACKING
+  READY
+  AWAITING_STOCK
+  HANDED_OUT
+  CANCELLED
+}
+
+model OrderLine {
+  id           String      @id @default(uuid())
+  orderId      String
+  order        Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  pupilId      String
+  pupil        Pupil       @relation(fields: [pupilId], references: [id])
+  variantId    String
+  variant      ItemVariant @relation(fields: [variantId], references: [id])
+  itemName     String // copied at checkout so later edits don't change past orders
+  variantLabel String
+  qty          Int
+  unitPrice    Int
+  status       LineStatus  @default(PENDING)
+
+  @@index([orderId])
+  @@index([pupilId])
+}
+
+model OrderEvent {
+  id        String   @id @default(uuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  message   String
+  actorName String?
+  createdAt DateTime @default(now())
+
+  @@index([orderId, createdAt])
+}
+
+enum PaymentStatus {
+  PENDING
+  AWAITING_VERIFICATION
+  APPROVED
+  PART_PAID
+  REJECTED
+}
+
+model Payment {
+  id              String        @id @default(uuid())
+  orderId         String
+  order           Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  method          PaymentMethod
+  amountDue       Int
+  amountReceived  Int?
+  status          PaymentStatus @default(PENDING)
+  paystackRef     String?       @unique
+  verifiedById    String?
+  verifiedAt      DateTime?
+  rejectionReason String?
+  createdAt       DateTime      @default(now())
+  receipts        Receipt[]
+
+  @@index([orderId])
+  @@index([status])
+}
+
+model Receipt {
+  id            String   @id @default(uuid())
+  paymentId     String
+  payment       Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  fileKey       String
+  fileName      String
+  mimeType      String
+  size          Int
+  sha256        String
+  bankName      String
+  amountClaimed Int
+  transferDate  DateTime
+  uploadedAt    DateTime @default(now())
+
+  @@index([sha256])
+}
+
+enum InvoiceStatus {
+  DRAFT
+  APPROVED
+  VOID
+}
+
+model Invoice {
+  id           String        @id @default(uuid())
+  orderId      String        @unique
+  order        Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status       InvoiceStatus @default(DRAFT)
+  approvedById String?
+  approvedAt   DateTime?
+  createdAt    DateTime      @default(now())
+}
+
+model Pickup {
+  id              String   @id @default(uuid())
+  orderId         String
+  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  collectedByName String
+  relationship    String
+  itemCount       Int
+  handedOutById   String
+  createdAt       DateTime @default(now())
+}
+
+// ---------- Wallet ----------
+
+model Wallet {
+  id           String              @id @default(uuid())
+  pupilId      String              @unique
+  pupil        Pupil               @relation(fields: [pupilId], references: [id], onDelete: Cascade)
+  transactions WalletTransaction[]
+}
+
+enum WalletTxType {
+  OVERPAYMENT_CREDIT
+  CANCELLED_ORDER_CREDIT
+  CHECKOUT_DEBIT
+  REFUND
+  ADJUSTMENT
+  TRANSFER_IN
+  TRANSFER_OUT
+}
+
+model WalletTransaction {
+  id        String       @id @default(uuid())
+  walletId  String
+  wallet    Wallet       @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  type      WalletTxType
+  amount    Int // signed
+  orderId   String?
+  reason    String?
+  actorName String?
+  movable   Boolean      @default(false) // overpayment on a multi-child order: parent may move it once
+  createdAt DateTime     @default(now())
+
+  @@index([walletId, createdAt])
+}
+
+// ---------- System ----------
+
+model Notification {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channels  String // e.g. "sms,email"
+  title     String
+  body      String
+  readAt    DateTime?
+  sentAt    DateTime?
+  error     String?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, createdAt])
+}
+
+// Append-only: prisma/sql/harden.sql adds a trigger that blocks UPDATE and DELETE.
+model AuditLog {
+  id        String   @id @default(uuid())
+  actorId   String?
+  actorName String
+  actorRole String
+  action    String
+  entity    String
+  entityId  String?
+  details   Json?
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([entity, entityId])
+}
+
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+enum BackupKind {
+  MANUAL
+  AUTOMATIC
+  SAFETY
+}
+
+model Backup {
+  id          String     @id @default(uuid())
+  fileName    String
+  fileKey     String
+  size        Int
+  checksum    String
+  kind        BackupKind
+  createdById String?
+  createdBy   String
+  counts      Json
+  createdAt   DateTime   @default(now())
+}

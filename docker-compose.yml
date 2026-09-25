@@ -1,0 +1,32 @@
+# Development:  npm run db:up        (starts only the database)
+# Production on a VPS:  docker compose --profile app up -d --build
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: nazareth
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nazareth}
+      POSTGRES_DB: nazareth_store
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  app:
+    profiles: ["app"]
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://nazareth:${POSTGRES_PASSWORD:-nazareth}@db:5432/nazareth_store?schema=public
+      STORAGE_DIR: /app/storage
+    depends_on: [db]
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - storage:/app/storage
+
+volumes:
+  pgdata:
+  storage:

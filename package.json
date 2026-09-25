@@ -1,0 +1,57 @@
+{
+  "name": "nazareth-school-store",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Nazareth School Store: books and school accessories for parents, with payments, stock and pick-up tracking.",
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "prisma generate && next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/*.test.ts",
+    "db:up": "docker compose up -d db",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy && npm run db:harden",
+    "db:harden": "prisma db execute --file prisma/sql/harden.sql --schema prisma/schema.prisma",
+    "db:seed": "prisma db seed",
+    "db:studio": "prisma studio",
+    "setup": "prisma migrate dev --name init && npm run db:harden && prisma db seed",
+    "totp": "tsx --env-file=.env scripts/totp.ts",
+    "cron": "tsx --env-file=.env scripts/cron.ts"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.16.2",
+    "bcryptjs": "^2.4.3",
+    "exceljs": "^4.4.0",
+    "jszip": "^3.10.1",
+    "next": "^15.5.4",
+    "otplib": "^12.0.1",
+    "pdf-lib": "^1.17.1",
+    "qrcode": "^1.5.4",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.13",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^22.18.6",
+    "@types/qrcode": "^1.5.5",
+    "@types/react": "^19.1.13",
+    "@types/react-dom": "^19.1.9",
+    "eslint": "^9.36.0",
+    "eslint-config-next": "^15.5.4",
+    "@eslint/eslintrc": "^3.3.1",
+    "prisma": "^6.16.2",
+    "tailwindcss": "^4.1.13",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
+  }
+}
