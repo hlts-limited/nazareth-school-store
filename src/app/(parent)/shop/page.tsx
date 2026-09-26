@@ -4,7 +4,7 @@ import { Avatar, Card, Empty, Note, PageHeader } from "@/shared/ui/primitives";
 import { ActionForm, SearchParamInput, SubmitButton } from "@/shared/ui/client";
 import { requireParentActor } from "@/modules/auth";
 import { addBooklistAction, addToCartAction, booklistProgress, getCart } from "@/modules/cart";
-import { categoryTree, ItemArt, itemLook, shopItems, variantAvailable } from "@/modules/catalogue";
+import { categoryTree, ItemArt, itemLook, pileStock, shopItems, variantAvailable } from "@/modules/catalogue";
 import { childrenOf } from "@/modules/pupils";
 import { AddToCart } from "../_components";
 
@@ -66,19 +66,28 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
               <div className="products">
                 {items.map((it) => {
                   const avail = it.variants.reduce((a, v) => a + variantAvailable(v), 0);
+                  const ps = it.isPile ? pileStock(it) : null;
                   return (
-                    <article key={it.id} className="pcard">
+                    <article key={it.id} className={`pcard${ps ? " pile" : ""}`}>
                       <span style={{ position: "relative", display: "block" }}>
                         <ItemArt {...itemLook(it)} />
                         {it.compulsory && <span className="pill ok plain" style={{ position: "absolute", top: 8, left: 8 }}>Required</span>}
+                        {ps && <span className="pill violet plain" style={{ position: "absolute", top: 8, right: 8 }}>{ps.total} books</span>}
                       </span>
                       <div className="pbody">
                         <div className="nm">{it.name}</div>
+                        {ps && (
+                          <details className="pile-books">
+                            <summary>What&apos;s in this pile</summary>
+                            <ul>{it.pileParts.map((pt) => <li key={pt.id}>{pt.qty > 1 ? `${pt.qty} × ` : ""}{pt.book.name}</li>)}</ul>
+                          </details>
+                        )}
                         <div className="row between">
                           <span className="pr">{naira(it.price)}</span>
-                          {avail <= 0 ? <span className="stock-out">Out of stock</span> : avail <= 5 ? <span className="stock-low">Only {avail} left</span> : null}
+                          {ps ? (ps.inStock < ps.total && <span className="stock-low" title="Books not in stock yet are packed as soon as they arrive">{ps.inStock} of {ps.total} in stock</span>)
+                            : avail <= 0 ? <span className="stock-out">Out of stock</span> : avail <= 5 ? <span className="stock-low">Only {avail} left</span> : null}
                         </div>
-                        <AddToCart action={addToCartAction} pupilId={child.id} childName={child.firstName} inCart={inCart(it.id)} readOnly={readOnly}
+                        <AddToCart action={addToCartAction} pupilId={child.id} childName={child.firstName} inCart={inCart(it.id)} readOnly={readOnly} pile={!!ps}
                           variants={it.variants.map((v) => ({ id: v.id, label: v.label, available: variantAvailable(v) }))} />
                       </div>
                     </article>

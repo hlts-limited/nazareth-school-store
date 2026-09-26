@@ -3,7 +3,7 @@ import { UserError } from "@/shared/lib/action";
 import { randomCode4 } from "@/shared/lib/crypto";
 import { orderNo } from "@/shared/lib/format";
 import { SCHOOL } from "@/shared/config/school";
-import { deductForHandout } from "@/modules/inventory";
+import { deductForHandout, reserve } from "@/modules/inventory";
 import { addEvent } from "@/modules/orders";
 import { notify } from "@/modules/notifications";
 
@@ -25,7 +25,10 @@ export async function startPacking(orderId: string, actorName: string) {
     const o = await tx.order.findUnique({ where: { id: orderId }, include: { lines: { include: { variant: true } } } });
     if (!o || o.status !== "PAYMENT_APPROVED") throw new UserError("This order isn't waiting to be packed.");
     for (const l of o.lines) {
-      await tx.orderLine.update({ where: { id: l.id }, data: { status: l.variant.onHand >= l.qty ? "PACKING" : "AWAITING_STOCK" } });
+      // Pile books ordered while out of stock hold no stock yet: try to reserve it now
+      const reserved = l.reserved || (await reserve(tx, l.variantId, l.qty));
+      const packable = reserved && l.variant.onHand >= l.qty;
+      await tx.orderLine.update({ where: { id: l.id }, data: { reserved, status: packable ? "PACKING" : "AWAITING_STOCK" } });
     }
     await tx.order.update({ where: { id: orderId }, data: { status: "PACKING" } });
     await addEvent(tx, orderId, "Being packed", actorName);
@@ -36,6 +39,7 @@ export async function startPacking(orderId: string, actorName: string) {
 export async function setLinePacked(lineId: string, packed: boolean) {
   const l = await db.orderLine.findUnique({ where: { id: lineId }, include: { order: true } });
   if (!l || l.order.status !== "PACKING") throw new UserError("That order isn't being packed.");
+  if (packed && !l.reserved) throw new UserError(`${l.itemName} isn't in stock yet. Restock it, then use "Now ready" when it arrives.`);
   await db.orderLine.update({ where: { id: lineId }, data: { status: packed ? "PACKING" : "AWAITING_STOCK" } });
 }
 
@@ -72,7 +76,9 @@ export async function lineNowReady(lineId: string, actorName: string) {
   if (!l || l.status !== "AWAITING_STOCK") throw new UserError("That item isn't awaiting stock.");
   if (l.variant.onHand < l.qty) throw new UserError("Restock this item first.");
   await db.$transaction(async (tx) => {
-    await tx.orderLine.update({ where: { id: lineId }, data: { status: "READY" } });
+    // A pile book that was ordered while out of stock takes its stock now
+    if (!l.reserved && !(await reserve(tx, l.variantId, l.qty))) throw new UserError("That stock is already promised to other orders. Restock more first.");
+    await tx.orderLine.update({ where: { id: lineId }, data: { status: "READY", reserved: true } });
     if (l.order.status === "PARTIALLY_HANDED_OUT" || l.order.status === "READY") await tx.order.update({ where: { id: l.orderId }, data: { status: l.order.status } });
     await addEvent(tx, l.orderId, `${l.itemName} arrived and is ready`, actorName);
   });

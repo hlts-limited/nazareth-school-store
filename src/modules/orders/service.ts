@@ -42,18 +42,32 @@ export async function ordersForPupil(pupilId: string) {
  */
 export async function checkout(parentId: string, method: "PAYSTACK" | "TRANSFER", useWalletFor: string[], actorName: string) {
   const order = await db.$transaction(async (tx) => {
-    const cart = await tx.cartItem.findMany({ where: { parentId }, include: { variant: { include: { item: true } }, pupil: true } });
+    const cart = await tx.cartItem.findMany({
+      where: { parentId },
+      include: { pupil: true, variant: { include: { item: { include: { pileParts: { orderBy: { sortOrder: "asc" }, include: { book: { include: { variants: true } } } } } } } } },
+    });
     if (!cart.length) throw new UserError("Your cart is empty.");
+    type Line = { pupilId: string; variantId: string; qty: number; unitPrice: number; itemName: string; variantLabel: string; pileItemId?: string; pileName?: string; reserved?: boolean };
+    const lines: Line[] = [];
     for (const c of cart) {
-      if (!c.variant.item.isActive) throw new UserError(`${c.variant.item.name} is no longer sold. Remove it from your cart.`);
+      const it = c.variant.item;
+      if (!it.isActive) throw new UserError(`${it.name} is no longer sold. Remove it from your cart.`);
+      if (it.isPile) {
+        // A pile becomes one line per book. Books in stock are reserved now; the rest wait for stock (no reservation).
+        if (!it.pileParts.length) throw new UserError(`${it.name} has no books in it yet. Remove it from your cart.`);
+        for (const pt of it.pileParts) {
+          const bv = pt.book.variants[0];
+          if (!bv) throw new UserError(`${pt.book.name} in ${it.name} can't be sold right now. Contact the school office.`);
+          const qty = pt.qty * c.qty;
+          const reserved = await reserve(tx, bv.id, qty);
+          lines.push({ pupilId: c.pupilId, variantId: bv.id, qty, unitPrice: bv.priceOverride ?? pt.book.price, itemName: pt.book.name, variantLabel: bv.label, pileItemId: it.id, pileName: it.name, reserved });
+        }
+        continue;
+      }
       const okReserve = await reserve(tx, c.variantId, c.qty);
-      if (!okReserve) throw new UserError(`Sorry, ${c.variant.item.name}${c.variant.label !== "Standard" ? ` (${c.variant.label})` : ""} just sold out in that quantity. Update your cart and try again.`);
+      if (!okReserve) throw new UserError(`Sorry, ${it.name}${c.variant.label !== "Standard" ? ` (${c.variant.label})` : ""} just sold out in that quantity. Update your cart and try again.`);
+      lines.push({ pupilId: c.pupilId, variantId: c.variantId, qty: c.qty, unitPrice: c.variant.priceOverride ?? it.price, itemName: it.name, variantLabel: c.variant.label });
     }
-    const lines = cart.map((c) => ({
-      pupilId: c.pupilId, variantId: c.variantId, qty: c.qty,
-      unitPrice: c.variant.priceOverride ?? c.variant.item.price,
-      itemName: c.variant.item.name, variantLabel: c.variant.label,
-    }));
     const subtotal = lines.reduce((a, l) => a + l.unitPrice * l.qty, 0);
     const o = await tx.order.create({
       data: { parentId, method, subtotal, lines: { create: lines }, invoice: { create: {} }, events: { create: { message: "Order placed", actorName } } },
@@ -81,7 +95,8 @@ export async function checkout(parentId: string, method: "PAYSTACK" | "TRANSFER"
 export async function cancelOrder(tx: Tx, orderId: string, reason: string, actorName: string) {
   const o = await tx.order.findUnique({ where: { id: orderId }, include: { lines: true } });
   if (!o || o.status === "CANCELLED" || o.status === "HANDED_OUT") return null;
-  for (const l of o.lines) if (l.status !== "HANDED_OUT" && l.status !== "CANCELLED") await release(tx, l.variantId, l.qty);
+  // Only give back stock that was actually held (pile books awaiting stock hold none)
+  for (const l of o.lines) if (l.reserved && l.status !== "HANDED_OUT" && l.status !== "CANCELLED") await release(tx, l.variantId, l.qty);
   await tx.orderLine.updateMany({ where: { orderId, status: { notIn: ["HANDED_OUT"] } }, data: { status: "CANCELLED" } });
   const refund = o.amountReceived + o.walletUsed;
   const firstPupil = o.lines[0]?.pupilId;

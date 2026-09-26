@@ -109,12 +109,27 @@ export default async function OrderPage({ params }: { params: Promise<{ no: stri
             {[...byKid.entries()].map(([pid, ls]) => (
               <div key={pid} className="card-b stack tight" style={{ borderTop: "1px solid var(--line-2)" }}>
                 <div className="row"><Avatar id={pid} first={ls[0].pupil.firstName} last={ls[0].pupil.lastName} size="sm" /><b>{ls[0].pupil.firstName} {ls[0].pupil.lastName}</b><span className="small muted">{ls[0].pupil.class.name}</span></div>
-                {ls.map((l) => (
+                {ls.filter((l) => !l.pileItemId).map((l) => (
                   <div key={l.id} className="row between small">
                     <span className="grow">{l.qty} × {l.itemName}{l.variantLabel !== "Standard" && <span className="muted"> ({l.variantLabel})</span>}</span>
                     <Pill tone={LINE_STATUS[l.status].tone}>{LINE_STATUS[l.status].label}</Pill>
                   </div>
                 ))}
+                {/* Pile books are listed under their pile, each with its own status */}
+                {[...new Set(ls.filter((l) => l.pileItemId).map((l) => l.pileItemId!))].map((pileId) => {
+                  const books = ls.filter((l) => l.pileItemId === pileId);
+                  return (
+                    <div key={pileId} className="pile-group">
+                      <div className="row between small"><b>{books[0].pileName}</b><span className="tnum">{naira(books.reduce((a, l) => a + l.unitPrice * l.qty, 0))}</span></div>
+                      {books.map((l) => (
+                        <div key={l.id} className="row between small">
+                          <span className="grow">{l.qty} × {l.itemName}</span>
+                          <Pill tone={LINE_STATUS[l.status].tone}>{LINE_STATUS[l.status].label}</Pill>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })}
               </div>
             ))}
           </Card>

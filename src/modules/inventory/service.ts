@@ -31,7 +31,7 @@ export async function recordMovement(variantId: string, type: StockMovementType,
 }
 
 export async function lowStock(take = 50) {
-  const variants = await db.itemVariant.findMany({ where: { item: { isActive: true } }, include: { item: true } });
+  const variants = await db.itemVariant.findMany({ where: { item: { isActive: true, isPile: false } }, include: { item: true } });
   return variants
     .map((v) => ({ ...v, available: v.onHand - v.reserved }))
     .filter((v) => v.available <= v.item.reorderLevel)
@@ -41,7 +41,7 @@ export async function lowStock(take = 50) {
 
 export async function stockLevels(q?: string) {
   return db.itemVariant.findMany({
-    where: q?.trim() ? { item: { name: { contains: q.trim(), mode: "insensitive" } } } : {},
+    where: { item: { isPile: false, ...(q?.trim() ? { name: { contains: q.trim(), mode: "insensitive" as const } } : {}) } },
     include: { item: true },
     orderBy: [{ item: { name: "asc" } }, { sortOrder: "asc" }],
     take: 400,
@@ -52,4 +52,13 @@ export async function recentMovements(take = 40) {
   const rows = await db.stockMovement.findMany({ orderBy: { createdAt: "desc" }, take, include: { variant: { include: { item: true } } } });
   const users = await db.user.findMany({ where: { id: { in: rows.map((r) => r.userId).filter(Boolean) as string[] } } });
   return rows.map((r) => ({ ...r, by: users.find((u) => u.id === r.userId)?.firstName ?? "System" }));
+}
+
+/** Per book: how many are wanted by paid orders but not yet in stock (pile books ordered while out of stock) */
+export async function awaitingByVariant(variantIds: string[]) {
+  const rows = await db.orderLine.groupBy({
+    by: ["variantId"], _sum: { qty: true },
+    where: { variantId: { in: variantIds }, reserved: false, status: { notIn: ["CANCELLED", "HANDED_OUT"] } },
+  });
+  return Object.fromEntries(rows.map((r) => [r.variantId, r._sum.qty ?? 0])) as Record<string, number>;
 }

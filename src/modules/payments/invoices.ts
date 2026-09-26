@@ -168,7 +168,7 @@ export async function orderInvoicePdf(orderId: string) {
   y -= 20;
   for (const l of o.lines) {
     draw(page, textFit(font, `${l.pupil.firstName} (${l.pupil.class.name})`, 9, 105), { x: 40, y, size: 9, font, color: INK });
-    draw(page, textFit(font, l.itemName + (l.variantLabel !== "Standard" ? ` (${l.variantLabel})` : ""), 9, 235), { x: 150, y, size: 9, font, color: INK });
+    draw(page, textFit(font, l.itemName + (l.variantLabel !== "Standard" ? ` (${l.variantLabel})` : "") + (l.pileName ? ` · ${l.pileName}` : ""), 9, 235), { x: 150, y, size: 9, font, color: INK });
     draw(page, String(l.qty), { x: 390, y, size: 9, font, color: INK });
     draw(page, pdfMoney(l.unitPrice), { x: 430, y, size: 9, font, color: INK });
     draw(page, pdfMoney(l.unitPrice * l.qty), { x: 500, y, size: 9, font, color: INK });

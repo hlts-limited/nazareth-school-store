@@ -6,7 +6,7 @@ import { randomToken } from "@/shared/lib/crypto";
 import { readUpload, storage } from "@/shared/lib/storage";
 import { staffFor, auditActor } from "@/modules/auth";
 import { audit } from "@/modules/audit";
-import { createCategory, createItem, updateItem } from "./service";
+import { createCategory, createItem, createPile, updateItem, updatePile } from "./service";
 
 const itemSchema = z.object({
   name: zText(160, "Enter the item name"),
@@ -63,5 +63,35 @@ export async function createCategoryAction(_: ActionResult, form: FormData): Pro
     const c = await createCategory(d.name, d.parentId);
     await audit(await auditActor(v), "Added category", "Category", c.id, { name: c.name });
     return ok(`${c.name} added.`);
+  });
+}
+
+// ---------- Core-textbook piles ----------
+const pileSchema = z.object({
+  name: zText(160, "Enter the pile name"),
+  description: zOptText(1000),
+  categoryId: zText(100, "Choose a category"),
+  classIds: z.union([z.string(), z.array(z.string())]).optional().transform((v) => (v ? (Array.isArray(v) ? v : [v]) : [])),
+  compulsory: zBool,
+  isActive: zBool.optional(),
+});
+
+/** Books come in as bookId=<id> checkboxes with a matching qty_<id> field */
+function pileParts(form: FormData) {
+  return form.getAll("bookId").map(String).filter(Boolean).map((bookId) => {
+    const qty = Math.floor(Number(form.get(`qty_${bookId}`) ?? 1));
+    return { bookId, qty: Number.isFinite(qty) && qty >= 1 && qty <= 20 ? qty : 1 };
+  });
+}
+
+export async function savePileAction(_: ActionResult, form: FormData): Promise<ActionResult> {
+  return runAction(async () => {
+    const v = await staffFor("catalogue.manage");
+    const id = String(form.get("id") ?? "");
+    const d = parseForm(pileSchema, form);
+    const input = { ...d, isActive: d.isActive ?? false, parts: pileParts(form) };
+    const pile = id ? await updatePile(id, input) : await createPile(input);
+    await audit(await auditActor(v), id ? "Updated pile" : "Added pile", "Item", pile.id, { name: pile.name, price: pile.price, books: input.parts.length });
+    return ok(`${pile.name} saved. Price is now the sum of its books.`, { redirect: "/admin/store/piles" });
   });
 }

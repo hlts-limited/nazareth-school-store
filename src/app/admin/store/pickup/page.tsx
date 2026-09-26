@@ -38,7 +38,7 @@ export default async function PickupPage({ searchParams }: { searchParams: Promi
             {o.lines.map((l) => (
               <label key={l.id} className="check small" style={{ opacity: l.status === "HANDED_OUT" ? 0.5 : 1 }}>
                 <input type="checkbox" name="lineIds" value={l.id} defaultChecked={l.status === "READY"} disabled={l.status !== "READY"} />
-                {l.qty} × {l.itemName}{l.variantLabel !== "Standard" ? ` (${l.variantLabel})` : ""} <span className="muted">for {l.pupil.firstName}</span>
+                {l.qty} × {l.itemName}{l.variantLabel !== "Standard" ? ` (${l.variantLabel})` : ""}{l.pileName && <span className="muted"> · {l.pileName}</span>} <span className="muted">for {l.pupil.firstName}</span>
                 {l.status !== "READY" && <Pill tone={LINE_STATUS[l.status].tone}>{LINE_STATUS[l.status].label}</Pill>}
               </label>
             ))}

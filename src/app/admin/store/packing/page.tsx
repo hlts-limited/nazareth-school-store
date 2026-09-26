@@ -33,8 +33,8 @@ export default async function PackingPage() {
                   <div key={pid} className="stack tight">
                     <div className="row tight"><Avatar id={pid} first={ls[0].pupil.firstName} last={ls[0].pupil.lastName} size="sm" /><b className="small">{ls[0].pupil.firstName} {ls[0].pupil.lastName} · {ls[0].pupil.class.name}</b></div>
                     {ls.map((l) => (
-                      <PackCheckbox key={l.id} action={setLinePackedAction} lineId={l.id} checked={l.status !== "AWAITING_STOCK"} disabled={o.status !== "PACKING"}
-                        label={`${l.qty} × ${l.itemName}${l.variantLabel !== "Standard" ? ` (${l.variantLabel})` : ""}${l.variant.onHand < l.qty ? " — not enough on hand" : ""}`} />
+                      <PackCheckbox key={l.id} action={setLinePackedAction} lineId={l.id} checked={l.status !== "AWAITING_STOCK"} disabled={o.status !== "PACKING" || !l.reserved}
+                        label={`${l.qty} × ${l.itemName}${l.variantLabel !== "Standard" ? ` (${l.variantLabel})` : ""}${l.pileName ? ` · ${l.pileName}` : ""}${!l.reserved ? " — not in stock yet" : l.variant.onHand < l.qty ? " — not enough on hand" : ""}`} />
                     ))}
                   </div>
                 ))}
@@ -46,12 +46,16 @@ export default async function PackingPage() {
         {awaitingStock.length > 0 && (
           <Card pad={false}>
             <div className="card-h"><h3>Items awaiting stock</h3><span className="small muted">Mark them ready when the delivery arrives</span></div>
-            {awaitingStock.flatMap((o) => o.lines.filter((l) => l.status === "AWAITING_STOCK").map((l) => (
-              <div key={l.id} className="order-row" style={{ cursor: "default" }}>
-                <div className="grow"><b className="mono small">{orderNo(o.number)}</b> · {l.qty} × {l.itemName}{l.variantLabel !== "Standard" ? ` (${l.variantLabel})` : ""} <span className="muted small">for {l.pupil.firstName}</span></div>
-                <ActionForm action={lineReadyAction}><input type="hidden" name="lineId" value={l.id} /><SubmitButton size="sm" variant="default" disabled={l.variant.onHand < l.qty}>{l.variant.onHand < l.qty ? "Restock first" : "Mark ready"}</SubmitButton></ActionForm>
-              </div>
-            )))}
+            {awaitingStock.flatMap((o) => o.lines.filter((l) => l.status === "AWAITING_STOCK").map((l) => {
+              // A book with no stock held yet needs free stock (not promised to other orders)
+              const short = l.reserved ? l.variant.onHand < l.qty : l.variant.onHand - l.variant.reserved < l.qty;
+              return (
+                <div key={l.id} className="order-row" style={{ cursor: "default" }}>
+                  <div className="grow"><b className="mono small">{orderNo(o.number)}</b> · {l.qty} × {l.itemName}{l.variantLabel !== "Standard" ? ` (${l.variantLabel})` : ""}{l.pileName && <span className="muted small"> · {l.pileName}</span>} <span className="muted small">for {l.pupil.firstName}</span></div>
+                  <ActionForm action={lineReadyAction}><input type="hidden" name="lineId" value={l.id} /><SubmitButton size="sm" variant="default" disabled={short}>{short ? "Restock first" : "Mark ready"}</SubmitButton></ActionForm>
+                </div>
+              );
+            }))}
           </Card>
         )}
       </div>

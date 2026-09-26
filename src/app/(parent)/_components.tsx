@@ -8,10 +8,22 @@ import { Icon } from "@/shared/ui/icon";
 type Action = (prev: ActionResult, form: FormData) => Promise<ActionResult>;
 
 /** Size picker + "Add for <child>" button on a product card */
-export function AddToCart({ action, pupilId, childName, variants, inCart, readOnly }: {
-  action: Action; pupilId: string; childName: string; inCart: number; readOnly: boolean;
+export function AddToCart({ action, pupilId, childName, variants, inCart, readOnly, pile = false }: {
+  action: Action; pupilId: string; childName: string; inCart: number; readOnly: boolean; pile?: boolean;
   variants: { id: string; label: string; available: number }[];
 }) {
+  // A pile is bought once per child and is never blocked by stock (missing books follow later)
+  if (pile) {
+    return (
+      <ActionForm action={action} className="foot">
+        <input type="hidden" name="pupilId" value={pupilId} />
+        <input type="hidden" name="variantId" value={variants[0]?.id ?? ""} />
+        {inCart > 0
+          ? <span className="in-cart"><Icon name="check" size="sm" /> Pile in cart for {childName}</span>
+          : <SubmitButton size="sm" block variant="primary" icon="plus" disabled={readOnly}>Add pile for {childName}</SubmitButton>}
+      </ActionForm>
+    );
+  }
   const sized = variants.length > 1 || (variants[0] && variants[0].label !== "Standard");
   const totalAvail = variants.reduce((a, v) => a + v.available, 0);
   const out = totalAvail <= 0;
@@ -32,14 +44,14 @@ export function AddToCart({ action, pupilId, childName, variants, inCart, readOn
   );
 }
 
-export function QtyControl({ action, id, qty, readOnly }: { action: Action; id: string; qty: number; readOnly: boolean }) {
+export function QtyControl({ action, id, qty, readOnly, removeOnly = false }: { action: Action; id: string; qty: number; readOnly: boolean; removeOnly?: boolean }) {
   return (
     <div className="row tight nowrap">
-      <div className="qty">
+      {!removeOnly && <div className="qty">
         <ActionForm action={action} className="inline-form"><input type="hidden" name="id" value={id} /><input type="hidden" name="qty" value={qty - 1} /><button type="submit" aria-label="Decrease" disabled={readOnly}>−</button></ActionForm>
         <span>{qty}</span>
         <ActionForm action={action} className="inline-form"><input type="hidden" name="id" value={id} /><input type="hidden" name="qty" value={qty + 1} /><button type="submit" aria-label="Increase" disabled={readOnly}>+</button></ActionForm>
-      </div>
+      </div>}
       <ActionForm action={action} className="inline-form"><input type="hidden" name="id" value={id} /><input type="hidden" name="qty" value={0} /><button type="submit" className="icon-btn" aria-label="Remove" disabled={readOnly}><Icon name="x" size="sm" /></button></ActionForm>
     </div>
   );

@@ -187,13 +187,32 @@ model Item {
   isActive     Boolean       @default(true)
   reorderLevel Int           @default(5)
   hasVariants  Boolean       @default(false)
+  // A pile (e.g. core textbooks) is sold as one product but made of real books with their own stock.
+  // Its price is kept equal to the sum of its books; it holds no stock itself.
+  isPile       Boolean       @default(false)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   variants     ItemVariant[]
   classes      ItemClass[]
   wishlist     WishlistItem[]
+  pileParts    PilePart[]    @relation("PileParts")
+  inPiles      PilePart[]    @relation("PileBooks")
 
   @@index([categoryId])
+}
+
+/// One book inside a pile. A book in any pile is only sold as part of that pile.
+model PilePart {
+  id        String @id @default(uuid())
+  pileId    String
+  pile      Item   @relation("PileParts", fields: [pileId], references: [id], onDelete: Cascade)
+  bookId    String
+  book      Item   @relation("PileBooks", fields: [bookId], references: [id])
+  qty       Int    @default(1)
+  sortOrder Int    @default(0)
+
+  @@unique([pileId, bookId])
+  @@index([bookId])
 }
 
 // Which classes an item is for, and whether it is on that class's required booklist
@@ -339,6 +358,11 @@ model OrderLine {
   qty          Int
   unitPrice    Int
   status       LineStatus  @default(PENDING)
+  // Set when the line is a book bought as part of a pile (copied at checkout)
+  pileItemId   String?
+  pileName     String?
+  // False while a pile book is awaiting stock: no stock is held for it until it arrives
+  reserved     Boolean     @default(true)
 
   @@index([orderId])
   @@index([pupilId])

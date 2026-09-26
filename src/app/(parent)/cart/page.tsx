@@ -36,6 +36,19 @@ export default async function CartPage() {
               {g.lines.map((l) => {
                 const it = l.variant.item;
                 const price = l.variant.priceOverride ?? it.price;
+                if (it.isPile) {
+                  return (
+                    <div key={l.id} className="cart-line">
+                      <ItemArt {...itemLook(it)} size="thumb" />
+                      <div className="grow">
+                        <div style={{ fontWeight: 600, fontSize: 13.5 }}>{it.name} <span className="pill violet plain">{it.pileParts.length} books</span></div>
+                        <div className="small muted">{it.pileParts.map((pt) => `${pt.qty > 1 ? `${pt.qty} × ` : ""}${pt.book.name}`).join(" · ")}</div>
+                      </div>
+                      <b className="tnum hide-sm" style={{ minWidth: 78, textAlign: "right" }}>{naira(price)}</b>
+                      <QtyControl action={setQtyAction} id={l.id} qty={l.qty} readOnly={readOnly} removeOnly />
+                    </div>
+                  );
+                }
                 return (
                   <div key={l.id} className="cart-line">
                     <ItemArt {...itemLook(it)} size="thumb" />

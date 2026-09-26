@@ -72,6 +72,7 @@ export const STAFF_SECTIONS: { id: string; label: string; perm: Permission; item
     items: [
       { href: "/admin/store", label: "Overview", icon: "chart" },
       { href: "/admin/store/items", label: "Items", icon: "tag" },
+      { href: "/admin/store/piles", label: "Core-textbook piles", icon: "layers" },
       { href: "/admin/store/categories", label: "Categories", icon: "layers" },
       { href: "/admin/store/stock", label: "Stock", icon: "box" },
       { href: "/admin/store/packing", label: "Orders to pack", icon: "list", badge: "pack" },
