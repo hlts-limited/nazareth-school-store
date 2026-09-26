@@ -12,7 +12,7 @@ const FORMAT_VERSION = 1;
 /** Tables in the order they must be inserted (parents before children). Sessions and login attempts are not backed up. */
 const TABLES = [
   ["setting", "Setting"], ["role", "Role"], ["class", "Class"], ["user", "User"], ["userRole", "UserRole"],
-  ["pupil", "Pupil"], ["guardian", "Guardian"], ["category", "Category"], ["item", "Item"], ["itemClass", "ItemClass"], ["itemVariant", "ItemVariant"],
+  ["pupil", "Pupil"], ["guardian", "Guardian"], ["category", "Category"], ["item", "Item"], ["itemClass", "ItemClass"], ["itemVariant", "ItemVariant"], ["pilePart", "PilePart"],
   ["order", "Order"], ["orderLine", "OrderLine"], ["orderEvent", "OrderEvent"], ["payment", "Payment"], ["receipt", "Receipt"], ["invoice", "Invoice"], ["pickup", "Pickup"],
   ["wallet", "Wallet"], ["walletTransaction", "WalletTransaction"], ["stockMovement", "StockMovement"], ["cartItem", "CartItem"], ["wishlistItem", "WishlistItem"],
   ["notification", "Notification"], ["auditLog", "AuditLog"],
