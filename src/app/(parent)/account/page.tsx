@@ -1,6 +1,6 @@
 import { Avatar, Card, Note, PageHeader } from "@/shared/ui/primitives";
 import { ActionForm, FieldError, SubmitButton } from "@/shared/ui/client";
-import { displayName, endViewAs, logout, requireParentActor } from "@/modules/auth";
+import { changePasswordAction, ChangePasswordForm, displayName, endViewAs, logout, requireParentActor } from "@/modules/auth";
 import { childrenOf, setPupilPinAction } from "@/modules/pupils";
 import { getSettings } from "@/modules/settings";
 
@@ -16,11 +16,15 @@ export default async function AccountPage() {
       <div className="grid g2" style={{ alignItems: "start" }}>
         <Card className="stack">
           <div className="row"><Avatar id={parent.id} first={parent.firstName} last={parent.lastName} size="lg" dark /><div><b>{displayName(parent)}</b><div className="small muted">{parent.phone} · {parent.email ?? "no email"}</div></div></div>
-          <Note icon="shield">You can be signed in on up to {lim.devices} devices. Without &ldquo;Remember this device&rdquo;, you&apos;re signed out after {lim.idleMinutes} minutes of inactivity.</Note>
+          <Note icon="shield">You can be signed in on {lim.devices === 1 ? "one device at a time" : `up to ${lim.devices} devices`}. Without &ldquo;Remember this device&rdquo;, you&apos;re signed out after {lim.idleMinutes} minutes of inactivity.</Note>
           <p className="small muted">To change your phone number or email, contact the school office. To get a copy of your family&apos;s data, or ask for it to be corrected or deleted, contact the office too (Nigeria Data Protection Act 2023).</p>
           {readOnly
             ? <form action={endViewAs}><button className="btn" type="submit">Exit view-as</button></form>
             : <form action={logout}><button className="btn danger" type="submit">Sign out</button></form>}
+        </Card>
+        <Card className="stack">
+          <h3>Change password</h3>
+          <ChangePasswordForm action={changePasswordAction} needCode={false} minLength={8} disabled={readOnly} />
         </Card>
         <Card className="stack">
           <h3>Pupil dashboard PIN</h3>

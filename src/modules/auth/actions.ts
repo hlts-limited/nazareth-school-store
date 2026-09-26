@@ -11,6 +11,8 @@ import { isProd } from "@/shared/config/env";
 import { ROLE_DEFS } from "@/modules/access-control";
 import { audit } from "@/modules/audit";
 import { getSettings } from "@/modules/settings";
+import { notify } from "@/modules/notifications";
+import { SCHOOL } from "@/shared/config/school";
 import { hashPassword, passwordProblem, verifyPassword, verifyTotp } from "./password";
 import { CAPTCHA_AFTER, checkCaptcha, isLocked, recentFailures, recordAttempt } from "./rate-limit";
 import { createSession, destroyCurrentSession, revokeAllForUser, revokeSessionById, VIEWAS_COOKIE } from "./session";
@@ -165,5 +167,42 @@ export async function forceSignOut(_: ActionResult, form: FormData): Promise<Act
     await revokeSessionById(id, "Signed out by Super Admin");
     await audit(await auditActor(admin), "Forced sign-out", "Session", id.slice(0, 12));
     return ok("Session ended.");
+  });
+}
+
+// ---------- Change your own password (staff and parents) ----------
+export async function changePasswordAction(_: ActionResult, form: FormData): Promise<ActionResult> {
+  return runAction(async () => {
+    const v = await getViewer();
+    if (!v || v.kind === "pupil") return fail("Your session has ended. Please sign in again.");
+    if (v.kind === "staff" && (await getViewAs())) return fail("Exit view-as before changing your password.");
+    const user = v.user;
+    const d = parseForm(z.object({ current: z.string().min(1, "Enter your current password"), password: z.string(), confirm: z.string(), code: z.string().optional() }), form);
+
+    // Wrong current passwords count towards the same 5-minute lock as sign-in
+    const key = `pwchange:${user.id}`;
+    if (await isLocked(key)) return fail(LOCKED_MSG);
+    if (!(await verifyPassword(d.current, user.passwordHash))) {
+      await recordAttempt(key, false);
+      return fail("Your current password isn't correct.", { current: "Not correct" });
+    }
+    if (v.kind === "staff" && user.totpSecret && !verifyTotp(d.code ?? "", user.totpSecret)) {
+      await recordAttempt(key, false);
+      return fail("That 2FA code is not correct.", { code: "Code not correct" });
+    }
+
+    const problem = passwordProblem(d.password) ?? (v.kind === "staff" && d.password.length < 10 ? "Staff passwords need at least 10 characters." : null);
+    if (problem) return fail(problem, { password: problem });
+    if (d.password === d.current) return fail("Choose a password different from your current one.", { password: "Same as current" });
+    if (d.password !== d.confirm) return fail("The two passwords don't match.", { confirm: "Doesn't match" });
+
+    await db.user.update({ where: { id: user.id }, data: { passwordHash: await hashPassword(d.password) } });
+    await recordAttempt(key, true);
+    // Sign out everywhere else; this device stays signed in
+    const others = await db.session.updateMany({ where: { userId: user.id, revokedAt: null, id: { not: v.session.id } }, data: { revokedAt: new Date(), revokeReason: "Password changed" } });
+    await audit(await auditActor(v), "Changed own password", "User", user.id, { otherDevicesSignedOut: others.count });
+    await notify(user.id, "Your password was changed",
+      `The password for your ${SCHOOL.storeName} account was just changed. If this wasn't you, contact the school office straight away.`, ["email"]);
+    return ok(others.count ? `Password changed. ${others.count} other device${others.count > 1 ? "s were" : " was"} signed out.` : "Password changed.");
   });
 }

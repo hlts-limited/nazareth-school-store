@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { SCHOOL } from "@/shared/config/school";
 import { Icon } from "@/shared/ui/icon";
 import { ThemeToggle } from "@/shared/ui/client";
@@ -23,7 +24,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <div className="side-foot">
             <div className="row nowrap">
               <span className="avatar" style={{ background: "var(--ink)" }}>{initials}</span>
-              <div className="grow" style={{ lineHeight: 1.2 }}><b style={{ fontSize: 13 }}>{v.user.firstName} {v.user.lastName}</b><div className="tiny muted">{v.roles.map(roleName).join(", ")}</div></div>
+              <Link href="/admin/account" className="grow" style={{ lineHeight: 1.2, color: "inherit", textDecoration: "none" }} title="My account and password"><b style={{ fontSize: 13 }}>{v.user.firstName} {v.user.lastName}</b><div className="tiny muted">{v.roles.map(roleName).join(", ")} · My account</div></Link>
               <form action={logout}><button className="icon-btn" type="submit" aria-label="Sign out"><Icon name="logout" size="sm" /></button></form>
             </div>
           </div>
@@ -35,6 +36,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <div className="grow" />
             <IdleWatcher idleSeconds={idle.idleSeconds} keepAlive={keepAlive} logout={logout} showTimer />
             <ThemeToggle />
+            <Link href="/admin/account" className="icon-btn show-md" aria-label="My account"><Icon name="users" size="sm" /></Link>
             <form action={logout} className="show-md"><button className="icon-btn" type="submit" aria-label="Sign out"><Icon name="logout" size="sm" /></button></form>
           </div>
           <StaffNav sections={sections} counts={counts} variant="tabs" />
