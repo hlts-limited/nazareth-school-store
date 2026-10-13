@@ -43,10 +43,14 @@ const FormPendingCtx = createContext(false);
  * <ActionForm action={serverAction}> — runs the action, shows its message as a toast,
  * exposes field errors to <FieldError>, and follows result.redirect.
  */
-export function ActionForm({ action, children, className, onDone, resetOnSuccess, id }: {
+export function ActionForm({ action, children, className, onDone, resetOnSuccess, id, prepare }: {
   action: Action; children: ReactNode; className?: string; onDone?: (r: ActionResult) => void; resetOnSuccess?: boolean; id?: string;
+  /** Runs in the browser before sending, e.g. to shrink photos. Return a message (string) to stop and show it instead. */
+  prepare?: (data: FormData) => Promise<FormData | string>;
 }) {
-  const [state, formAction, pending] = useActionState(action, { ok: false });
+  const [state, formAction, actionPending] = useActionState(action, { ok: false });
+  const [preparing, setPreparing] = useState(false);
+  const pending = actionPending || preparing;
   const toast = useToast();
   const router = useRouter();
   const ref = useRef<HTMLFormElement>(null);
@@ -70,7 +74,15 @@ export function ActionForm({ action, children, className, onDone, resetOnSuccess
     if (pending) return;
     const submitter = (e.nativeEvent as SubmitEvent).submitter as HTMLElement | null;
     const data = new FormData(e.currentTarget, submitter);
-    startTransition(() => formAction(data));
+    if (!prepare) { startTransition(() => formAction(data)); return; }
+    setPreparing(true);
+    prepare(data)
+      .then((ready) => {
+        if (typeof ready === "string") toast(ready, false);
+        else startTransition(() => formAction(ready));
+      })
+      .catch(() => toast("Something went wrong preparing the form. Please try again.", false))
+      .finally(() => setPreparing(false));
   };
   return (
     <FormResultCtx.Provider value={state}>

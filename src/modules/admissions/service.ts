@@ -6,7 +6,11 @@ import { randomToken, safeEqual, sha256 } from "@/shared/lib/crypto";
 import { storage } from "@/shared/lib/storage";
 import { env } from "@/shared/config/env";
 import { initializeTransaction, verifyTransaction } from "@/modules/payments";
-import { addPupil } from "@/modules/pupils";
+import { addPupil, suggestRegNumber } from "@/modules/pupils";
+import { admissionClassFor, lagosDay } from "@/shared/lib/admission-age";
+import { DOC_KINDS, type DocKind } from "./docs";
+
+export { DOC_KINDS, RELIGIONS, docLabel, type DocKind } from "./docs";
 
 // ---------- Admission windows: is admission open? ----------
 
@@ -37,14 +41,6 @@ export function admissionNotice(s: AdmissionStatus): string {
 
 // ---------- Applications from the public website ----------
 
-export const DOC_KINDS = [
-  { kind: "passport", label: "Passport photograph", required: true },
-  { kind: "birth", label: "Birth certificate", required: true },
-  { kind: "result", label: "Latest school report", required: false },
-  { kind: "testimonial", label: "Testimonial from previous school", required: false },
-] as const;
-export type DocKind = (typeof DOC_KINDS)[number]["kind"];
-
 const CODE_CHARS = "23456789ABCDEFGHJKMNPQRSTUVWXYZ"; // no 0/O, 1/I/L
 
 /** NZA27-7K3QXM: the year the session starts, then 6 random characters, so numbers can't be guessed in order. */
@@ -62,28 +58,63 @@ export type NewApplication = {
   details: Record<string, string | undefined>;
 };
 
-export async function createApplication(input: NewApplication) {
-  const status = await admissionStatus();
-  if (!status.open || !status.window) throw new UserError("Admission is not open at the moment.");
-  const w = status.window;
-  if (!(await db.class.findUnique({ where: { id: input.classId } }))) throw new UserError("Choose a class.", { classId: "Choose a class" });
+/** The class a child is admitted into, by age on 1 September of the session (see shared/lib/admission-age). */
+export async function classForChild(dob: Date, session: string) {
+  const r = admissionClassFor(lagosDay(dob), session);
+  if (!r.className) return { ...r, classId: null };
+  const cls = await db.class.findUnique({ where: { name: r.className } });
+  if (!cls) throw new UserError(`The ${r.className} class is missing. Ask the Super Admin to check the class list.`);
+  return { ...r, classId: cls.id };
+}
 
+/** How the form fee was handled when the office registers a child */
+export type OfficeFee = "paid" | "online" | "waived";
+
+/**
+ * Online: the open window, class by age. Office: any window, class by age unless staff choose another.
+ * Returns the family's private link (the token is only known now).
+ */
+export async function createApplication(input: Omit<NewApplication, "classId"> & { classId?: string }, office?: { windowId: string; fee: OfficeFee; by: string }) {
+  let w: AdmissionWindow | null;
+  if (office) {
+    w = await db.admissionWindow.findUnique({ where: { id: office.windowId } });
+    if (!w) throw new UserError("Choose the admission session.", { windowId: "Required" });
+  } else {
+    const status = await admissionStatus();
+    if (!status.open || !status.window) throw new UserError("Admission is not open at the moment.");
+    w = status.window;
+  }
+  const byAge = await classForChild(input.dateOfBirth, w.session);
+  const classId = office && input.classId ? input.classId : byAge.classId;
+  if (!classId) throw new UserError(byAge.problem ?? "Check the date of birth.", { dateOfBirth: byAge.problem ?? "Check the date of birth" });
+  if (office && !(await db.class.findUnique({ where: { id: classId } }))) throw new UserError("Choose a class.", { classId: "Choose a class" });
+
+  const fee = office ? (office.fee === "waived" ? 0 : w.formFee) : w.formFee;
+  const paidNow = office?.fee === "paid" && fee > 0;
+  const awaiting = fee > 0 && !paidNow;
   const token = randomToken(24);
   for (let attempt = 0; attempt < 5; attempt++) {
     const number = newApplicationNumber(w.session);
     if (await db.application.findUnique({ where: { number } })) continue;
     const app = await db.application.create({
       data: {
-        number, accessTokenHash: sha256(token), windowId: w.id, classId: input.classId,
-        status: w.formFee > 0 ? "AWAITING_PAYMENT" : "SUBMITTED", submittedAt: w.formFee > 0 ? null : new Date(),
+        number, accessTokenHash: sha256(token), windowId: w.id, classId,
+        status: awaiting ? "AWAITING_PAYMENT" : "SUBMITTED", submittedAt: awaiting ? null : new Date(), feePaidAt: paidNow ? new Date() : null,
         surname: input.surname, otherNames: input.otherNames, dateOfBirth: input.dateOfBirth, gender: input.gender, previousSchool: input.previousSchool,
         parentName: input.parentName, relationship: input.relationship, parentPhone: input.parentPhone, parentEmail: input.parentEmail, address: input.address,
-        details: input.details as Prisma.InputJsonValue, feeAmount: w.formFee,
+        details: { ...input.details, ...(office ? { registeredBy: office.by, formFee: office.fee } : {}) } as Prisma.InputJsonValue, feeAmount: fee,
       },
     });
     return { app, token, link: applicationPath(app.number, token) };
   }
   throw new Error("Could not allocate an application number");
+}
+
+/** A new private link for the family (the old one stops working). For when they lose it, or the office registered the child. */
+export async function renewAccessLink(id: string) {
+  const token = randomToken(24);
+  const app = await db.application.update({ where: { id }, data: { accessTokenHash: sha256(token) } });
+  return { app, link: `${env().APP_URL}${applicationPath(app.number, token)}` };
 }
 
 export const applicationPath = (number: string, token: string) => `/admissions/application/${number}/${token}`;
@@ -262,6 +293,38 @@ export async function enrol(id: string, opts: { regNumber: string; classId: stri
   await db.application.update({ where: { id }, data: { status: "ENROLLED", pupilId: r.pupil.id } });
   return r;
 }
+
+/** Admitted children not yet moved into a class, and those already moved, for the "Admitted pupils" page. */
+export async function admittedList(windowId?: string) {
+  const where = windowId ? { windowId } : {};
+  const [waiting, enrolled] = await Promise.all([
+    db.application.findMany({ where: { ...where, status: "ADMITTED" }, include: { class: true }, orderBy: [{ class: { sortOrder: "asc" } }, { surname: "asc" }] }),
+    db.application.findMany({ where: { ...where, status: "ENROLLED" }, include: { class: true, pupil: { include: { class: true } } }, orderBy: { updatedAt: "desc" }, take: 200 }),
+  ]);
+  return { waiting, enrolled };
+}
+
+/** Move admitted children into the class they applied for, with the next reg numbers. One failure doesn't stop the rest. */
+export async function enrolMany(ids: string[]) {
+  const done: { id: string; name: string; reg: string; className: string; parentCreated: boolean }[] = [];
+  const failed: { id: string; name: string; reason: string }[] = [];
+  for (const id of ids) {
+    const app = await db.application.findUnique({ where: { id }, include: { class: true } });
+    if (!app) continue;
+    const name = `${app.otherNames.split(/\s+/)[0]} ${app.surname}`;
+    try {
+      const r = await enrol(id, { regNumber: await suggestRegNumber(), classId: app.classId });
+      done.push({ id, name, reg: r.pupil.regNumber, className: app.class.name, parentCreated: r.parentCreated });
+    } catch (e) {
+      failed.push({ id, name, reason: e instanceof UserError ? e.message : "Unexpected error" });
+    }
+  }
+  return { done, failed };
+}
+
+/** Text for the parent when an exam is booked (SMS/email; the family's page shows it too). */
+export const examMessage = (app: { otherNames: string; number: string }, slot: { startsAt: Date; venue: string }) =>
+  `${app.otherNames.split(/\s+/)[0]}'s entrance exam is on ${slot.startsAt.toLocaleString("en-GB", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit", timeZone: "Africa/Lagos" })} at ${slot.venue}. Please arrive 30 minutes early. Application ${app.number}. Check it any time at ${env().APP_URL}/admissions/results`;
 
 // ---------- Windows and exam slots ----------
 

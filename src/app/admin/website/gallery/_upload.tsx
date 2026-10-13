@@ -5,22 +5,10 @@ import { useRouter } from "next/navigation";
 import type { ActionResult } from "@/shared/lib/action";
 import { useToast } from "@/shared/ui/client";
 import { Icon } from "@/shared/ui/icon";
+import { shrinkImage } from "@/shared/ui/shrink-image";
 
 type Action = (prev: ActionResult, form: FormData) => Promise<ActionResult>;
 
-const MAX_SIDE = 1600;
-
-/** Redraw the photo at most 1600px wide/high as a JPEG: phone photos shrink from ~4 MB to ~300 KB, and location data is dropped. */
-async function shrink(file: File): Promise<Blob> {
-  const bmp = await createImageBitmap(file, { imageOrientation: "from-image" });
-  const scale = Math.min(1, MAX_SIDE / Math.max(bmp.width, bmp.height));
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.round(bmp.width * scale);
-  canvas.height = Math.round(bmp.height * scale);
-  canvas.getContext("2d")!.drawImage(bmp, 0, 0, canvas.width, canvas.height);
-  bmp.close();
-  return new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("Could not read photo"))), "image/jpeg", 0.85));
-}
 
 export function PhotoUploader({ action, albums }: { action: Action; albums: string[] }) {
   const [album, setAlbum] = useState(albums[0] ?? "");
@@ -38,10 +26,9 @@ export function PhotoUploader({ action, albums }: { action: Action; albums: stri
     setProgress({ done, failed });
     for (const f of files) {
       try {
-        const blob = await shrink(f);
         const fd = new FormData();
         fd.set("album", album.trim());
-        fd.set("file", new File([blob], f.name.replace(/\.\w+$/, "") + ".jpg", { type: "image/jpeg" }));
+        fd.set("file", await shrinkImage(f));
         const r = await action({ ok: false }, fd);
         if (r.ok) done++; else { failed++; if (r.message) toast(`${f.name}: ${r.message}`, false); }
       } catch {

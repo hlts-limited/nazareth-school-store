@@ -8,7 +8,7 @@ import { ActionForm, CopyButton, FieldError, SubmitButton } from "@/shared/ui/cl
 import { Icon } from "@/shared/ui/icon";
 import { Note } from "@/shared/ui/primitives";
 import {
-  applicationByToken, applicationPath, confirmApplicationFee, DECIDED, DOC_KINDS, missingDocs, payApplicationFeeAction, uploadApplicationDocAction,
+  applicationByToken, applicationPath, confirmApplicationFee, DECIDED, DOC_KINDS, docLabel, missingDocs, payApplicationFeeAction, uploadApplicationDocAction,
 } from "@/modules/admissions";
 import { PageHero, Section } from "../../../../_parts";
 
@@ -17,10 +17,10 @@ export const metadata: Metadata = { title: "Your application", robots: { index: 
 export const dynamic = "force-dynamic";
 
 const OUTCOME: Record<string, { tone: "ok" | "warn" | "err"; title: string; text: string }> = {
-  ADMITTED: { tone: "ok", title: "Congratulations! Your child has been offered admission.", text: "Please visit the school office to complete enrolment and pay school fees." },
-  ENROLLED: { tone: "ok", title: "Your child is enrolled.", text: "Welcome to the Nazareth family. Check your phone for your School Store invite." },
+  ADMITTED: { tone: "ok", title: "Congratulations! Your child passed the entrance exam and has been offered admission.", text: "The school office will place your child in their class. You'll then get a School Store invite to buy books and uniforms." },
+  ENROLLED: { tone: "ok", title: "Congratulations! Your child passed the entrance exam and is now in their class.", text: "Welcome to the Nazareth family. Sign in to the School Store (check your phone or email for the invite) to buy books and uniforms." },
   WAITLISTED: { tone: "warn", title: "Your child is on the waiting list.", text: "We will contact you if a place becomes available." },
-  NOT_ADMITTED: { tone: "err", title: "We are unable to offer a place this time.", text: "Thank you for your interest. Please contact the school office if you have questions." },
+  NOT_ADMITTED: { tone: "err", title: "Your child did not pass the entrance exam this time.", text: "Thank you for your interest. Please contact the school office if you have questions." },
 };
 
 export default async function ApplicationPage({ params, searchParams }: { params: Promise<{ number: string; token: string }>; searchParams: Promise<{ reference?: string; trxref?: string }> }) {
@@ -67,7 +67,24 @@ export default async function ApplicationPage({ params, searchParams }: { params
             {outcome && (
               <div className={`note ${outcome.tone} result-note`}>
                 <Icon name={outcome.tone === "ok" ? "check" : "info"} />
-                <span><b>{outcome.title}</b><br />{outcome.text}</span>
+                <span><b>{outcome.title}</b><br />{outcome.text}{app.status === "ENROLLED" && <> <Link href="/login">Go to the School Store</Link></>}</span>
+              </div>
+            )}
+
+            {app.examSlot ? (
+              <div className="card stack">
+                <h2>Entrance exam</h2>
+                <dl className="facts">
+                  <div><dt>Date and time</dt><dd><b>{fmtDateTime(app.examSlot.startsAt)}</b></dd></div>
+                  <div><dt>Venue</dt><dd>{app.examSlot.venue}</dd></div>
+                </dl>
+                {app.examSlot.note && <p className="muted">{app.examSlot.note}</p>}
+                <p className="small muted">Please arrive 30 minutes early with your application number ({app.number}).</p>
+              </div>
+            ) : app.status === "SUBMITTED" && (
+              <div className="card stack">
+                <h2>Entrance exam</h2>
+                <p className="muted">Not scheduled yet. The school will give your child an exam date; it will show here, and we&apos;ll send it to {app.parentPhone}{app.parentEmail ? ` and ${app.parentEmail}` : ""}.</p>
               </div>
             )}
 
@@ -79,16 +96,17 @@ export default async function ApplicationPage({ params, searchParams }: { params
                   <h2>Documents</h2>
                   {missing.length === 0 ? <span className="pill ok">All required documents uploaded</span> : <span className="pill warn">{missing.length} required still to upload</span>}
                 </div>
-                <p className="muted small">JPG, PNG, WebP or PDF, up to 4 MB each. A clear phone photo is fine.</p>
+                <p className="muted small">JPG, PNG, WebP or PDF, up to 4 MB each. A clear phone photo is fine. You can replace a document until the exam result is out.</p>
                 <ul className="doc-list">
                   {DOC_KINDS.map((d) => {
                     const doc = app.documents.find((x) => x.kind === d.kind);
+                    const label = docLabel(d.kind, (app.details as Record<string, string> | null)?.religion);
                     return (
                       <li key={d.kind}>
                         <div className="row nowrap" style={{ gap: 10 }}>
                           <span className={`doc-ic ${doc ? "done" : ""}`}><Icon name={doc ? "check" : "file"} size="sm" /></span>
                           <div className="grow">
-                            <b>{d.label}</b>{d.required ? "" : <span className="muted"> (if any)</span>}
+                            <b>{label}</b>{d.required ? "" : <span className="muted"> (if any)</span>}
                             <div className="small muted">{doc ? `${doc.fileName} · uploaded ${fmtDate(doc.uploadedAt)}` : d.required ? "Required" : "Optional"}</div>
                           </div>
                         </div>
@@ -97,7 +115,7 @@ export default async function ApplicationPage({ params, searchParams }: { params
                             <input type="hidden" name="number" value={app.number} />
                             <input type="hidden" name="token" value={token} />
                             <input type="hidden" name="kind" value={d.kind} />
-                            <input className="input" type="file" name="file" aria-label={`Choose ${d.label}`} accept={d.kind === "passport" ? "image/jpeg,image/png,image/webp" : "image/jpeg,image/png,image/webp,application/pdf"} />
+                            <input className="input" type="file" name="file" aria-label={`Choose ${label}`} accept={d.kind === "passport" ? "image/jpeg,image/png,image/webp" : "image/jpeg,image/png,image/webp,application/pdf"} />
                             <SubmitButton variant="default" size="sm" icon="upload">{doc ? "Replace" : "Upload"}</SubmitButton>
                             <FieldError name={`file-${d.kind}`} />
                           </ActionForm>
@@ -109,17 +127,6 @@ export default async function ApplicationPage({ params, searchParams }: { params
               </div>
             )}
 
-            {app.examSlot && (
-              <div className="card stack">
-                <h2>Entrance assessment</h2>
-                <dl className="facts">
-                  <div><dt>Date and time</dt><dd>{fmtDateTime(app.examSlot.startsAt)}</dd></div>
-                  <div><dt>Venue</dt><dd>{app.examSlot.venue}</dd></div>
-                </dl>
-                {app.examSlot.note && <p className="muted">{app.examSlot.note}</p>}
-                <p className="small muted">Please arrive 30 minutes early with your application number.</p>
-              </div>
-            )}
           </div>
 
           <aside className="stack">

@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { SCHOOL } from "@/shared/config/school";
 import { Icon } from "@/shared/ui/icon";
+import { ADMISSION_CLASSES, MIN_AGE } from "@/shared/lib/admission-age";
 import { PageHero, Section, SectionLinks } from "../../_parts";
 
 export const metadata: Metadata = { title: "Admission FAQs", description: `Answers to the questions parents ask most before admission to ${SCHOOL.name}.` };
@@ -10,10 +11,10 @@ export const metadata: Metadata = { title: "Admission FAQs", description: `Answe
 const call = <a href={`tel:${SCHOOL.phone.tel}`}>{SCHOOL.phone.display}</a>;
 
 const FAQS: [string, ReactNode][] = [
-  ["What age should my child be before admission?", <>Age requirements differ for each class, from Kindergarten to Primary 6. Please call the school office on {call} for the requirement for your child&apos;s class.</>],
+  ["What age should my child be before admission?", <>The class is chosen by your child&apos;s age on 1 September, when the session starts: {ADMISSION_CLASSES.map((c, i) => `${MIN_AGE + i} years ${c}`).join(", ")}. We don&apos;t admit new pupils into Primary 6.</>],
   ["How can I get an application form?", <>When admission is open, start on the <Link href="/admissions/apply">Apply online</Link> page, or collect a form from the school office at {SCHOOL.address.line1}, {SCHOOL.address.line2}.</>],
-  ["Does the school hold entrance examinations?", <>Yes. Entrance assessment dates and results are published on the <Link href="/admissions/results">Admission results</Link> page.</>],
-  ["What documents are required?", "The application form lists every document you need, such as a passport photograph, birth certificate, and your child's most recent school result."],
+  ["Does the school hold entrance examinations?", <>Yes. Your child&apos;s exam date is sent to you by text or email, and you can see it and whether your child passed on the <Link href="/admissions/results">Admission results</Link> page.</>],
+  ["What documents are required?", "Three documents, uploaded with the application form: the candidate's passport photograph, a baptismal certificate (Catholic) or dedication certificate (non-Catholic), and the birth certificate."],
   ["What curriculum does the school offer?", <>A full programme from Kindergarten to Primary 6: Pre-School, Lower Primary (Prep 1 – Primary 2) and Upper Primary (Primary 3 – 6), with Upper Primary pupils prepared for the FSLC examination. See <Link href="/academics/curriculum">our curriculum</Link>.</>],
   ["Are there co-curricular activities?", <>Yes. From inter-house sports to cultural festivals, our events build character, teamwork, and lasting memories. See <Link href="/academics/co-curricular">co-curricular activities</Link>.</>],
   ["Do you provide transport?", <>Please contact the school office on {call} for information about transport.</>],

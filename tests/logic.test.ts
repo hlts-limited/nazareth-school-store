@@ -115,6 +115,32 @@ test("Alpha access is never part of a role, not even Super Admin", async () => {
   assert.equal(roleName("alpha"), "Alpha Admin");
 });
 
+test("admission class is chosen by age on 1 September of the session", async () => {
+  const { admissionClassFor, ageOn, lagosDay } = await import("../src/shared/lib/admission-age");
+  const cls = (dob: string) => admissionClassFor(dob, "2027/2028").className;
+  assert.equal(ageOn("2025-09-01", "2027-09-01"), 2, "birthday on the day counts");
+  assert.equal(ageOn("2025-09-02", "2027-09-01"), 1, "a day short");
+  assert.equal(cls("2025-09-01"), "Kindergarten");
+  assert.equal(cls("2024-06-15"), "Pre-Nursery");
+  assert.equal(cls("2023-01-01"), "Prep 1");
+  assert.equal(cls("2022-03-04"), "Prep 2");
+  assert.equal(cls("2021-09-01"), "Primary 1");
+  assert.equal(cls("2017-09-01"), "Primary 5");
+  assert.equal(cls("2016-09-01"), null, "11-year-olds would be Primary 6: not admitted");
+  assert.match(admissionClassFor("2016-09-01", "2027/2028").problem!, /Primary 6/);
+  assert.equal(cls("2025-09-02"), null, "under 2");
+  assert.equal(lagosDay(new Date("2021-03-04T00:00:00+01:00")), "2021-03-04", "stored midnight-in-Lagos dates read back as the same day");
+});
+
+test("document labels follow the family's religion", async () => {
+  const { DOC_KINDS, docLabel } = await import("../src/modules/admissions/docs");
+  assert.deepEqual(DOC_KINDS.map((d) => d.kind), ["passport", "faith", "birth"]);
+  assert.ok(DOC_KINDS.every((d) => d.required));
+  assert.equal(docLabel("faith", "Catholic"), "Baptismal certificate");
+  assert.equal(docLabel("faith", "Christian (other denomination)"), "Dedication certificate");
+  assert.match(docLabel("faith"), /Catholic.*dedication/);
+});
+
 test("old website addresses redirect permanently", async () => {
   const { default: config } = await import("../next.config");
   const redirects = await config.redirects!();

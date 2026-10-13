@@ -33,6 +33,17 @@ async function sendSms(to: string, text: string, whatsapp = false) {
 }
 
 /**
+ * Message someone who has no account yet (e.g. an applicant's parent) by SMS and email.
+ * Never throws; returns what failed so the caller can tell the office.
+ */
+export async function notifyContact(to: { phone?: string | null; email?: string | null }, title: string, body: string): Promise<string[]> {
+  const errors: string[] = [];
+  if (to.phone) { try { await sendSms(to.phone, `${SCHOOL.name}: ${body}`); } catch (e) { errors.push(`sms: ${(e as Error).message}`); } }
+  if (to.email) { try { await sendEmail(to.email, title, body); } catch (e) { errors.push(`email: ${(e as Error).message}`); } }
+  return errors;
+}
+
+/**
  * Notify a user: always stored in-app, then sent by the chosen channels.
  * Sending never throws — a failure is recorded on the notification so the office can follow up.
  */

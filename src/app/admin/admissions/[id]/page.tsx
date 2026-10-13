@@ -4,13 +4,18 @@ import { fmtDate, fmtDateTime, naira } from "@/shared/lib/format";
 import { ActionForm, FieldError, SubmitButton } from "@/shared/ui/client";
 import { Icon } from "@/shared/ui/icon";
 import { Note, PageHeader } from "@/shared/ui/primitives";
+import { SCHOOL } from "@/shared/config/school";
+import { admissionClassFor, lagosDay } from "@/shared/lib/admission-age";
 import { requireStaff } from "@/modules/auth";
 import { listClasses } from "@/modules/catalogue";
 import { suggestRegNumber } from "@/modules/pupils";
 import {
-  applicationDetail, decideAction, DOC_KINDS, enrolAction, missingDocs, setExamSlotAction, STATUS_LABEL, withdrawAction,
+  applicationDetail, decideAction, DOC_KINDS, docLabel, enrolAction, missingDocs, renewLinkAction, setExamSlotAction, staffUploadDocAction, STATUS_LABEL, withdrawAction,
 } from "@/modules/admissions";
 import { STATUS_TONE } from "../_tone";
+import { FamilyLink } from "./_family-link";
+
+const DECISIONS = [["ADMITTED", "Passed: admit"], ["WAITLISTED", "Waiting list"], ["NOT_ADMITTED", "Did not pass"]] as const;
 
 export const metadata = { title: "Application" };
 
@@ -26,13 +31,15 @@ const age = (dob: Date) => {
   return y;
 };
 
-export default async function ApplicationDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ApplicationDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ registered?: string }> }) {
   const v = await requireStaff("admissions.view");
   const app = await applicationDetail((await params).id);
+  const justRegistered = (await searchParams).registered === "1";
   if (!app) notFound();
   const canManage = v.permissions.has("admissions.manage");
   const [classes, reg] = app.status === "ADMITTED" && canManage ? await Promise.all([listClasses(), suggestRegNumber()]) : [[], ""];
   const details = (app.details ?? {}) as Record<string, string | undefined>;
+  const byAge = admissionClassFor(lagosDay(app.dateOfBirth), app.window.session);
   const missing = missingDocs(app.documents);
   const open = ["SUBMITTED", "EXAM_SCHEDULED", "ADMITTED", "WAITLISTED", "NOT_ADMITTED"].includes(app.status);
 
@@ -45,6 +52,7 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
       />
       <div className="detail-grid">
         <div className="stack">
+          {justRegistered && <Note tone="ok" icon="check">Registered. Use <b>Family link</b> to send the parent their private page, where they see the exam date and the result{missing.length ? ", and can upload the missing documents" : ""}.</Note>}
           {app.status === "AWAITING_PAYMENT" && <Note tone="warn" icon="alert">The family hasn&apos;t paid the {naira(app.feeAmount)} form fee yet, so this application isn&apos;t complete.</Note>}
           {app.window.resultsPublishedAt && open && <Note>Results for {app.window.session} are published: the family sees any decision you save straight away.</Note>}
 
@@ -52,7 +60,7 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
             <h3>The child</h3>
             <dl className="facts">
               <div><dt>Full name</dt><dd>{app.otherNames} {app.surname}</dd></div>
-              <div><dt>Date of birth</dt><dd>{fmtDate(app.dateOfBirth)} (age {age(app.dateOfBirth)})</dd></div>
+              <div><dt>Date of birth</dt><dd>{fmtDate(app.dateOfBirth)} (age {age(app.dateOfBirth)} now, {byAge.age} on 1 September {byAge.on.slice(0, 4)}{byAge.className ? `: ${byAge.className} by age` : ""})</dd></div>
               <div><dt>Gender</dt><dd>{app.gender}</dd></div>
               <div><dt>Applying for</dt><dd>{app.class.name}</dd></div>
               <div><dt>Previous school</dt><dd>{app.previousSchool ?? "—"}</dd></div>
@@ -73,20 +81,30 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
           </section>
 
           <section className="card stack">
-            <div className="row between"><h3>Documents</h3>{missing.length ? <span className="pill warn">Missing: {missing.map((m) => m.label).join(", ")}</span> : <span className="pill ok">Required documents in</span>}</div>
+            <div className="row between"><h3>Documents</h3>{missing.length ? <span className="pill warn">Missing: {missing.map((m) => docLabel(m.kind, details.religion)).join(", ")}</span> : <span className="pill ok">Required documents in</span>}</div>
             <div className="doc-grid">
               {DOC_KINDS.map((d) => {
                 const doc = app.documents.find((x) => x.kind === d.kind);
                 const src = doc ? `/api/files/${doc.fileKey}` : null;
+                const label = docLabel(d.kind, details.religion);
                 return (
                   <div key={d.kind} className="doc-card">
                     {src && doc?.mimeType.startsWith("image/")
                       // eslint-disable-next-line @next/next/no-img-element
-                      ? <a href={src} target="_blank" rel="noreferrer"><img src={src} alt={d.label} /></a>
+                      ? <a href={src} target="_blank" rel="noreferrer"><img src={src} alt={label} /></a>
                       : <div className="doc-ph"><Icon name="file" /></div>}
-                    <div className="stack tight">
-                      <b className="small">{d.label}</b>
+                    <div className="stack tight grow">
+                      <b className="small">{label}</b>
                       {doc ? <a className="small" href={src!} target="_blank" rel="noreferrer">Open {doc.mimeType === "application/pdf" ? "PDF" : "image"}</a> : <span className="small muted">{d.required ? "Not uploaded" : "Not provided"}</span>}
+                      {canManage && open && (
+                        <ActionForm action={staffUploadDocAction} className="stack tight" resetOnSuccess>
+                          <input type="hidden" name="id" value={app.id} />
+                          <input type="hidden" name="kind" value={d.kind} />
+                          <input className="input" type="file" name="file" aria-label={`Upload ${label}`} accept={d.kind === "passport" ? "image/jpeg,image/png,image/webp" : "image/jpeg,image/png,image/webp,application/pdf"} />
+                          <FieldError name={`file-${d.kind}`} />
+                          <div><SubmitButton size="sm" variant="default" icon="upload">{doc ? "Replace" : "Upload"}</SubmitButton></div>
+                        </ActionForm>
+                      )}
                     </div>
                   </div>
                 );
@@ -114,15 +132,23 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
             )}
           </section>
 
+          {canManage && app.status !== "WITHDRAWN" && (
+            <section className="card stack">
+              <h3>Family link</h3>
+              <p className="small muted">The family&apos;s private page shows the exam date and the result, and lets them upload documents. Make a link to send them, e.g. if they lost theirs or you registered the child here.</p>
+              <FamilyLink id={app.id} action={renewLinkAction} school={SCHOOL.name} />
+            </section>
+          )}
+
           {canManage && open && (
             <section className="card stack">
-              <h3>Decision</h3>
+              <h3>Entrance exam result</h3>
               {app.decidedAt && <p className="small muted">Last decided {fmtDateTime(app.decidedAt)}{app.decisionNote ? `: “${app.decisionNote}”` : ""}</p>}
               <ActionForm action={decideAction} className="stack tight">
                 <input type="hidden" name="id" value={app.id} />
                 <div className="stack tight">
-                  {(["ADMITTED", "WAITLISTED", "NOT_ADMITTED"] as const).map((d) => (
-                    <label key={d} className="check"><input type="radio" name="decision" value={d} defaultChecked={app.status === d} /> {STATUS_LABEL[d]}</label>
+                  {DECISIONS.map(([d, label]) => (
+                    <label key={d} className="check"><input type="radio" name="decision" value={d} defaultChecked={app.status === d} /> {label}</label>
                   ))}
                 </div>
                 <FieldError name="decision" />
@@ -135,8 +161,8 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
 
           {canManage && app.status === "ADMITTED" && (
             <section className="card stack">
-              <h3>Enrol as a pupil</h3>
-              <p className="small muted">Creates the pupil record and links it to the parent by phone number. A new parent gets a School Store invite.</p>
+              <h3>Move into class</h3>
+              <p className="small muted">Creates the pupil in their class and links them to the parent by phone number, so the parent can shop in the School Store. A new parent gets an invite. To move many children at once, use <Link href="/admin/admissions/admitted">Admitted pupils</Link>.</p>
               <ActionForm action={enrolAction} className="stack tight">
                 <input type="hidden" name="id" value={app.id} />
                 <label className="lbl" htmlFor="reg">Reg number</label>
@@ -144,7 +170,7 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
                 <FieldError name="regNumber" />
                 <label className="lbl" htmlFor="cls">Class</label>
                 <select className="input" id="cls" name="classId" defaultValue={app.classId}>{classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
-                <SubmitButton variant="success" size="sm" icon="check">Enrol {app.otherNames.split(/\s+/)[0]}</SubmitButton>
+                <SubmitButton variant="success" size="sm" icon="check">Move {app.otherNames.split(/\s+/)[0]} into class</SubmitButton>
               </ActionForm>
             </section>
           )}
