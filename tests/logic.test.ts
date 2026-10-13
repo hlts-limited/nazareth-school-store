@@ -93,3 +93,33 @@ test("S3 request signing matches AWS's published example", () => {
   });
   assert.equal(s.signature, "f0e8bdb87c964420e857bd35b5d6ed310bd44f0170aba48dd91039c6036bdb41");
 });
+
+test("role boundaries for the website and admissions", async () => {
+  const { ROLE_DEFS, STAFF_SECTIONS } = await import("../src/modules/access-control/permissions");
+  const perms = (id: string) => new Set(ROLE_DEFS.find((r) => r.id === id)!.permissions);
+  for (const p of ["admissions.view", "admissions.manage", "admissions.publish", "website.manage"]) {
+    assert.ok(perms("secretary").has(p as never), `secretary has ${p}`);
+    assert.ok(perms("admin").has(p as never), `admin has ${p}`);
+    assert.ok(!perms("accountant").has(p as never), `accountant lacks ${p}`);
+    assert.ok(!perms("registrar").has(p as never), `registrar lacks ${p}`);
+  }
+  // Every back-office link sits in a section guarded by a real permission
+  const all = new Set(ROLE_DEFS.find((r) => r.id === "admin")!.permissions);
+  for (const s of STAFF_SECTIONS) assert.ok(all.has(s.perm), `${s.id} uses a known permission`);
+});
+
+test("old website addresses redirect permanently", async () => {
+  const { default: config } = await import("../next.config");
+  const redirects = await config.redirects!();
+  const to = (src: string) => redirects.find((r) => r.source === src);
+  // Every page of the old static site (hlts-limited/Nazareth-website)
+  const OLD_PAGES = [
+    "index", "welcome-address", "history", "vision-mission", "management", "nursery-primary-school", "high-school", "curriculum", "co-curricular",
+    "why-choose-nazareth", "admission-process", "admission-faqs", "apply-online", "admission-update", "gallery", "contact", "admin-login", "admin-dashboard",
+  ];
+  for (const src of OLD_PAGES.map((p) => `/${p}.html`)) {
+    const r = to(src);
+    assert.ok(r, `${src} redirects`);
+    assert.equal(r.permanent, true);
+  }
+});

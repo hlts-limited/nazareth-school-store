@@ -61,7 +61,8 @@ Useful commands:
 | Command | What it does |
 |---|---|
 | `npm run dev` | Run the app with live reload |
-| `npm test` | Unit tests for payment maths, encryption, file checks and S3 signing |
+| `npm test` | Unit tests for payment maths, encryption, file checks, S3 signing, role permissions and old-website redirects |
+| `npm run test:db` | Database tests (admissions journey, website content, full backup → restore) on a separate local `<db>_test` database; your own data isn't touched |
 | `npm run typecheck` | Check TypeScript types |
 | `npm run lint` | Check code style and module boundaries |
 | `npm run db:studio` | Browse the database in a web UI |

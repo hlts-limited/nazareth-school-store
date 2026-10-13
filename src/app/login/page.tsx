@@ -40,7 +40,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <div className="rise d7"><Icon name="box" /> Track every order to pick-up</div>
         </div>
       </section>
-      <section className="login-form">
+      <main className="login-form">
         <div className="login-box">
           <Link className="back-link" href="/"><Icon name="back" size="sm" />School website</Link>
           <div className="stack tight"><h2>Sign in</h2><p className="muted">Choose who is signing in.</p></div>
@@ -57,7 +57,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             actions={{ parent: loginParent, pupil: loginPupil, staff: loginStaff }}
           />
         </div>
-      </section>
+      </main>
     </div>
   );
 }

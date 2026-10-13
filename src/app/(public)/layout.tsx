@@ -81,19 +81,19 @@ export default async function PublicLayout({ children }: { children: React.React
           </div>
 
           <div className="stack tight">
-            <h4>Explore</h4>
+            <h2>Explore</h2>
             {nav.map((n) => <Link key={n.href} href={n.href}>{n.label}</Link>)}
           </div>
 
           <div className="stack tight">
-            <h4>Parents &amp; pupils</h4>
+            <h2>Parents &amp; pupils</h2>
             <Link href="/login">School Store</Link>
             <Link href="/login?tab=pupil">Pupil sign-in</Link>
             <Link href="/login?tab=staff">Staff sign-in</Link>
           </div>
 
           <div className="stack tight">
-            <h4>Contact</h4>
+            <h2>Contact</h2>
             <span className="row tight nowrap"><Icon name="pin" size="sm" /><span>{SCHOOL.address.line1}, {SCHOOL.address.line2}, {SCHOOL.address.state}</span></span>
             <a className="row tight nowrap" href={`tel:${SCHOOL.phone.tel}`}><Icon name="phone" size="sm" /><span>{SCHOOL.phone.display}</span></a>
             <a className="row tight nowrap" href={`mailto:${SCHOOL.email}`}><Icon name="mail" size="sm" /><span>{SCHOOL.email}</span></a>

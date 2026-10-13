@@ -110,9 +110,10 @@ export async function uploadPhotoAction(_: ActionResult, form: FormData): Promis
 
 export async function updatePhotoAction(_: ActionResult, form: FormData): Promise<ActionResult> {
   return runAction(async () => {
-    await staff();
+    const v = await staff();
     const d = parseForm(z.object({ id: zText(100), album: zText(80, "Enter an album name"), caption: zOptText(160) }), form);
     await updatePhoto(d.id, { album: d.album, caption: d.caption });
+    await audit(await auditActor(v), "Edited gallery photo", "GalleryPhoto", d.id, { album: d.album });
     return ok("Photo saved.");
   });
 }

@@ -17,6 +17,8 @@ The public school website (previously static HTML in hlts-limited/Nazareth-websi
 - Website module (src/modules/website, permission `website.manage`, Secretary + Super Admin): notices for the announcement bar (up to 3, plus the automatic admission notice), events (/events and the homepage), gallery albums (photos are resized to 1600px JPEG in the browser before upload, stored under `gallery/`, served publicly), and Contact-page messages (/admin/website).
 - Application-fee Paystack references start with `NZA`; the shared webhook routes them to `confirmApplicationFee`.
 - `vercel-build` runs migrations and the seed only when VERCEL_ENV=production (or MIGRATE_ON_BUILD is set on a preview that has its own database). Preview deployments share production env vars, so never remove that guard.
+- Tests: `npm test` (pure logic) and `npm run test:db` (scripts/test-db.ts: local `<db>_test` database, temp storage, simulated Paystack; tests in tests/db run one file at a time and clear the rows they use). Never point test:db at a remote database; the script refuses.
+- Dark mode uses `--red-fill` for red backgrounds with white text (the bright `--red` fails contrast there).
 - The public pages' CSP allows YouTube (nocookie) and Google Maps frames only; it has no `frame-src 'self'`.
 
 ## Conventions

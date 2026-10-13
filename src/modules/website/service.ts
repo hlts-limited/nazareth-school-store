@@ -43,8 +43,10 @@ export async function upcomingEvents(take = 20, now = new Date()) {
 }
 
 export async function pastEvents(take = 12, now = new Date()) {
+  // The opposite of upcomingEvents, so an event never shows in both lists
+  const startOfToday = new Date(now.getTime() - 24 * 3600_000);
   return db.event.findMany({
-    where: { published: true, startsAt: { lt: now }, OR: [{ endsAt: null }, { endsAt: { lt: now } }] },
+    where: { published: true, OR: [{ endsAt: { lt: now } }, { endsAt: null, startsAt: { lt: startOfToday } }] },
     orderBy: { startsAt: "desc" },
     take,
   });
