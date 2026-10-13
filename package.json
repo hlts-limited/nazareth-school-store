@@ -22,6 +22,7 @@
     "db:studio": "prisma studio",
     "setup": "prisma migrate dev --name init && npm run db:harden && prisma db seed",
     "totp": "tsx --env-file=.env scripts/totp.ts",
+    "set-admin": "tsx --env-file=.env scripts/set-admin.ts",
     "cron": "tsx --env-file=.env scripts/cron.ts"
   },
   "prisma": {
