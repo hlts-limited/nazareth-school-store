@@ -164,6 +164,16 @@ export async function confirmApplicationFee(reference: string): Promise<"paid" |
   return r.count ? "paid" : "already";
 }
 
+/** The family paid the form fee at the school office: the application goes through to the school. */
+export async function markFeePaidAtOffice(id: string, by: string) {
+  const app = await db.application.findUniqueOrThrow({ where: { id } });
+  if (app.status !== "AWAITING_PAYMENT") throw new UserError("The form fee for this application is already settled.");
+  return db.application.update({
+    where: { id },
+    data: { status: "SUBMITTED", feePaidAt: new Date(), submittedAt: new Date(), details: { ...((app.details ?? {}) as Record<string, unknown>), feePaidAtOffice: by } as Prisma.InputJsonValue },
+  });
+}
+
 // ---------- Documents ----------
 
 export async function saveDocument(applicationId: string, kind: DocKind, file: { buf: Buffer; mime: string; ext: string; name: string }) {

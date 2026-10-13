@@ -11,7 +11,7 @@ import { audit } from "@/modules/audit";
 import { notifyContact } from "@/modules/notifications";
 import {
   addExamSlot, applicationByToken, createApplication, decide, deleteExamSlot, DOC_KINDS, docLabel, enrol, enrolMany, examMessage, lookupResult, RELIGIONS,
-  renewAccessLink, saveDocument, saveWindow, setExamSlot, setResultsPublished, startApplicationFee, withdraw, type Decision, type DocKind,
+  markFeePaidAtOffice, renewAccessLink, saveDocument, saveWindow, setExamSlot, setResultsPublished, startApplicationFee, withdraw, type Decision, type DocKind,
 } from "./service";
 
 const zDay = (msg: string) => z.string().regex(/^\d{4}-\d{2}-\d{2}$/, msg);
@@ -215,6 +215,15 @@ export async function enrolManyAction(_: ActionResult, form: FormData): Promise<
     const invited = r.done.filter((d) => d.parentCreated).length;
     const msg = `${r.done.length} child${r.done.length === 1 ? "" : "ren"} moved into ${r.done.length === 1 ? "their class" : "their classes"}.${invited ? ` ${invited} new parent${invited === 1 ? "" : "s"} invited to the School Store.` : ""}`;
     return { ok: r.done.length > 0, message: r.failed.length ? `${msg} Not moved: ${r.failed.map((f) => `${f.name} (${f.reason})`).join("; ")}` : msg };
+  });
+}
+
+export async function markFeePaidAction(_: ActionResult, form: FormData): Promise<ActionResult> {
+  return runAction(async () => {
+    const v = await staffFor("admissions.manage");
+    const app = await markFeePaidAtOffice(String(form.get("id")), staffName(v));
+    await audit(await auditActor(v), "Recorded form fee paid at the office", "Application", app.id, { number: app.number, amount: app.feeAmount });
+    return ok("Form fee recorded as paid. The application is now with the school.");
   });
 }
 

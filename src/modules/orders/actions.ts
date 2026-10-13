@@ -2,7 +2,8 @@
 
 import { z } from "zod";
 import { orderNo } from "@/shared/lib/format";
-import { ok, parseForm, runAction, type ActionResult } from "@/shared/lib/action";
+import { fail, ok, parseForm, runAction, type ActionResult } from "@/shared/lib/action";
+import { onlinePaymentsReady } from "@/shared/config/env";
 import { auditActor, getViewer, parentForAction } from "@/modules/auth";
 import { audit } from "@/modules/audit";
 import { cancelByParent, checkout } from "./service";
@@ -14,6 +15,7 @@ export async function checkoutAction(_: ActionResult, form: FormData): Promise<A
       method: z.enum(["PAYSTACK", "TRANSFER"], { errorMap: () => ({ message: "Choose how you'll pay" }) }),
       useWallet: z.union([z.string(), z.array(z.string())]).optional().transform((v) => (v ? (Array.isArray(v) ? v : [v]) : [])),
     }), form);
+    if (d.method === "PAYSTACK" && !onlinePaymentsReady()) return fail("Online card payment isn't available yet. Choose bank transfer.", { method: "Choose bank transfer" });
     const name = `${parent.firstName} ${parent.lastName}`;
     const order = await checkout(parent.id, d.method, d.useWallet, name);
     const v = await getViewer();

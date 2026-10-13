@@ -8,7 +8,7 @@ import { Icon } from "@/shared/ui/icon";
 import { SCHOOL } from "@/shared/config/school";
 import { requireParentActor } from "@/modules/auth";
 import { amountDue, cancelOrderAction, getOrderByNo, isPaid, LINE_STATUS, ORDER_STATUS, stepIndex, UNPAID_STATUSES } from "@/modules/orders";
-import { payFromWalletAction, startPaystackAction, uploadReceiptAction } from "@/modules/payments";
+import { payFromWalletAction, paystackReady, startPaystackAction, uploadReceiptAction } from "@/modules/payments";
 import { getSettings } from "@/modules/settings";
 import { balances } from "@/modules/wallet";
 import { childrenOf } from "@/modules/pupils";
@@ -77,15 +77,15 @@ export default async function OrderPage({ params }: { params: Promise<{ no: stri
           ) : <Note tone="err" icon="x">This order was cancelled. Any money already paid is in your child&apos;s wallet.</Note>}
 
           {o.status === "PENDING_PAYMENT" && o.method === "TRANSFER" && (<>{transferBox}<div className="row"><UploadReceipt action={uploadReceiptAction} orderId={o.id} due={due} readOnly={readOnly} today={isoDay()} /></div></>)}
-          {o.status === "PENDING_PAYMENT" && o.method === "PAYSTACK" && (
+          {o.status === "PENDING_PAYMENT" && o.method === "PAYSTACK" && (paystackReady() ? (
             <ActionForm action={startPaystackAction} className="row"><input type="hidden" name="orderId" value={o.id} /><SubmitButton size="lg" disabled={readOnly}>Pay {naira(due)} with Paystack</SubmitButton></ActionForm>
-          )}
+          ) : (<><Note icon="info">Online card payment isn&apos;t available at the moment. Please pay by bank transfer and upload your receipt.</Note>{transferBox}<div className="row"><UploadReceipt action={uploadReceiptAction} orderId={o.id} due={due} readOnly={readOnly} today={isoDay()} /></div></>))}
           {o.status === "PAYMENT_REJECTED" && (<><Note tone="err" icon="alert"><b>Receipt not accepted:</b> {o.rejectReason}</Note>{transferBox}<div className="row"><UploadReceipt action={uploadReceiptAction} orderId={o.id} due={due} readOnly={readOnly} today={isoDay()} label="Upload a new receipt" /></div></>)}
           {o.status === "PART_PAID" && (
             <>
               <Note tone="err" icon="alert"><b>Balance due: {naira(due)}.</b> We received {naira(o.amountReceived)} of {naira(o.subtotal - o.walletUsed)}. Your items stay reserved while you pay the balance; if it isn&apos;t paid within {settings.autoCancelHours} hours, the order is cancelled and the money received goes to your child&apos;s wallet.</Note>
               <div className="row">
-                <ActionForm action={startPaystackAction} className="inline-form"><input type="hidden" name="orderId" value={o.id} /><SubmitButton icon="card" disabled={readOnly}>Pay {naira(due)} with Paystack</SubmitButton></ActionForm>
+                {paystackReady() && <ActionForm action={startPaystackAction} className="inline-form"><input type="hidden" name="orderId" value={o.id} /><SubmitButton icon="card" disabled={readOnly}>Pay {naira(due)} with Paystack</SubmitButton></ActionForm>}
                 <UploadReceipt action={uploadReceiptAction} orderId={o.id} due={due} readOnly={readOnly} today={isoDay()} label="Upload transfer receipt" />
               </div>
             </>

@@ -4,6 +4,7 @@ import { ActionForm, FieldError, SubmitButton } from "@/shared/ui/client";
 import { Icon } from "@/shared/ui/icon";
 import { Empty, Note, PageHeader } from "@/shared/ui/primitives";
 import { requireStaff } from "@/modules/auth";
+import { paystackReady } from "@/modules/payments";
 import { addExamSlotAction, admissionStatus, deleteExamSlotAction, listWindows, publishResultsAction, saveWindowAction } from "@/modules/admissions";
 
 export const metadata = { title: "Admission windows" };
@@ -12,6 +13,7 @@ type W = Awaited<ReturnType<typeof listWindows>>[number];
 
 function WindowFields({ w }: { w?: W }) {
   const id = w?.id ?? "new";
+  const online = paystackReady();
   return (
     <>
       {w && <input type="hidden" name="id" value={w.id} />}
@@ -19,7 +21,7 @@ function WindowFields({ w }: { w?: W }) {
         <div className="field"><label htmlFor={`ws-${id}`}>Session</label><input className="input" id={`ws-${id}`} name="session" placeholder="2027/2028" defaultValue={w?.session} /><FieldError name="session" /></div>
         <div className="field"><label htmlFor={`wo-${id}`}>Opens</label><input className="input" type="date" id={`wo-${id}`} name="opensAt" defaultValue={w ? isoDay(w.opensAt) : undefined} /><FieldError name="opensAt" /></div>
         <div className="field"><label htmlFor={`wc-${id}`}>Closes (last day)</label><input className="input" type="date" id={`wc-${id}`} name="closesAt" defaultValue={w ? isoDay(new Date(w.closesAt.getTime() - 1)) : undefined} /><FieldError name="closesAt" /></div>
-        <div className="field"><label htmlFor={`wf-${id}`}>Form fee (₦)</label><input className="input tnum" id={`wf-${id}`} name="formFee" inputMode="numeric" defaultValue={w?.formFee ?? 0} /><span className="hint">0 = free. Paid online with Paystack.</span><FieldError name="formFee" /></div>
+        <div className="field"><label htmlFor={`wf-${id}`}>Form fee (₦)</label><input className="input tnum" id={`wf-${id}`} name="formFee" inputMode="numeric" defaultValue={w?.formFee ?? 0} /><span className="hint">0 = free. {online ? "Paid online with Paystack, or at the office." : "Online payment (Paystack) isn't set up, so families pay at the office."}</span><FieldError name="formFee" /></div>
       </div>
       <div className="field"><label htmlFor={`wn-${id}`}>Note for staff (optional)</label><input className="input" id={`wn-${id}`} name="note" defaultValue={w?.note ?? ""} /></div>
     </>

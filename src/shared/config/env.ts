@@ -41,6 +41,9 @@ export function env() {
 
 export const isProd = () => process.env.NODE_ENV === "production";
 
+/** Can people pay online? A Paystack secret key is set, or (development only) the simulated checkout is used. */
+export const onlinePaymentsReady = () => !!env().PAYSTACK_SECRET_KEY || !isProd();
+
 /** Is this the Alpha Admin's email? (ALPHA_ADMIN_EMAIL; never true when it isn't set) */
 export const isAlphaEmail = (email: string | null | undefined) => {
   const a = env().ALPHA_ADMIN_EMAIL;

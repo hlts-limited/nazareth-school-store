@@ -10,6 +10,7 @@ import { Note } from "@/shared/ui/primitives";
 import {
   applicationByToken, applicationPath, confirmApplicationFee, DECIDED, DOC_KINDS, docLabel, missingDocs, payApplicationFeeAction, uploadApplicationDocAction,
 } from "@/modules/admissions";
+import { paystackReady } from "@/modules/payments";
 import { PageHero, Section } from "../../../../_parts";
 
 // The link carries a private token, so keep it out of search engines and caches.
@@ -56,11 +57,15 @@ export default async function ApplicationPage({ params, searchParams }: { params
               <div className="card stack">
                 <h2>Pay the form fee</h2>
                 <p className="muted">Your application is saved, but it is sent to the school only after the {naira(app.feeAmount)} form fee is paid.</p>
-                <ActionForm action={payApplicationFeeAction}>
-                  <input type="hidden" name="number" value={app.number} />
-                  <input type="hidden" name="token" value={token} />
-                  <SubmitButton icon="card">Pay {naira(app.feeAmount)} with Paystack</SubmitButton>
-                </ActionForm>
+                {paystackReady() ? (
+                  <ActionForm action={payApplicationFeeAction}>
+                    <input type="hidden" name="number" value={app.number} />
+                    <input type="hidden" name="token" value={token} />
+                    <SubmitButton icon="card">Pay {naira(app.feeAmount)} with Paystack</SubmitButton>
+                  </ActionForm>
+                ) : (
+                  <Note icon="info">Please pay the form fee at the school office ({SCHOOL.address.line1}, {SCHOOL.address.line2}) during office hours, {SCHOOL.officeHours}. Bring your application number, <b>{app.number}</b>. The office will then send your application through, and this page will update. Questions? Call <a href={`tel:${SCHOOL.phone.tel}`}>{SCHOOL.phone.display}</a>.</Note>
+                )}
               </div>
             )}
 

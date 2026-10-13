@@ -4,7 +4,7 @@ import { Card, Note, PageHeader } from "@/shared/ui/primitives";
 import { ActionForm, SubmitButton } from "@/shared/ui/client";
 import { requireParentActor } from "@/modules/auth";
 import { amountDue, getOrderByNo, UNPAID_STATUSES } from "@/modules/orders";
-import { paystackMock, startPaystackAction } from "@/modules/payments";
+import { paystackMock, paystackReady, startPaystackAction } from "@/modules/payments";
 
 export const metadata = { title: "Pay with Paystack" };
 
@@ -14,7 +14,7 @@ export default async function PayPage({ params }: { params: Promise<{ no: string
   const { parent, readOnly } = await requireParentActor();
   const o = await getOrderByNo(no, parent.id);
   if (!o) notFound();
-  if (!UNPAID_STATUSES.includes(o.status)) redirect(`/orders/${orderNo(o.number)}`);
+  if (!UNPAID_STATUSES.includes(o.status) || !paystackReady()) redirect(`/orders/${orderNo(o.number)}`);  // no online payment: the order page offers bank transfer
   return (
     <div style={{ maxWidth: 520 }}>
       <PageHeader title="Pay with Paystack" sub={`Order ${orderNo(o.number)}`} />

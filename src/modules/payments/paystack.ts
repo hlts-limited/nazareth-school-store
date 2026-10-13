@@ -1,15 +1,19 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { env, isProd } from "@/shared/config/env";
+import { UserError } from "@/shared/lib/action";
 
 const API = "https://api.paystack.co";
 
 /** Without a secret key (development only) the store uses a simulated checkout. */
 export const paystackMock = () => !env().PAYSTACK_SECRET_KEY && !isProd();
 
+/** Can people pay online right now? (a real key, or the simulated checkout in development) */
+export { onlinePaymentsReady as paystackReady } from "@/shared/config/env";
+
 export async function initializeTransaction(opts: { email: string; amountNaira: number; reference: string; callbackUrl: string; metadata: Record<string, unknown> }) {
   if (paystackMock()) return { authorizationUrl: `${opts.callbackUrl}?reference=${encodeURIComponent(opts.reference)}&mock=1` };
   const key = env().PAYSTACK_SECRET_KEY;
-  if (!key) throw new Error("PAYSTACK_SECRET_KEY is not set");
+  if (!key) throw new UserError("Online card payment isn't available yet. Please pay by bank transfer or at the school office.");
   const r = await fetch(`${API}/transaction/initialize`, {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },

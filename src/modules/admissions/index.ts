@@ -5,7 +5,7 @@ export {
 export type { AdmissionStatus, ApplicationSearch, OfficeFee } from "./service";
 export {
   submitApplicationAction, registerApplicationAction, payApplicationFeeAction, uploadApplicationDocAction, lookupResultAction,
-  setExamSlotAction, bulkApplicationsAction, decideAction, withdrawAction, enrolAction, enrolManyAction, staffUploadDocAction, renewLinkAction,
+  setExamSlotAction, bulkApplicationsAction, decideAction, withdrawAction, enrolAction, enrolManyAction, markFeePaidAction, staffUploadDocAction, renewLinkAction,
   saveWindowAction, publishResultsAction, addExamSlotAction, deleteExamSlotAction,
 } from "./actions";
 export type { ResultLookup } from "./actions";

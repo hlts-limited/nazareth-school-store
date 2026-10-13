@@ -5,7 +5,7 @@ import { db } from "../../src/shared/lib/db";
 import { UserError } from "../../src/shared/lib/action";
 import {
   addExamSlot, admissionNotice, admissionStatus, admittedList, applicationByToken, confirmApplicationFee, createApplication, decide, enrol, enrolMany,
-  lookupResult, renewAccessLink, saveWindow, setExamSlot, setResultsPublished, startApplicationFee, withdraw, type NewApplication,
+  lookupResult, markFeePaidAtOffice, renewAccessLink, saveWindow, setExamSlot, setResultsPublished, startApplicationFee, withdraw, type NewApplication,
 } from "../../src/modules/admissions/service";
 
 const DAY = 86_400_000;
@@ -164,6 +164,18 @@ test("the office registers a child: fee handling and class override", async () =
   assert.equal(waived.app.status, "SUBMITTED");
   assert.equal(waived.app.feeAmount, 0);
   assert.equal(waived.app.classId, p3, "staff can choose another class");
+});
+
+test("the office can record a form fee paid in person", async () => {
+  const s = await admissionStatus();
+  await db.admissionWindow.update({ where: { id: s.window!.id }, data: { formFee: 3800 } });
+  const { app } = await createApplication(child({ surname: "Office", parentPhone: "08039990090" }));
+  assert.equal(app.status, "AWAITING_PAYMENT");
+  const paid = await markFeePaidAtOffice(app.id, "Joy Nnamdi");
+  assert.equal(paid.status, "SUBMITTED");
+  assert.ok(paid.feePaidAt && paid.submittedAt);
+  assert.equal((paid.details as Record<string, string>).feePaidAtOffice, "Joy Nnamdi");
+  await assert.rejects(markFeePaidAtOffice(app.id, "Joy Nnamdi"), /already settled/);
 });
 
 test("a new family link replaces the old one", async () => {

@@ -7,10 +7,11 @@ import { Note, PageHeader } from "@/shared/ui/primitives";
 import { SCHOOL, divisionOf } from "@/shared/config/school";
 import { AGE_DAY, admissionClassFor, lagosDay } from "@/shared/lib/admission-age";
 import { requireStaff } from "@/modules/auth";
+import { paystackReady } from "@/modules/payments";
 import { listClasses } from "@/modules/catalogue";
 import { suggestRegNumber } from "@/modules/pupils";
 import {
-  applicationDetail, decideAction, DOC_KINDS, docLabel, enrolAction, missingDocs, renewLinkAction, setExamSlotAction, staffUploadDocAction, STATUS_LABEL, withdrawAction,
+  applicationDetail, decideAction, DOC_KINDS, docLabel, enrolAction, markFeePaidAction, missingDocs, renewLinkAction, setExamSlotAction, staffUploadDocAction, STATUS_LABEL, withdrawAction,
 } from "@/modules/admissions";
 import { STATUS_TONE } from "../_tone";
 import { FamilyLink } from "./_family-link";
@@ -53,7 +54,17 @@ export default async function ApplicationDetailPage({ params, searchParams }: { 
       <div className="detail-grid">
         <div className="stack">
           {justRegistered && <Note tone="ok" icon="check">Registered. Use <b>Family link</b> to send the parent their private page, where they see the exam date and the result{missing.length ? ", and can upload the missing documents" : ""}.</Note>}
-          {app.status === "AWAITING_PAYMENT" && <Note tone="warn" icon="alert">The family hasn&apos;t paid the {naira(app.feeAmount)} form fee yet, so this application isn&apos;t complete.</Note>}
+          {app.status === "AWAITING_PAYMENT" && (
+            <div className="note warn"><Icon name="alert" /><div className="stack tight grow">
+              <span>The family hasn&apos;t paid the {naira(app.feeAmount)} form fee yet, so this application isn&apos;t complete.{!paystackReady() && " Online payment isn't set up, so they need to pay at the school office."}</span>
+              {canManage && (
+                <ActionForm action={markFeePaidAction}>
+                  <input type="hidden" name="id" value={app.id} />
+                  <SubmitButton size="sm" variant="success" icon="check" confirmText={`Record the ${naira(app.feeAmount)} form fee as paid at the office?`}>Form fee paid at the office</SubmitButton>
+                </ActionForm>
+              )}
+            </div></div>
+          )}
           {app.window.resultsPublishedAt && open && <Note>Results for {app.window.session} are published: the family sees any decision you save straight away.</Note>}
 
           <section className="card stack">

@@ -7,6 +7,7 @@ import { getCart, setQtyAction } from "@/modules/cart";
 import { ItemArt, itemLook } from "@/modules/catalogue";
 import { checkoutAction } from "@/modules/orders";
 import { getSettings } from "@/modules/settings";
+import { paystackReady } from "@/modules/payments";
 import { CheckoutBox, QtyControl } from "../_components";
 
 export const metadata = { title: "Cart" };
@@ -63,7 +64,7 @@ export default async function CartPage() {
           <Link className="btn ghost" href="/shop" style={{ alignSelf: "flex-start" }}><Icon name="plus" size="sm" /> Add more items</Link>
         </div>
         <aside style={{ position: "sticky", top: 84 }}>
-          <CheckoutBox action={checkoutAction} subtotal={cart.subtotal} autoCancelHours={settings.autoCancelHours} readOnly={readOnly}
+          <CheckoutBox action={checkoutAction} subtotal={cart.subtotal} autoCancelHours={settings.autoCancelHours} readOnly={readOnly} paystack={paystackReady()}
             wallets={cart.groups.map((g) => ({ pupilId: g.pupil.id, name: g.pupil.firstName, balance: g.walletBalance, groupTotal: g.subtotal }))} />
         </aside>
       </div>
