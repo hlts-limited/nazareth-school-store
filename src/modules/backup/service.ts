@@ -68,7 +68,7 @@ function sortCategories(rows: Record<string, unknown>[]) {
   return out;
 }
 
-export const listBackups = () => db.backup.findMany({ orderBy: { createdAt: "desc" }, take: 100 });
+export const listBackups = (take = 100) => db.backup.findMany({ orderBy: { createdAt: "desc" }, take });
 
 export async function readBackupFile(id: string) {
   const b = await db.backup.findUnique({ where: { id } });

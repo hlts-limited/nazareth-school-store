@@ -5,11 +5,12 @@ import type { Pupil, Session, User } from "@prisma/client";
 import { db } from "@/shared/lib/db";
 import { UserError } from "@/shared/lib/action";
 import { requestMeta } from "@/shared/lib/request";
-import { ROLE_DEFS, type Permission, roleName } from "@/modules/access-control";
+import { ALL_PERMISSIONS, ALPHA_ROLE, ROLE_DEFS, type Permission, roleName } from "@/modules/access-control";
+import { isAlphaEmail } from "@/shared/config/env";
 import type { AuditActor } from "@/modules/audit";
 import { enforceLimits, readSession, VIEWAS_COOKIE } from "./session";
 
-export type StaffViewer = { kind: "staff"; session: Session; user: User; roles: string[]; permissions: Set<string>; isAdmin: boolean };
+export type StaffViewer = { kind: "staff"; session: Session; user: User; roles: string[]; permissions: Set<string>; isAdmin: boolean; isAlpha: boolean };
 export type ParentViewer = { kind: "parent"; session: Session; user: User };
 export type PupilViewer = { kind: "pupil"; session: Session; pupil: Pupil };
 export type Viewer = StaffViewer | ParentViewer | PupilViewer;
@@ -31,11 +32,12 @@ export const getViewer = cache(async (): Promise<Viewer | null> => {
     if (!(await enforceLimits(s, "PARENT"))) return null;
     return { kind: "parent", session: s, user };
   }
-  const roles = user.roles.map((r) => r.roleId);
-  const isAdmin = roles.includes("admin");
+  const isAlpha = isAlphaEmail(user.email);
+  const roles = [...(isAlpha ? [ALPHA_ROLE] : []), ...user.roles.map((r) => r.roleId)];
+  const isAdmin = isAlpha || roles.includes("admin");
   if (!(await enforceLimits(s, isAdmin ? "ADMIN" : "STAFF"))) return null;
-  const permissions = new Set<string>(ROLE_DEFS.filter((r) => roles.includes(r.id)).flatMap((r) => r.permissions));
-  return { kind: "staff", session: s, user, roles, permissions, isAdmin };
+  const permissions = new Set<string>(isAlpha ? ALL_PERMISSIONS : ROLE_DEFS.filter((r) => roles.includes(r.id)).flatMap((r) => r.permissions));
+  return { kind: "staff", session: s, user, roles, permissions, isAdmin, isAlpha };
 });
 
 export async function requireStaff(perm?: Permission): Promise<StaffViewer> {

@@ -7,8 +7,8 @@ import { db } from "@/shared/lib/db";
 import { fail, ok, parseForm, runAction, zText, type ActionResult, UserError } from "@/shared/lib/action";
 import { normalizePhone } from "@/shared/lib/format";
 import { requestMeta } from "@/shared/lib/request";
-import { isProd } from "@/shared/config/env";
-import { ROLE_DEFS, roleName } from "@/modules/access-control";
+import { ALPHA_ROLE, ROLE_DEFS, roleName } from "@/modules/access-control";
+import { isAlphaEmail, isProd } from "@/shared/config/env";
 import { audit } from "@/modules/audit";
 import { getSettings } from "@/modules/settings";
 import { notify } from "@/modules/notifications";
@@ -80,15 +80,16 @@ export async function loginStaff(_: ActionResult, form: FormData): Promise<Actio
       await recordAttempt(key, false); await recordAttempt(`ip:${ip}`, false);
       return fail("That email and password don't match.");
     }
-    const roles = user.roles.map((r) => r.roleId);
-    const needs2fa = !!user.totpSecret || ROLE_DEFS.some((r) => roles.includes(r.id) && r.requires2fa);
+    const alpha = isAlphaEmail(user.email);
+    const roles = [...(alpha ? [ALPHA_ROLE] : []), ...user.roles.map((r) => r.roleId)];
+    const needs2fa = alpha || !!user.totpSecret || ROLE_DEFS.some((r) => roles.includes(r.id) && r.requires2fa);
     if (needs2fa) {
       if (!user.totpSecret) return fail("Two-factor authentication must be set up for your account. Ask the Super Admin for a new invite link.");
       if (!d.code) return fail("Enter the 6-digit code from your authenticator app.", { code: "Required for your role" });
       if (!verifyTotp(d.code, user.totpSecret)) { await recordAttempt(key, false); return fail("That code is not correct.", { code: "Code not correct" }); }
     }
     await recordAttempt(key, true);
-    await createSession("STAFF", { userId: user.id }, { isAdmin: roles.includes("admin") });
+    await createSession("STAFF", { userId: user.id }, { isAdmin: alpha || roles.includes("admin") });
     await audit({ id: user.id, name: `${user.firstName} ${user.lastName}`, role: roles.map(roleName).join(", "), ip }, "Signed in", "Session");
     return ok(undefined, { redirect: "/admin" });
   });
@@ -164,6 +165,11 @@ export async function forceSignOut(_: ActionResult, form: FormData): Promise<Act
   return runAction(async () => {
     const admin = await staffFor("sessions.manage");
     const id = String(form.get("id") ?? "");
+    if (!admin.isAlpha) {
+      const target = await db.session.findUnique({ where: { id }, select: { userId: true } });
+      const owner = target?.userId ? await db.user.findUnique({ where: { id: target.userId }, select: { email: true } }) : null;
+      if (isAlphaEmail(owner?.email)) return fail("Only the Alpha Admin can end the Alpha Admin's sessions.");
+    }
     await revokeSessionById(id, "Signed out by Super Admin");
     await audit(await auditActor(admin), "Forced sign-out", "Session", id.slice(0, 12));
     return ok("Session ended.");

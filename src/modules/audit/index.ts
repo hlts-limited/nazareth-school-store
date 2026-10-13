@@ -1,2 +1,2 @@
-export { audit, listAudit } from "./service";
-export type { AuditActor } from "./service";
+export { audit, listAudit, auditWhere } from "./service";
+export type { AuditActor, AuditFilter } from "./service";

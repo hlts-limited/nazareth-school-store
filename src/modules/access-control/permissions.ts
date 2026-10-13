@@ -22,6 +22,8 @@ export const PERMISSIONS = {
   ADMISSIONS_MANAGE: "admissions.manage",
   ADMISSIONS_PUBLISH: "admissions.publish",
   WEBSITE_MANAGE: "website.manage",
+  /** Alpha Admin only: raw data editing, SQL console. Never part of a role; see ALPHA_ADMIN_EMAIL. */
+  ALPHA: "system.alpha",
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -42,14 +44,29 @@ export const ROLE_DEFS: { id: string; name: string; permissions: Permission[]; r
   },
   {
     id: "admin", name: "Super Admin", requires2fa: true,
-    permissions: Object.values(P) as Permission[],
+    permissions: (Object.values(P) as Permission[]).filter((p) => p !== P.ALPHA),
   },
 ];
 
-export const roleName = (id: string) => ROLE_DEFS.find((r) => r.id === id)?.name ?? id;
+/** The Alpha Admin is the single account named by ALPHA_ADMIN_EMAIL. It has every permission, can't be given out
+ *  from Staff & roles, and is shown with this pseudo-role id. */
+export const ALPHA_ROLE = "alpha";
+export const ALL_PERMISSIONS = Object.values(P) as Permission[];
+
+export const roleName = (id: string) => (id === ALPHA_ROLE ? "Alpha Admin" : ROLE_DEFS.find((r) => r.id === id)?.name ?? id);
 
 /** Staff areas shown in the back office; a person sees the areas their permissions allow. */
 export const STAFF_SECTIONS: { id: string; label: string; perm: Permission; items: { href: string; label: string; icon: string; badge?: "review" | "pack" | "bin" | "apps" | "enq" }[] }[] = [
+  {
+    id: "alpha", label: "Alpha", perm: P.ALPHA,
+    items: [
+      { href: "/admin/alpha", label: "System overview", icon: "shield" },
+      { href: "/admin/alpha/data", label: "Data explorer", icon: "db" },
+      { href: "/admin/alpha/sql", label: "SQL console", icon: "file" },
+      { href: "/admin/alpha/backups", label: "Backups & restores", icon: "layers" },
+      { href: "/admin/alpha/audit", label: "Full audit log", icon: "list" },
+    ],
+  },
   {
     id: "admin", label: "Super Admin", perm: P.SETTINGS_MANAGE,
     items: [

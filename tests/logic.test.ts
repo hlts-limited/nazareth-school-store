@@ -95,7 +95,7 @@ test("S3 request signing matches AWS's published example", () => {
 });
 
 test("role boundaries for the website and admissions", async () => {
-  const { ROLE_DEFS, STAFF_SECTIONS } = await import("../src/modules/access-control/permissions");
+  const { ROLE_DEFS, STAFF_SECTIONS, ALL_PERMISSIONS } = await import("../src/modules/access-control/permissions");
   const perms = (id: string) => new Set(ROLE_DEFS.find((r) => r.id === id)!.permissions);
   for (const p of ["admissions.view", "admissions.manage", "admissions.publish", "website.manage"]) {
     assert.ok(perms("secretary").has(p as never), `secretary has ${p}`);
@@ -104,8 +104,15 @@ test("role boundaries for the website and admissions", async () => {
     assert.ok(!perms("registrar").has(p as never), `registrar lacks ${p}`);
   }
   // Every back-office link sits in a section guarded by a real permission
-  const all = new Set(ROLE_DEFS.find((r) => r.id === "admin")!.permissions);
+  const all = new Set(ALL_PERMISSIONS);
   for (const s of STAFF_SECTIONS) assert.ok(all.has(s.perm), `${s.id} uses a known permission`);
+});
+
+test("Alpha access is never part of a role, not even Super Admin", async () => {
+  const { ROLE_DEFS, ALL_PERMISSIONS, roleName } = await import("../src/modules/access-control/permissions");
+  for (const r of ROLE_DEFS) assert.ok(!(r.permissions as string[]).includes("system.alpha"), `${r.id} must not have system.alpha`);
+  assert.ok((ALL_PERMISSIONS as string[]).includes("system.alpha"));
+  assert.equal(roleName("alpha"), "Alpha Admin");
 });
 
 test("old website addresses redirect permanently", async () => {
