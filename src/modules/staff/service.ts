@@ -7,20 +7,21 @@ import { ROLE_DEFS } from "@/modules/access-control";
 import { newTotpSecret, revokeAllForUser } from "@/modules/auth";
 import { notify } from "@/modules/notifications";
 
-const ownerEmail = () => env().SEED_ADMIN_EMAIL || undefined;
+/** The owner (first Super Admin) and the Alpha Admin: hidden from Staff & roles and can't be changed there. */
+const protectedEmails = () => [env().SEED_ADMIN_EMAIL, env().ALPHA_ADMIN_EMAIL].filter((e): e is string => !!e);
 
-/** Staff shown on Staff & roles: everyone except the owner account. */
+/** Staff shown on Staff & roles: everyone except the owner and Alpha accounts. */
 export const listStaff = () => db.user.findMany({
-  where: { type: "STAFF", ...(ownerEmail() ? { NOT: { email: ownerEmail() } } : {}) },
+  where: { type: "STAFF", ...(protectedEmails().length ? { NOT: { email: { in: protectedEmails() } } } : {}) },
   include: { roles: true }, orderBy: [{ status: "asc" }, { firstName: "asc" }],
 });
 
 /** The owner account can't be changed from Staff & roles, even by a crafted request. */
 async function assertNotOwner(userId: string) {
-  const owner = ownerEmail();
-  if (!owner) return;
+  const emails = protectedEmails();
+  if (!emails.length) return;
   const u = await db.user.findUnique({ where: { id: userId }, select: { email: true } });
-  if (u?.email === owner) throw new UserError("The owner account can't be changed here.");
+  if (u?.email && emails.includes(u.email)) throw new UserError("The owner account can't be changed here.");
 }
 
 async function sendStaffInvite(userId: string) {

@@ -21,6 +21,8 @@ const schema = z.object({
   CRON_SECRET: z.string().min(8).optional(),
   // The owner (first Super Admin, created by the seed): hidden from Staff & roles and can't be changed there
   SEED_ADMIN_EMAIL: z.string().trim().toLowerCase().optional(),
+  // The Alpha Admin: the one account with unrestricted access (data explorer, SQL console). Must use 2FA.
+  ALPHA_ADMIN_EMAIL: z.string().trim().toLowerCase().optional(),
 });
 
 let cached: z.infer<typeof schema> | null = null;
@@ -38,3 +40,9 @@ export function env() {
 }
 
 export const isProd = () => process.env.NODE_ENV === "production";
+
+/** Is this the Alpha Admin's email? (ALPHA_ADMIN_EMAIL; never true when it isn't set) */
+export const isAlphaEmail = (email: string | null | undefined) => {
+  const a = env().ALPHA_ADMIN_EMAIL;
+  return !!a && !!email && email.toLowerCase() === a;
+};
