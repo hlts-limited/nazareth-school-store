@@ -1,7 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { ADMISSION, PUBLIC_NAV, SCHOOL } from "@/shared/config/school";
+import { PUBLIC_NAV, SCHOOL } from "@/shared/config/school";
+import { admissionNotice, admissionStatus } from "@/modules/admissions";
 import { Icon } from "@/shared/ui/icon";
 
 /** Banner at the top of every inner page: breadcrumb, title and a one-line lead */
@@ -94,16 +95,19 @@ export function MapEmbed() {
 }
 
 /** Closing banner on inner pages, worded from the current admission status */
-export function AdmissionCta() {
+export async function AdmissionCta() {
+  const s = await admissionStatus();
   return (
     <section className="pub-sec">
       <div className="store-cta">
         <div className="stack tight">
           <h2>Ready to join {SCHOOL.name}?</h2>
-          <p>{ADMISSION.open ? `Admission for the ${ADMISSION.session} session is open. Apply online or visit the school office.` : ADMISSION.closedNote}</p>
+          <p>{admissionNotice(s)}</p>
         </div>
         <div className="row">
-          <Link className="btn primary lg" href="/admissions/process">How admission works</Link>
+          {s.open
+            ? <Link className="btn primary lg" href="/admissions/apply">Apply online</Link>
+            : <Link className="btn primary lg" href="/admissions/process">How admission works</Link>}
           <Link className="btn lg hero-ghost" href="/contact">Contact us</Link>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { confirmPaystack, validSignature } from "@/modules/payments";
+import { confirmApplicationFee, isApplicationFeeRef } from "@/modules/admissions";
 
 /**
  * Paystack webhook. Set this URL in your Paystack dashboard: https://<your-domain>/api/paystack/webhook
@@ -11,7 +12,8 @@ export async function POST(req: Request) {
   let event: { event?: string; data?: { reference?: string } };
   try { event = JSON.parse(raw); } catch { return new NextResponse("Bad JSON", { status: 400 }); }
   if (event.event === "charge.success" && event.data?.reference) {
-    try { await confirmPaystack(event.data.reference); } catch (e) { console.error("[paystack webhook]", e); return new NextResponse("Retry", { status: 500 }); }
+    const ref = event.data.reference;
+    try { await (isApplicationFeeRef(ref) ? confirmApplicationFee(ref) : confirmPaystack(ref)); } catch (e) { console.error("[paystack webhook]", e); return new NextResponse("Retry", { status: 500 }); }
   }
   return NextResponse.json({ received: true });
 }

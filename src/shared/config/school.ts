@@ -21,16 +21,6 @@ export const SCHOOL = {
 } as const;
 
 /**
- * Admission status shown across the public website. Phase 4 (admissions module) moves this
- * into the back office as admission windows; until then, change it here.
- */
-export const ADMISSION = {
-  session: "2026/2027",
-  open: false,
-  closedNote: "Admission for the 2026/2027 session has closed. Contact the school office to find out when the next admission opens.",
-} as const;
-
-/**
  * Public website menu. `ready: false` hides an entry until its page exists,
  * so the menu never links to a page that isn't built yet.
  */

@@ -639,6 +639,40 @@ a.chip{text-decoration:none}
   .lightbox-img{height:min(70vh,520px)}
 }
 
+/* Admissions (public) */
+.pub-notice a{color:inherit;font-weight:700;text-decoration:underline;text-underline-offset:2px}
+.form-wrap{max-width:860px}
+.form-wrap fieldset{margin:0;min-width:0}
+.form-wrap legend{display:flex;align-items:center;gap:10px;float:left;width:100%;margin-bottom:4px;font-family:var(--disp);font-weight:750;font-size:17px}
+.form-wrap legend+*{clear:both}
+.form-wrap .check{align-items:flex-start;line-height:1.5}
+.form-wrap .check input{margin-top:2px;flex:none}
+.hp{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}
+.doc-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.doc-list>li{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 16px;padding:12px 0;border-top:1px solid var(--line-2)}
+.doc-list>li:first-child{border-top:0}
+.doc-ic{flex:none;width:32px;height:32px;border-radius:9px;display:grid;place-items:center;background:var(--line-2);color:var(--muted)}
+.doc-ic.done{background:var(--ok-soft);color:var(--ok)}
+.doc-up{flex-wrap:nowrap}
+.doc-up input[type=file]{max-width:230px;padding:6px;font-size:12.5px}
+.result-note{font-size:15px;padding:16px 18px}
+.lookup-grid{grid-template-columns:minmax(0,1fr) auto;align-items:start}
+@media (max-width:560px){
+  .doc-up{flex-wrap:wrap;width:100%}
+  .doc-up input[type=file]{max-width:none;flex:1 1 100%}
+}
+
+/* Admissions (back office) */
+.detail-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,320px);gap:16px;align-items:start}
+.doc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.doc-card{display:flex;flex-direction:column;gap:8px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2)}
+.doc-card img,.doc-ph{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:7px;background:var(--line-2)}
+.doc-ph{display:grid;place-items:center;color:var(--faint)}
+.slot-form{align-items:flex-end;padding-top:6px}
+@media (max-width:900px){
+  .detail-grid{grid-template-columns:minmax(0,1fr)}
+}
+
 @media (max-width:1060px){
   .pub-menu-btn{display:inline-grid}
   .pub-nav{display:none;position:absolute;left:0;right:0;top:100%;margin:0;padding:10px 16px 16px;flex-direction:column;align-items:stretch;gap:2px;background:var(--surface);border-bottom:1px solid var(--line);box-shadow:var(--shadow-lg);max-height:calc(100vh - 68px);overflow-y:auto}

@@ -1,28 +1,32 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ADMISSION, SCHOOL } from "@/shared/config/school";
+import { SCHOOL } from "@/shared/config/school";
+import { naira, fmtDate } from "@/shared/lib/format";
 import { Icon } from "@/shared/ui/icon";
 import { Note } from "@/shared/ui/primitives";
+import { admissionNotice, admissionStatus } from "@/modules/admissions";
 import { PageHero, Section, SectionLinks } from "../../_parts";
 
 export const metadata: Metadata = { title: "Admission process", description: `How to apply for a place at ${SCHOOL.name}.` };
 
 const STEPS: [string, string][] = [
-  ["Get the admission form", "Start your application on the Apply online page, or collect a form from the school office."],
-  ["Fill in and submit", "Complete the form with your child's details and the class you are applying for."],
-  ["Upload documents", "Upload the required documents, such as a passport photograph and birth certificate."],
-  ["Entrance assessment", "Your child is invited for an entrance assessment. Dates are published on the Admission results page."],
-  ["Admission results", "Check the result with your application number. Successful pupils then complete school fees payment to take up their place."],
+  ["Fill in the application form", "Apply online on the Apply online page, or collect a form from the school office. If there is a form fee, you pay it securely online with Paystack."],
+  ["Save your application link", "You get an application number and a private link. Use the link to upload documents and to see your child's exam date."],
+  ["Upload documents", "Upload a passport photograph and birth certificate, plus the latest school report and a testimonial if your child is changing schools."],
+  ["Entrance assessment", "The school gives your child an assessment date. It appears on your application page and on the Admission results page."],
+  ["Admission results", "When results are published, check them with the application number. Admitted children are then enrolled, and you are invited to the School Store."],
 ];
 
-export default function ProcessPage() {
+export default async function ProcessPage() {
+  const s = await admissionStatus();
+  const w = s.window;
   return (
     <>
       <PageHero crumb={[["Admissions"], ["Admission process"]]} title="Admission process" lead="Apply online or visit the school office. Here is what to expect, step by step." />
       <Section>
         <div className="process">
           <div className="stack">
-            {!ADMISSION.open && <Note tone="warn" icon="alert">{ADMISSION.closedNote}</Note>}
+            <Note tone={s.open ? "ok" : "warn"} icon={s.open ? "check" : "alert"}>{admissionNotice(s)}</Note>
             <ol className="steps">
               {STEPS.map(([title, text], i) => (
                 <li key={title}>
@@ -35,15 +39,16 @@ export default function ProcessPage() {
           <aside className="card stack">
             <h3>Admission at a glance</h3>
             <dl className="facts">
-              <div><dt>Session</dt><dd>{ADMISSION.session}</dd></div>
-              <div><dt>Status</dt><dd>{ADMISSION.open ? "Open" : "Closed"}</dd></div>
+              {w && <div><dt>Session</dt><dd>{w.session}</dd></div>}
+              <div><dt>Status</dt><dd>{s.open ? "Open" : s.upcoming ? "Opening soon" : "Closed"}</dd></div>
+              {w && (s.open || s.upcoming) && <div><dt>{s.open ? "Closes" : "Opens"}</dt><dd>{fmtDate(s.open ? new Date(w.closesAt.getTime() - 1) : w.opensAt)}</dd></div>}
+              {w && (s.open || s.upcoming) && <div><dt>Form fee</dt><dd>{w.formFee ? naira(w.formFee) : "Free"}</dd></div>}
               <div><dt>Classes</dt><dd>Kindergarten to Primary 6</dd></div>
-              <div><dt>Forms</dt><dd>Online, or at the school office</dd></div>
               <div><dt>Office hours</dt><dd>{SCHOOL.officeHours}</dd></div>
             </dl>
             <div className="stack tight">
               <a className="btn block" href={`tel:${SCHOOL.phone.tel}`}><Icon name="phone" size="sm" />{SCHOOL.phone.display}</a>
-              <Link className="btn primary block" href="/admissions/apply">Apply online</Link>
+              <Link className="btn primary block" href="/admissions/apply">{s.open ? "Apply online" : "Admission forms"}</Link>
             </div>
           </aside>
         </div>

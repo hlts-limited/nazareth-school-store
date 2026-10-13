@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { ADMISSION, PUBLIC_NAV, SCHOOL } from "@/shared/config/school";
+import { PUBLIC_NAV, SCHOOL } from "@/shared/config/school";
 import { Icon } from "@/shared/ui/icon";
 import { ThemeToggle } from "@/shared/ui/client";
 import { dashboardPath, getViewer } from "@/modules/auth";
+import { admissionNotice, admissionStatus } from "@/modules/admissions";
 import { PublicNav } from "./_nav";
 
 export const metadata: Metadata = {
@@ -12,8 +13,6 @@ export const metadata: Metadata = {
   description: `${SCHOOL.name}, Festac Town: a nursery and primary school. ${SCHOOL.motto}.`,
 };
 
-// Until notices move into the back office (website module), the bar shows the admission status.
-const NOTICE = ADMISSION.open ? `Admission for the ${ADMISSION.session} session is open.` : ADMISSION.closedNote;
 
 const SOCIALS: [keyof typeof SCHOOL.social, string, string][] = [
   ["facebook", "Facebook", "facebook"],
@@ -24,18 +23,18 @@ const SOCIALS: [keyof typeof SCHOOL.social, string, string][] = [
 ];
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
-  const viewer = await getViewer();
+  const [viewer, admission] = await Promise.all([getViewer(), admissionStatus()]);
+  // Until notices move into the back office (website module), the bar shows the admission status.
+  const notice = admissionNotice(admission);
   const nav = PUBLIC_NAV.filter((n) => n.ready);
 
   return (
     <div className="pub">
       <a className="skip-link" href="#content">Skip to content</a>
-      {NOTICE && (
-        <div className="pub-notice" role="note">
-          <Icon name="info" size="sm" />
-          <span>{NOTICE}</span>
-        </div>
-      )}
+      <div className="pub-notice" role="note">
+        <Icon name="info" size="sm" />
+        <span>{notice}{admission.open && <> <Link href="/admissions/apply">Apply online</Link></>}</span>
+      </div>
 
       <header className="pub-top">
         <div className="pub-top-in">
