@@ -58,7 +58,7 @@ export type NewApplication = {
   details: Record<string, string | undefined>;
 };
 
-/** The class a child is admitted into, by age on 1 September of the session (see shared/lib/admission-age). */
+/** The class a child is admitted into, by age on 31 December of the session's first year (see shared/lib/admission-age). */
 export async function classForChild(dob: Date, session: string) {
   const r = admissionClassFor(lagosDay(dob), session);
   if (!r.className) return { ...r, classId: null };

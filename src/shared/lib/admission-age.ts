@@ -5,8 +5,10 @@ export const MIN_AGE = 2;
 export const ADMISSION_CLASSES = DEFAULT_CLASSES.slice(0, DEFAULT_CLASSES.indexOf("Primary 6"));
 export const MAX_AGE = MIN_AGE + ADMISSION_CLASSES.length - 1;
 
-/** The age that counts is the child's age on 1 September when the session starts ("2027/2028" → 2027-09-01). */
-export const sessionStartDay = (session: string) => `${session.match(/\d{4}/)?.[0] ?? new Date().getFullYear()}-09-01`;
+/** The age that counts is the child's age on 31 December of the year the admission session starts
+ *  (the session the school creates: "2026/2027" → 2026-12-31, "2027/2028" → 2027-12-31). */
+export const AGE_DAY = "31 December";
+export const ageDay = (session: string) => `${session.match(/\d{4}/)?.[0] ?? new Date().getFullYear()}-12-31`;
 
 /** Whole years between two YYYY-MM-DD days (no time zones involved). */
 export function ageOn(dob: string, day: string) {
@@ -18,7 +20,7 @@ export function ageOn(dob: string, day: string) {
 export type AgeClass = { age: number; on: string; className: string | null; problem: string | null };
 
 export function admissionClassFor(dob: string, session: string): AgeClass {
-  const on = sessionStartDay(session);
+  const on = ageDay(session);
   const age = ageOn(dob, on);
   const when = new Date(`${on}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
   if (age < MIN_AGE) return { age, on, className: null, problem: `Children must be at least ${MIN_AGE} years old on ${when} (the start of the ${session} session).` };

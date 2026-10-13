@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { ActionResult } from "@/shared/lib/action";
 import { ActionForm, FieldError, SubmitButton } from "@/shared/ui/client";
 import { shrinkImage } from "@/shared/ui/shrink-image";
-import { admissionClassFor } from "@/shared/lib/admission-age";
+import { AGE_DAY, admissionClassFor } from "@/shared/lib/admission-age";
 import { DOC_KINDS, RELIGIONS, docLabel } from "./docs";
 
 type Action = (prev: ActionResult, form: FormData) => Promise<ActionResult>;
@@ -100,7 +100,7 @@ export function ApplicationFields({ action, mode, windows, classes = [], submitL
             <span className="lbl">Class</span>
             <div className={`age-class ${byAge?.problem ? "bad" : ""}`} aria-live="polite">
               {!byAge ? <span className="muted">Chosen by age once you enter the date of birth.</span>
-                : byAge.className ? <><b>{byAge.className}</b><span className="small muted"> · age {byAge.age} on 1 September {byAge.on.slice(0, 4)}</span></>
+                : byAge.className ? <><b>{byAge.className}</b><span className="small muted"> · age {byAge.age} on {AGE_DAY} {byAge.on.slice(0, 4)}</span></>
                   : <span>{byAge.problem}</span>}
             </div>
             {office && (

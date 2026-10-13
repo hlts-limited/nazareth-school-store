@@ -115,20 +115,24 @@ test("Alpha access is never part of a role, not even Super Admin", async () => {
   assert.equal(roleName("alpha"), "Alpha Admin");
 });
 
-test("admission class is chosen by age on 1 September of the session", async () => {
+test("admission class is chosen by age on 31 December of the session's first year", async () => {
   const { admissionClassFor, ageOn, lagosDay } = await import("../src/shared/lib/admission-age");
-  const cls = (dob: string) => admissionClassFor(dob, "2027/2028").className;
-  assert.equal(ageOn("2025-09-01", "2027-09-01"), 2, "birthday on the day counts");
-  assert.equal(ageOn("2025-09-02", "2027-09-01"), 1, "a day short");
-  assert.equal(cls("2025-09-01"), "Kindergarten");
-  assert.equal(cls("2024-06-15"), "Pre-Nursery");
-  assert.equal(cls("2023-01-01"), "Prep 1");
-  assert.equal(cls("2022-03-04"), "Prep 2");
-  assert.equal(cls("2021-09-01"), "Primary 1");
-  assert.equal(cls("2017-09-01"), "Primary 5");
-  assert.equal(cls("2016-09-01"), null, "11-year-olds would be Primary 6: not admitted");
-  assert.match(admissionClassFor("2016-09-01", "2027/2028").problem!, /Primary 6/);
-  assert.equal(cls("2025-09-02"), null, "under 2");
+  const cls = (dob: string) => admissionClassFor(dob, "2026/2027").className;
+  assert.equal(admissionClassFor("2024-12-31", "2026/2027").on, "2026-12-31");
+  assert.equal(admissionClassFor("2024-12-31", "2027/2028").on, "2027-12-31", "follows whichever session the school creates");
+  assert.equal(ageOn("2024-12-31", "2026-12-31"), 2, "birthday on the day counts");
+  assert.equal(ageOn("2025-01-01", "2026-12-31"), 1, "a day short");
+  assert.equal(cls("2024-12-31"), "Kindergarten");
+  assert.equal(cls("2024-01-15"), "Kindergarten", "2 by 31 December, even though 1 in September");
+  assert.equal(cls("2023-06-15"), "Pre-Nursery");
+  assert.equal(cls("2022-01-01"), "Prep 1");
+  assert.equal(cls("2021-03-04"), "Prep 2");
+  assert.equal(cls("2020-12-31"), "Primary 1");
+  assert.equal(cls("2016-12-31"), "Primary 5");
+  assert.equal(cls("2015-12-31"), null, "11-year-olds would be Primary 6: not admitted");
+  assert.match(admissionClassFor("2015-12-31", "2026/2027").problem!, /Primary 6/);
+  assert.equal(cls("2025-01-01"), null, "under 2");
+  assert.match(admissionClassFor("2025-01-01", "2026/2027").problem!, /at least 2 years old on 31 December 2026/);
   assert.equal(lagosDay(new Date("2021-03-04T00:00:00+01:00")), "2021-03-04", "stored midnight-in-Lagos dates read back as the same day");
 });
 

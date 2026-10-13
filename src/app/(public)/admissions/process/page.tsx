@@ -4,14 +4,14 @@ import { SCHOOL } from "@/shared/config/school";
 import { naira, fmtDate } from "@/shared/lib/format";
 import { Icon } from "@/shared/ui/icon";
 import { Note } from "@/shared/ui/primitives";
-import { ADMISSION_CLASSES, MAX_AGE, MIN_AGE } from "@/shared/lib/admission-age";
+import { ADMISSION_CLASSES, AGE_DAY, MAX_AGE, MIN_AGE } from "@/shared/lib/admission-age";
 import { admissionNotice, admissionStatus } from "@/modules/admissions";
 import { PageHero, Section, SectionLinks } from "../../_parts";
 
 export const metadata: Metadata = { title: "Admission process", description: `How to apply for a place at ${SCHOOL.name}.` };
 
 const STEPS: [string, string][] = [
-  ["Fill in the application form", `Apply online, or register at the school office. The class is chosen by your child's age on 1 September: age ${MIN_AGE} ${ADMISSION_CLASSES[0]}, ${MIN_AGE + 1} ${ADMISSION_CLASSES[1]}, ${MIN_AGE + 2} ${ADMISSION_CLASSES[2]}, and so on up to age ${MAX_AGE} ${ADMISSION_CLASSES[ADMISSION_CLASSES.length - 1]}. If there is a form fee, you pay it securely online with Paystack.`],
+  ["Fill in the application form", `Apply online, or register at the school office. The class is chosen by your child's age on ${AGE_DAY} of the year the admission session starts: age ${MIN_AGE} ${ADMISSION_CLASSES[0]}, ${MIN_AGE + 1} ${ADMISSION_CLASSES[1]}, ${MIN_AGE + 2} ${ADMISSION_CLASSES[2]}, and so on up to age ${MAX_AGE} ${ADMISSION_CLASSES[ADMISSION_CLASSES.length - 1]}. If there is a form fee, you pay it securely online with Paystack.`],
   ["Upload documents", "With the form, upload the candidate's passport photograph, a baptismal certificate (Catholic) or dedication certificate (non-Catholic), and the birth certificate. Phone photos are fine."],
   ["Save your application link", "You get an application number and a private link. Use the link to see your child's exam date and result, and to replace a document."],
   ["Entrance exam", "The school gives your child an exam date. You'll get it by text or email, and it appears on your application page and on the Admission results page."],

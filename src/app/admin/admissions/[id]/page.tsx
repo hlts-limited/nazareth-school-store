@@ -5,7 +5,7 @@ import { ActionForm, FieldError, SubmitButton } from "@/shared/ui/client";
 import { Icon } from "@/shared/ui/icon";
 import { Note, PageHeader } from "@/shared/ui/primitives";
 import { SCHOOL } from "@/shared/config/school";
-import { admissionClassFor, lagosDay } from "@/shared/lib/admission-age";
+import { AGE_DAY, admissionClassFor, lagosDay } from "@/shared/lib/admission-age";
 import { requireStaff } from "@/modules/auth";
 import { listClasses } from "@/modules/catalogue";
 import { suggestRegNumber } from "@/modules/pupils";
@@ -60,7 +60,7 @@ export default async function ApplicationDetailPage({ params, searchParams }: { 
             <h3>The child</h3>
             <dl className="facts">
               <div><dt>Full name</dt><dd>{app.otherNames} {app.surname}</dd></div>
-              <div><dt>Date of birth</dt><dd>{fmtDate(app.dateOfBirth)} (age {age(app.dateOfBirth)} now, {byAge.age} on 1 September {byAge.on.slice(0, 4)}{byAge.className ? `: ${byAge.className} by age` : ""})</dd></div>
+              <div><dt>Date of birth</dt><dd>{fmtDate(app.dateOfBirth)} (age {age(app.dateOfBirth)} now, {byAge.age} on {AGE_DAY} {byAge.on.slice(0, 4)}{byAge.className ? `: ${byAge.className} by age` : ""})</dd></div>
               <div><dt>Gender</dt><dd>{app.gender}</dd></div>
               <div><dt>Applying for</dt><dd>{app.class.name}</dd></div>
               <div><dt>Previous school</dt><dd>{app.previousSchool ?? "—"}</dd></div>

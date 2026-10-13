@@ -13,7 +13,7 @@ let classId = "";
 let staffId = "";
 const RUN = Date.now().toString(36).toUpperCase(); // reg numbers stay unique across runs
 
-// Born 4 March 2022: 5 on 1 September 2027, so Prep 2 for the 2027/2028 session
+// Born 4 March 2022: 5 on 31 December 2027, so Prep 2 for the 2027/2028 session
 const child = (over: Partial<NewApplication> = {}): Omit<NewApplication, "classId"> & { classId?: string } => ({
   classId, surname: "Okonkwo", otherNames: "Ada Chioma", dateOfBirth: new Date("2022-03-04T00:00:00+01:00"), gender: "Female",
   parentName: "Ngozi Okonkwo", relationship: "Mother", parentPhone: "08039990001", address: "12 Test Close, Enugu",
@@ -192,7 +192,7 @@ test("admitted children move into the class they applied for, with new reg numbe
   const pa = await db.pupil.findUniqueOrThrow({ where: { id: (await db.application.findUniqueOrThrow({ where: { id: a.app.id } })).pupilId! }, include: { class: true, guardians: true } });
   const pb = await db.pupil.findUniqueOrThrow({ where: { id: (await db.application.findUniqueOrThrow({ where: { id: b.app.id } })).pupilId! }, include: { class: true, guardians: true } });
   assert.equal(pa.class.name, "Prep 2");
-  assert.equal(pb.class.name, "Primary 3", "born Feb 2019: 8 on 1 Sept 2027");
+  assert.equal(pb.class.name, "Primary 3", "born Feb 2019: 8 on 31 Dec 2027");
   assert.notEqual(pa.regNumber, pb.regNumber);
   assert.equal(pa.guardians[0].parentId, pb.guardians[0].parentId, "brother and sister share one parent account");
 });
