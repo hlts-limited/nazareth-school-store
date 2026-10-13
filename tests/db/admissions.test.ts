@@ -4,8 +4,8 @@ import assert from "node:assert/strict";
 import { db } from "../../src/shared/lib/db";
 import { UserError } from "../../src/shared/lib/action";
 import {
-  addExamSlot, admissionNotice, admissionStatus, applicationByToken, confirmApplicationFee, createApplication, decide, enrol,
-  lookupResult, saveWindow, setExamSlot, setResultsPublished, startApplicationFee, withdraw, type NewApplication,
+  addExamSlot, admissionNotice, admissionStatus, admittedList, applicationByToken, confirmApplicationFee, createApplication, decide, enrol, enrolMany,
+  lookupResult, renewAccessLink, saveWindow, setExamSlot, setResultsPublished, startApplicationFee, withdraw, type NewApplication,
 } from "../../src/modules/admissions/service";
 
 const DAY = 86_400_000;
@@ -13,8 +13,9 @@ let classId = "";
 let staffId = "";
 const RUN = Date.now().toString(36).toUpperCase(); // reg numbers stay unique across runs
 
-const child = (over: Partial<NewApplication> = {}): NewApplication => ({
-  classId, surname: "Okonkwo", otherNames: "Ada Chioma", dateOfBirth: new Date("2021-03-04"), gender: "Female",
+// Born 4 March 2022: 5 on 1 September 2027, so Prep 2 for the 2027/2028 session
+const child = (over: Partial<NewApplication> = {}): Omit<NewApplication, "classId"> & { classId?: string } => ({
+  classId, surname: "Okonkwo", otherNames: "Ada Chioma", dateOfBirth: new Date("2022-03-04T00:00:00+01:00"), gender: "Female",
   parentName: "Ngozi Okonkwo", relationship: "Mother", parentPhone: "08039990001", address: "12 Test Close, Enugu",
   details: {}, ...over,
 });
@@ -51,9 +52,22 @@ test("the notice gives the last open day, not the closing instant", async () => 
   await db.admissionWindow.update({ where: { id: w.id }, data: { closesAt: w.closesAt } });
 });
 
+test("the class is chosen by age, and Primary 6 ages are turned away", async () => {
+  const other = (await db.class.findFirstOrThrow({ where: { name: "Primary 3" } })).id;
+  const { app } = await createApplication(child({ classId: other, parentPhone: "08039990050" }));
+  assert.equal(app.classId, classId, "the website ignores any class sent with the form");
+  await db.application.delete({ where: { id: app.id } });
+  const k = await createApplication(child({ dateOfBirth: new Date("2025-08-20T00:00:00+01:00"), parentPhone: "08039990051" }));
+  assert.equal((await db.class.findUniqueOrThrow({ where: { id: k.app.classId } })).name, "Kindergarten");
+  await db.application.delete({ where: { id: k.app.id } });
+  await assert.rejects(createApplication(child({ dateOfBirth: new Date("2016-05-01T00:00:00+01:00") })), /Primary 6/);
+  await assert.rejects(createApplication(child({ dateOfBirth: new Date("2026-01-01T00:00:00+01:00") })), /at least 2/);
+});
+
 test("full journey: apply, pay the form fee, exam, decision, results, enrol", async () => {
   const { app, token } = await createApplication(child());
   assert.match(app.number, /^NZA27-[2-9A-HJKMNP-Z]{6}$/);
+  assert.equal(app.classId, classId);
   assert.equal(app.status, "AWAITING_PAYMENT");
   assert.equal(app.feeAmount, 5000);
 
@@ -130,6 +144,57 @@ test("free windows submit straight away", async () => {
   const { app } = await createApplication(child({ surname: "Eze", otherNames: "Chidi", parentPhone: "08039990003" }));
   assert.equal(app.status, "SUBMITTED");
   assert.ok(app.submittedAt);
+});
+
+test("the office registers a child: fee handling and class override", async () => {
+  const s = await admissionStatus();
+  await db.admissionWindow.update({ where: { id: s.window!.id }, data: { formFee: 3000 } });
+  const by = "Joy Nnamdi";
+  const paid = await createApplication(child({ surname: "Adeyemi", parentPhone: "08039990060" }), { windowId: s.window!.id, fee: "paid", by });
+  assert.equal(paid.app.status, "SUBMITTED");
+  assert.ok(paid.app.feePaidAt);
+  assert.equal(paid.app.feeAmount, 3000);
+  assert.equal((paid.app.details as Record<string, string>).registeredBy, by);
+
+  const online = await createApplication(child({ surname: "Obi", parentPhone: "08039990061" }), { windowId: s.window!.id, fee: "online", by });
+  assert.equal(online.app.status, "AWAITING_PAYMENT");
+
+  const p3 = (await db.class.findFirstOrThrow({ where: { name: "Primary 3" } })).id;
+  const waived = await createApplication(child({ surname: "Uche", parentPhone: "08039990062", classId: p3 }), { windowId: s.window!.id, fee: "waived", by });
+  assert.equal(waived.app.status, "SUBMITTED");
+  assert.equal(waived.app.feeAmount, 0);
+  assert.equal(waived.app.classId, p3, "staff can choose another class");
+});
+
+test("a new family link replaces the old one", async () => {
+  const { app, token } = await createApplication(child({ surname: "Link", parentPhone: "08039990070" }));
+  const { link } = await renewAccessLink(app.id);
+  const fresh = link.split("/").pop()!;
+  assert.equal(await applicationByToken(app.number, token), null, "old link stops working");
+  assert.ok(await applicationByToken(app.number, fresh));
+});
+
+test("admitted children move into the class they applied for, with new reg numbers", async () => {
+  const s = await admissionStatus();
+  const a = await createApplication(child({ surname: "Move", otherNames: "Amaka", parentPhone: "08039990080" }), { windowId: s.window!.id, fee: "waived", by: "Test" });
+  // No class sent: the office form then uses the class by age, like the website
+  const b = await createApplication(child({ surname: "Move", otherNames: "Bayo", parentPhone: "08039990080", dateOfBirth: new Date("2019-02-01T00:00:00+01:00"), classId: undefined }), { windowId: s.window!.id, fee: "waived", by: "Test" });
+  const c = await createApplication(child({ surname: "Stay", parentPhone: "08039990081" }), { windowId: s.window!.id, fee: "waived", by: "Test" });
+  await decide(a.app.id, "ADMITTED", undefined, staffId);
+  await decide(b.app.id, "ADMITTED", undefined, staffId);
+  const list = await admittedList(s.window!.id);
+  assert.ok(list.waiting.some((x) => x.id === a.app.id) && list.waiting.some((x) => x.id === b.app.id));
+  assert.ok(!list.waiting.some((x) => x.id === c.app.id), "not admitted: not listed");
+
+  const r = await enrolMany([a.app.id, b.app.id, c.app.id]);
+  assert.equal(r.done.length, 2);
+  assert.equal(r.failed.length, 1, "the child who wasn't admitted is refused");
+  const pa = await db.pupil.findUniqueOrThrow({ where: { id: (await db.application.findUniqueOrThrow({ where: { id: a.app.id } })).pupilId! }, include: { class: true, guardians: true } });
+  const pb = await db.pupil.findUniqueOrThrow({ where: { id: (await db.application.findUniqueOrThrow({ where: { id: b.app.id } })).pupilId! }, include: { class: true, guardians: true } });
+  assert.equal(pa.class.name, "Prep 2");
+  assert.equal(pb.class.name, "Primary 3", "born Feb 2019: 8 on 1 Sept 2027");
+  assert.notEqual(pa.regNumber, pb.regNumber);
+  assert.equal(pa.guardians[0].parentId, pb.guardians[0].parentId, "brother and sister share one parent account");
 });
 
 test("application numbers are unique", async () => {

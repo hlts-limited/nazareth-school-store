@@ -1,12 +1,13 @@
 import Link from "next/link";
-import { fmtDate } from "@/shared/lib/format";
+import { fmtDate, fmtDateTime } from "@/shared/lib/format";
 import { LinkButton, PageHeader, Empty } from "@/shared/ui/primitives";
-import { SearchParamInput, SearchParamSelect } from "@/shared/ui/client";
+import { ActionForm, SearchParamInput, SearchParamSelect, SubmitButton } from "@/shared/ui/client";
 import { Icon } from "@/shared/ui/icon";
 import { requireStaff } from "@/modules/auth";
 import { listClasses } from "@/modules/catalogue";
-import { admissionStatus, DOC_KINDS, listApplications, listWindows, STATUS_LABEL } from "@/modules/admissions";
+import { admissionStatus, bulkApplicationsAction, DOC_KINDS, listApplications, listWindows, STATUS_LABEL } from "@/modules/admissions";
 import { STATUS_TONE } from "./_tone";
+import { SelectAll } from "./_select";
 
 export const metadata = { title: "Applications" };
 
@@ -19,6 +20,8 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
   const required = DOC_KINDS.filter((d) => d.required).map((d) => d.kind);
   const params = (extra: Record<string, string>) => `/admin/admissions?${new URLSearchParams({ ...(sp.w ? { w: sp.w } : {}), ...(sp.cls ? { cls: sp.cls } : {}), ...(sp.q ? { q: sp.q } : {}), ...(sp.status ? { status: sp.status } : {}), ...extra })}`;
   const total = Object.values(res.counts).reduce((a, b) => a + (b ?? 0), 0);
+  const canManage = v.permissions.has("admissions.manage");
+  const slots = windows.find((w) => w.id === windowId)?.examSlots.filter((s) => s.startsAt > new Date()) ?? [];
 
   if (!windows.length) {
     return (
@@ -38,7 +41,11 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
       <PageHeader
         title="Applications"
         sub={current.open && current.window ? `${current.window.session} admission is open` : current.upcoming && current.window ? `${current.window.session} admission opens ${fmtDate(current.window.opensAt)}` : "Admission is closed"}
-        actions={v.permissions.has("admissions.publish") ? <LinkButton href="/admin/admissions/windows" icon="clock">Windows &amp; exams</LinkButton> : undefined}
+        actions={<>
+          {v.permissions.has("admissions.publish") && <LinkButton href="/admin/admissions/windows" icon="clock">Windows &amp; exams</LinkButton>}
+          <LinkButton href="/admin/admissions/admitted" icon="users">Admitted pupils</LinkButton>
+          {canManage && <LinkButton href="/admin/admissions/new" icon="plus" variant="primary">Register a child</LinkButton>}
+        </>}
       />
       <div className="stack">
         <div className="chips" role="tablist" aria-label="Filter by status">
@@ -57,13 +64,32 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
           <div className="card"><Empty title="No applications match">Applications appear here as families apply on the website.</Empty></div>
         ) : (
           <div className="card pad-0">
+            {canManage && (
+              <ActionForm action={bulkApplicationsAction} id="bulk-form" className="row bulk-bar" resetOnSuccess>
+                <span className="small muted">With ticked:</span>
+                <select className="input sm" name="op" defaultValue="" aria-label="What to do with ticked applications" style={{ width: "auto", maxWidth: 360 }}>
+                  <option value="" disabled>Choose…</option>
+                  <optgroup label="Book the entrance exam">
+                    {slots.length ? slots.map((s) => <option key={s.id} value={`slot:${s.id}`}>{fmtDateTime(s.startsAt)} · {s.venue} ({s._count.applications}/{s.capacity})</option>)
+                      : <option value="" disabled>No upcoming exam slots: add them under Windows &amp; exams</option>}
+                  </optgroup>
+                  <optgroup label="Record the exam result">
+                    <option value="ADMITTED">Passed: admit</option>
+                    <option value="WAITLISTED">Waiting list</option>
+                    <option value="NOT_ADMITTED">Did not pass</option>
+                  </optgroup>
+                </select>
+                <SubmitButton size="sm" variant="default" icon="check">Apply</SubmitButton>
+              </ActionForm>
+            )}
             <div className="tbl-wrap"><table className="t rt">
-              <thead><tr><th>Application</th><th>Child</th><th>Class</th><th>Parent</th><th>Documents</th><th>Status</th><th>Applied</th></tr></thead>
+              <thead><tr>{canManage && <th style={{ width: 36 }}><SelectAll form="bulk-form" /></th>}<th>Application</th><th>Child</th><th>Class</th><th>Parent</th><th>Documents</th><th>Status</th><th>Applied</th></tr></thead>
               <tbody>
                 {res.rows.map((a) => {
                   const have = required.filter((k) => a.documents.some((d) => d.kind === k)).length;
                   return (
                     <tr key={a.id}>
+                      {canManage && <td data-label=""><input type="checkbox" name="ids" value={a.id} form="bulk-form" aria-label={`Select ${a.otherNames} ${a.surname}`} /></td>}
                       <td data-label="Application"><Link className="mono" href={`/admin/admissions/${a.id}`}>{a.number}</Link></td>
                       <td data-label="Child"><b>{a.surname}</b>, {a.otherNames}</td>
                       <td data-label="Class">{a.class.name}</td>

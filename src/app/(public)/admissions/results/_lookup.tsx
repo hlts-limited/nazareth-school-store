@@ -8,9 +8,9 @@ import { Icon } from "@/shared/ui/icon";
 type Action = (prev: ResultLookup, form: FormData) => Promise<ResultLookup>;
 
 const OUTCOME: Record<string, [string, string, string]> = {
-  ADMITTED: ["ok", "Admitted", "Congratulations! Please visit the school office to complete enrolment."],
+  ADMITTED: ["ok", "Passed: admitted", "Congratulations! Your child passed the entrance exam and has been offered admission. You'll receive a School Store invite to buy books and uniforms for their class."],
   WAITLISTED: ["warn", "Waiting list", "We will contact you if a place becomes available."],
-  NOT_ADMITTED: ["err", "Not admitted", "We are unable to offer a place this time. Thank you for applying."],
+  NOT_ADMITTED: ["err", "Did not pass", "Your child did not pass the entrance exam this time. Thank you for applying."],
   WITHDRAWN: ["warn", "Withdrawn", "This application was withdrawn. Contact the school office if this is a mistake."],
 };
 
@@ -51,7 +51,8 @@ export function ResultLookupForm({ action }: { action: Action }) {
             {o ? <span className={`pill ${o[0]}`}>{o[1]}</span> : <span className="pill plain">Result not published yet</span>}
           </div>
           {o ? <p>{o[2]}</p> : <p className="muted">Results for this session have not been published yet. Please check again later.</p>}
-          {r.exam && !o && <div className="note"><Icon name="clock" /><span>Entrance assessment: <b>{when(r.exam.startsAt)}</b> at {r.exam.venue}.</span></div>}
+          {r.exam && !o && <div className="note"><Icon name="clock" /><span>Entrance exam: <b>{when(r.exam.startsAt)}</b> at {r.exam.venue}. Please arrive 30 minutes early.</span></div>}
+          {!r.exam && !o && <p className="small muted">The entrance exam date hasn&apos;t been set yet. It will show here once the school schedules it.</p>}
         </div>
       )}
     </div>

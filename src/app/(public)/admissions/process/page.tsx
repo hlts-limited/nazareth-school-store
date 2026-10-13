@@ -4,17 +4,18 @@ import { SCHOOL } from "@/shared/config/school";
 import { naira, fmtDate } from "@/shared/lib/format";
 import { Icon } from "@/shared/ui/icon";
 import { Note } from "@/shared/ui/primitives";
+import { ADMISSION_CLASSES, MAX_AGE, MIN_AGE } from "@/shared/lib/admission-age";
 import { admissionNotice, admissionStatus } from "@/modules/admissions";
 import { PageHero, Section, SectionLinks } from "../../_parts";
 
 export const metadata: Metadata = { title: "Admission process", description: `How to apply for a place at ${SCHOOL.name}.` };
 
 const STEPS: [string, string][] = [
-  ["Fill in the application form", "Apply online on the Apply online page, or collect a form from the school office. If there is a form fee, you pay it securely online with Paystack."],
-  ["Save your application link", "You get an application number and a private link. Use the link to upload documents and to see your child's exam date."],
-  ["Upload documents", "Upload a passport photograph and birth certificate, plus the latest school report and a testimonial if your child is changing schools."],
-  ["Entrance assessment", "The school gives your child an assessment date. It appears on your application page and on the Admission results page."],
-  ["Admission results", "When results are published, check them with the application number. Admitted children are then enrolled, and you are invited to the School Store."],
+  ["Fill in the application form", `Apply online, or register at the school office. The class is chosen by your child's age on 1 September: age ${MIN_AGE} ${ADMISSION_CLASSES[0]}, ${MIN_AGE + 1} ${ADMISSION_CLASSES[1]}, ${MIN_AGE + 2} ${ADMISSION_CLASSES[2]}, and so on up to age ${MAX_AGE} ${ADMISSION_CLASSES[ADMISSION_CLASSES.length - 1]}. If there is a form fee, you pay it securely online with Paystack.`],
+  ["Upload documents", "With the form, upload the candidate's passport photograph, a baptismal certificate (Catholic) or dedication certificate (non-Catholic), and the birth certificate. Phone photos are fine."],
+  ["Save your application link", "You get an application number and a private link. Use the link to see your child's exam date and result, and to replace a document."],
+  ["Entrance exam", "The school gives your child an exam date. You'll get it by text or email, and it appears on your application page and on the Admission results page."],
+  ["Admission results", "When results are published, check whether your child passed with the application number. Children who pass are placed in their class, and you are invited to the School Store to buy books and uniforms."],
 ];
 
 export default async function ProcessPage() {
@@ -43,7 +44,7 @@ export default async function ProcessPage() {
               <div><dt>Status</dt><dd>{s.open ? "Open" : s.upcoming ? "Opening soon" : "Closed"}</dd></div>
               {w && (s.open || s.upcoming) && <div><dt>{s.open ? "Closes" : "Opens"}</dt><dd>{fmtDate(s.open ? new Date(w.closesAt.getTime() - 1) : w.opensAt)}</dd></div>}
               {w && (s.open || s.upcoming) && <div><dt>Form fee</dt><dd>{w.formFee ? naira(w.formFee) : "Free"}</dd></div>}
-              <div><dt>Classes</dt><dd>Kindergarten to Primary 6</dd></div>
+              <div><dt>Admission into</dt><dd>{ADMISSION_CLASSES[0]} to {ADMISSION_CLASSES[ADMISSION_CLASSES.length - 1]} (ages {MIN_AGE} to {MAX_AGE})</dd></div>
               <div><dt>Office hours</dt><dd>{SCHOOL.officeHours}</dd></div>
             </dl>
             <div className="stack tight">

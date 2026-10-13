@@ -113,6 +113,8 @@ export const STAFF_SECTIONS: { id: string; label: string; perm: Permission; item
     id: "admissions", label: "Admissions", perm: P.ADMISSIONS_VIEW,
     items: [
       { href: "/admin/admissions", label: "Applications", icon: "file", badge: "apps" },
+      { href: "/admin/admissions/new", label: "Register a child", icon: "plus" },
+      { href: "/admin/admissions/admitted", label: "Admitted pupils", icon: "users" },
       { href: "/admin/admissions/windows", label: "Windows & exams", icon: "clock" },
     ],
   },
