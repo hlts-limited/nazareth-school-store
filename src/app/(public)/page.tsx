@@ -11,12 +11,14 @@ export const metadata: Metadata = {
 const SCHOOLS = [
   {
     name: "Pre-School",
+    href: "/schools/pre-school",
     classes: "Kindergarten & Pre-Nursery",
     text: "A nurturing start where young learners build foundational skills through play-based and structured learning.",
     img: "/images/cultural-day/05.jpg",
   },
   {
     name: "Primary School",
+    href: "/schools/primary",
     classes: "Prep 1 – Primary 6",
     text: "A balanced curriculum that builds strong foundations, critical thinking, and readiness for the FSLC examination.",
     img: "/images/cultural-day/13.jpg",
@@ -40,7 +42,7 @@ export default function HomePage() {
           <p>{SCHOOL.tagline}. We nurture academic excellence, moral values, and leadership skills in every child entrusted to our care.</p>
           <div className="row">
             <Link className="btn primary lg" href="/login"><Icon name="shop" size="sm" />School Store</Link>
-            <a className="btn lg hero-ghost" href={`tel:${SCHOOL.phone.tel}`}><Icon name="phone" size="sm" />Call the school</a>
+            <Link className="btn lg hero-ghost" href="/admissions/process">Admissions</Link>
           </div>
         </div>
       </section>
@@ -58,7 +60,7 @@ export default function HomePage() {
                 <span className="pill plain">{s.classes}</span>
               </div>
               <div className="stack tight card-b">
-                <h3>{s.name}</h3>
+                <h3><Link className="card-link" href={s.href}>{s.name}</Link></h3>
                 <p className="muted">{s.text}</p>
               </div>
             </article>
@@ -77,6 +79,7 @@ export default function HomePage() {
             <p>It is with great joy and gratitude that I welcome you to {SCHOOL.name}. Our school is built on a strong foundation of faith, discipline, and academic excellence. We are committed to nurturing every child entrusted to our care — developing not only their intellect but also their character and moral values.</p>
             <p>At {SCHOOL.name}, we believe that every child is gifted and capable of greatness.</p>
             <p className="welcome-sig"><b>{SCHOOL.supervisor}</b><span className="muted"> · Supervisor</span></p>
+            <div><Link className="btn" href="/about/welcome">Read the full message<Icon name="chev" size="sm" /></Link></div>
           </div>
         </div>
       </section>

@@ -33,6 +33,32 @@ const headersWith = (policy: string) => [
 /** Paths served by the public website, src/app/(public). */
 const PUBLIC_PATHS = ["/", "/about/:path*", "/schools/:path*", "/academics/:path*", "/admissions/:path*", "/gallery", "/contact"];
 
+/** Old website addresses (the static .html site) and section roots, sent to the new pages */
+const REDIRECTS: [string, string][] = [
+  ["/index.html", "/"],
+  ["/welcome-address.html", "/about/welcome"],
+  ["/history.html", "/about/history"],
+  ["/vision-mission.html", "/about/vision"],
+  ["/management.html", "/about/management"],
+  ["/nursery-primary-school.html", "/schools/pre-school"],
+  ["/high-school.html", "/schools/primary"],
+  ["/curriculum.html", "/academics/curriculum"],
+  ["/co-curricular.html", "/academics/co-curricular"],
+  ["/why-choose-nazareth.html", "/admissions/why-nazareth"],
+  ["/admission-process.html", "/admissions/process"],
+  ["/admission-faqs.html", "/admissions/faqs"],
+  ["/apply-online.html", "/admissions/apply"],
+  ["/admission-update.html", "/admissions/results"],
+  ["/gallery.html", "/gallery"],
+  ["/contact.html", "/contact"],
+  ["/admin-login.html", "/login?tab=staff"],
+  ["/admin-dashboard.html", "/admin"],
+  ["/about", "/about/welcome"],
+  ["/schools", "/schools/pre-school"],
+  ["/academics", "/academics/curriculum"],
+  ["/admissions", "/admissions/process"],
+];
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   output: "standalone", // small self-contained build for Docker / VPS
@@ -42,6 +68,9 @@ const nextConfig: NextConfig = {
     serverActions: { bodySizeLimit: "60mb" }, // receipts are capped at 5 MB in code; backups can be large
   },
   serverExternalPackages: ["exceljs", "pdf-lib", "jszip", "bcryptjs", "qrcode"],
+  async redirects() {
+    return REDIRECTS.map(([source, destination]) => ({ source, destination, permanent: true }));
+  },
   async headers() {
     // /api/files sets its own headers (so PDF receipts can be previewed).
     // When several rules match, the later one wins for the same header, so the public rules come last.

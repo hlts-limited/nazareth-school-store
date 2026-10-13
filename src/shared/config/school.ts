@@ -21,32 +21,44 @@ export const SCHOOL = {
 } as const;
 
 /**
+ * Admission status shown across the public website. Phase 4 (admissions module) moves this
+ * into the back office as admission windows; until then, change it here.
+ */
+export const ADMISSION = {
+  session: "2026/2027",
+  open: false,
+  closedNote: "Admission for the 2026/2027 session has closed. Contact the school office to find out when the next admission opens.",
+} as const;
+
+/**
  * Public website menu. `ready: false` hides an entry until its page exists,
  * so the menu never links to a page that isn't built yet.
  */
 export const PUBLIC_NAV: { label: string; href: string; ready: boolean; children?: { label: string; href: string }[] }[] = [
   { label: "Home", href: "/", ready: true },
-  { label: "About", href: "/about/welcome", ready: false, children: [
+  { label: "About", href: "/about/welcome", ready: true, children: [
     { label: "Welcome address", href: "/about/welcome" },
     { label: "Our history", href: "/about/history" },
     { label: "Vision & mission", href: "/about/vision" },
     { label: "Management", href: "/about/management" },
   ] },
-  { label: "Our schools", href: "/schools/pre-school", ready: false, children: [
+  { label: "Our schools", href: "/schools/pre-school", ready: true, children: [
     { label: "Pre-School", href: "/schools/pre-school" },
     { label: "Primary School", href: "/schools/primary" },
   ] },
-  { label: "Academics", href: "/academics/curriculum", ready: false, children: [
+  { label: "Academics", href: "/academics/curriculum", ready: true, children: [
     { label: "Curriculum", href: "/academics/curriculum" },
     { label: "Co-curricular", href: "/academics/co-curricular" },
   ] },
-  { label: "Admissions", href: "/admissions/process", ready: false, children: [
+  { label: "Admissions", href: "/admissions/process", ready: true, children: [
     { label: "Why Nazareth?", href: "/admissions/why-nazareth" },
     { label: "Admission process", href: "/admissions/process" },
     { label: "FAQs", href: "/admissions/faqs" },
+    { label: "Apply online", href: "/admissions/apply" },
+    { label: "Admission results", href: "/admissions/results" },
   ] },
-  { label: "Gallery", href: "/gallery", ready: false },
-  { label: "Contact", href: "/contact", ready: false },
+  { label: "Gallery", href: "/gallery", ready: true },
+  { label: "Contact", href: "/contact", ready: true },
 ];
 
 /** Classes in promotion order. Seeded into the database; Super Admin can reorder them. */

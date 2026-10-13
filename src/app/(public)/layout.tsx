@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { PUBLIC_NAV, SCHOOL } from "@/shared/config/school";
+import { ADMISSION, PUBLIC_NAV, SCHOOL } from "@/shared/config/school";
 import { Icon } from "@/shared/ui/icon";
 import { ThemeToggle } from "@/shared/ui/client";
 import { dashboardPath, getViewer } from "@/modules/auth";
@@ -12,8 +12,8 @@ export const metadata: Metadata = {
   description: `${SCHOOL.name}, Festac Town: a nursery and primary school. ${SCHOOL.motto}.`,
 };
 
-// Until notices move into the back office (website module), the bar text lives here.
-const NOTICE = "Admission for the 2026/2027 session has closed. Contact the school office to find out when the next admission opens.";
+// Until notices move into the back office (website module), the bar shows the admission status.
+const NOTICE = ADMISSION.open ? `Admission for the ${ADMISSION.session} session is open.` : ADMISSION.closedNote;
 
 const SOCIALS: [keyof typeof SCHOOL.social, string, string][] = [
   ["facebook", "Facebook", "facebook"],
