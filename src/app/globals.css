@@ -695,6 +695,18 @@ a.chip{text-decoration:none}
 .rename summary::-webkit-details-marker{display:none}
 .rename[open] summary{margin-bottom:8px}
 
+/* Links between the store and the school website */
+.school-foot{margin-top:40px;padding-top:18px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 20px;font-size:13px}
+.school-foot a{color:var(--muted);text-decoration:none}
+.school-foot a:hover{color:var(--red);text-decoration:underline}
+.school-foot-home{display:inline-flex;align-items:center;gap:6px;font-weight:600;color:var(--ink-2)!important}
+.school-foot-links{display:flex;flex-wrap:wrap;gap:6px 16px}
+.back-link{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;font-size:13px;font-weight:600;color:var(--muted);text-decoration:none}
+.back-link:hover{color:var(--red)}
+.login-crest{color:inherit;text-decoration:none}
+.side-site{display:flex;align-items:center;gap:8px;margin:6px 10px 0;padding:8px 10px;border-radius:9px;font-size:13px;color:var(--muted);text-decoration:none}
+.side-site:hover{background:var(--line-2);color:var(--ink)}
+
 @media (max-width:1060px){
   .pub-menu-btn{display:inline-grid}
   .pub-nav{display:none;position:absolute;left:0;right:0;top:100%;margin:0;padding:10px 16px 16px;flex-direction:column;align-items:stretch;gap:2px;background:var(--surface);border-bottom:1px solid var(--line);box-shadow:var(--shadow-lg);max-height:calc(100vh - 68px);overflow-y:auto}

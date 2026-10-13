@@ -3,6 +3,7 @@ import Link from "next/link";
 import { SCHOOL } from "@/shared/config/school";
 import { Icon } from "@/shared/ui/icon";
 import { ThemeToggle } from "@/shared/ui/client";
+import { SchoolFooter } from "@/shared/ui/school-footer";
 import { IdleWatcher, ParentNav } from "@/shared/ui/shell-client";
 import { displayName, endViewAs, getViewer, idleInfo, keepAlive, logout, requireParentActor } from "@/modules/auth";
 import { cartCount } from "@/modules/cart";
@@ -36,7 +37,7 @@ export default async function ParentLayout({ children }: { children: React.React
             </Link>
           </div>
         </header>
-        <main className="main">{children}</main>
+        <main className="main">{children}<SchoolFooter /></main>
         <ParentNav cartCount={count} variant="bottom" />
       </div>
       {!viewAs && !remembered && <IdleWatcher idleSeconds={idle.idleSeconds} keepAlive={keepAlive} logout={logout} />}

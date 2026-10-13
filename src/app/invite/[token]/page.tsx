@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import QRCode from "qrcode";
 import { db } from "@/shared/lib/db";
 import { SCHOOL } from "@/shared/config/school";
@@ -17,10 +18,10 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
   return (
     <main className="main" style={{ maxWidth: 520 }}>
       <div className="stack loose">
-        <div className="brand">
+        <Link className="brand login-crest" href="/" title={`${SCHOOL.name} website`}>
           <Image src="/logo.png" alt="" width={40} height={40} />
           <span><b>{SCHOOL.storeName}</b><small>{SCHOOL.motto}</small></span>
-        </div>
+        </Link>
         {!valid ? (
           <div className="card empty"><h3>This link has expired</h3><p>Ask the school office to send you a new invite.</p></div>
         ) : (

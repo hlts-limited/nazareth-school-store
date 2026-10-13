@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { SCHOOL } from "@/shared/config/school";
 import { requestMeta } from "@/shared/lib/request";
@@ -22,13 +23,13 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     <div className="login">
       <section className="login-art">
         <LoginScene />
-        <div className="row nowrap rise" style={{ gap: 14, position: "relative", zIndex: 1 }}>
+        <Link href="/" className="row nowrap rise login-crest" style={{ gap: 14, position: "relative", zIndex: 1 }}>
           <Image src="/logo.png" alt="Nazareth School crest" width={64} height={64} style={{ background: "#fff", borderRadius: 14, padding: 5 }} priority />
           <div>
             <div className="motto">{SCHOOL.motto}</div>
             <div style={{ fontFamily: "var(--disp)", fontWeight: 700, fontSize: 15, marginTop: 3 }}>{SCHOOL.name}</div>
           </div>
-        </div>
+        </Link>
         <div className="stack" style={{ position: "relative", zIndex: 1 }}>
           <h1><span className="rise d1">Books and uniforms</span> <span className="rise d2">for every child,</span> <span className="rise d3">in one checkout.</span></h1>
           <p className="rise d4">Shop your children&apos;s booklists, pay by card or bank transfer, and know exactly when to come for pick-up.</p>
@@ -41,6 +42,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       </section>
       <section className="login-form">
         <div className="login-box">
+          <Link className="back-link" href="/"><Icon name="back" size="sm" />School website</Link>
           <div className="stack tight"><h2>Sign in</h2><p className="muted">Choose who is signing in.</p></div>
           {ended && (
             <Note tone="warn" icon="shield">
