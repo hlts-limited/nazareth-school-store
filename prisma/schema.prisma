@@ -585,6 +585,60 @@ model ApplicationDocument {
   @@unique([applicationId, kind])
 }
 
+// ---------- Public website content ----------
+
+// Announcement bar messages, shown between startsAt and endsAt
+model Notice {
+  id          String    @id @default(uuid())
+  text        String
+  link        String?
+  startsAt    DateTime  @default(now())
+  endsAt      DateTime?
+  createdById String?
+  createdAt   DateTime  @default(now())
+
+  @@index([startsAt, endsAt])
+}
+
+model Event {
+  id          String    @id @default(uuid())
+  title       String
+  startsAt    DateTime
+  endsAt      DateTime?
+  venue       String?
+  description String?
+  published   Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+
+  @@index([startsAt])
+}
+
+model GalleryPhoto {
+  id        String   @id @default(uuid())
+  album     String // e.g. "Inter-house sports 2026"; photos are grouped by this name
+  caption   String?
+  fileKey   String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([album, sortOrder])
+}
+
+// Messages sent from the website's Contact page
+model Enquiry {
+  id          String    @id @default(uuid())
+  name        String
+  email       String?
+  phone       String?
+  subject     String
+  message     String
+  handledAt   DateTime?
+  handledById String?
+  createdAt   DateTime  @default(now())
+
+  @@index([handledAt, createdAt])
+}
+
 // ---------- System ----------
 
 model Notification {

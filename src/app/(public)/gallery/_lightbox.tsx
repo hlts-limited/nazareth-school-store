@@ -4,7 +4,8 @@ import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Icon } from "@/shared/ui/icon";
 
-type Photo = { src: string; alt: string };
+// `uploaded` photos come from /api/files and are already resized in the browser, so skip Next's optimiser
+type Photo = { src: string; alt: string; uploaded?: boolean };
 
 /** Photo grid; a photo opens full-size in a dialog with previous/next and arrow-key support */
 export function Gallery({ photos }: { photos: Photo[] }) {
@@ -31,7 +32,7 @@ export function Gallery({ photos }: { photos: Photo[] }) {
       <div className="gallery">
         {photos.map((p, i) => (
           <button key={p.src} type="button" className="gallery-item" onClick={() => show(i)} aria-label={`Open photo: ${p.alt}`}>
-            <Image src={p.src} alt={p.alt} fill sizes="(max-width: 600px) 50vw, (max-width: 1060px) 33vw, 300px" />
+            <Image src={p.src} alt={p.alt} fill sizes="(max-width: 600px) 50vw, (max-width: 1060px) 33vw, 300px" unoptimized={p.uploaded} />
           </button>
         ))}
       </div>
@@ -39,7 +40,7 @@ export function Gallery({ photos }: { photos: Photo[] }) {
         {photo && (
           <>
             <div className="lightbox-img">
-              <Image src={photo.src} alt={photo.alt} fill sizes="100vw" loading="eager" />
+              <Image src={photo.src} alt={photo.alt} fill sizes="100vw" loading="eager" unoptimized={photo.uploaded} />
             </div>
             <div className="lightbox-bar">
               <span>{photo.alt} · {at! + 1} of {photos.length}</span>

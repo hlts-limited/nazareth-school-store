@@ -641,6 +641,9 @@ a.chip{text-decoration:none}
 
 /* Admissions (public) */
 .pub-notice a{color:inherit;font-weight:700;text-decoration:underline;text-underline-offset:2px}
+.pub-notice ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;justify-content:center;gap:2px 18px}
+.pub-notice li+li::before{content:"•";margin-right:18px;opacity:.5}
+@media (max-width:640px){.pub-notice ul{flex-direction:column}.pub-notice li+li::before{display:none}}
 .form-wrap{max-width:860px}
 .form-wrap fieldset{margin:0;min-width:0}
 .form-wrap legend{display:flex;align-items:center;gap:10px;float:left;width:100%;margin-bottom:4px;font-family:var(--disp);font-weight:750;font-size:17px}
@@ -672,6 +675,25 @@ a.chip{text-decoration:none}
 @media (max-width:900px){
   .detail-grid{grid-template-columns:minmax(0,1fr)}
 }
+
+/* Website content: events, messages, gallery manager */
+.event{display:flex;gap:16px;align-items:flex-start}
+.event-date{flex:none;width:58px;border-radius:12px;overflow:hidden;text-align:center;border:1px solid var(--line);background:var(--surface)}
+.event-date span{display:block;padding:3px 0;background:var(--red);color:#fff;font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.event-date b{display:block;padding:6px 0 7px;font-family:var(--disp);font-size:22px;line-height:1}
+.event.past{opacity:.75}
+.event.past .event-date span{background:var(--muted)}
+.event-desc{white-space:pre-line;line-height:1.6}
+.event .row.tight svg{flex:none}
+.msg-body{white-space:pre-line;line-height:1.65;padding:12px 14px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line-2)}
+.muted-card{opacity:.8}
+.photo-admin{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.photo-tile{margin:0;display:flex;flex-direction:column;gap:8px;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2)}
+.photo-tile img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:7px;background:var(--line-2)}
+.photo-tile .input{padding:6px 9px;font-size:13px}
+.rename summary{list-style:none}
+.rename summary::-webkit-details-marker{display:none}
+.rename[open] summary{margin-bottom:8px}
 
 @media (max-width:1060px){
   .pub-menu-btn{display:inline-grid}

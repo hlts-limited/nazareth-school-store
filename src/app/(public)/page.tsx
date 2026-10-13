@@ -3,6 +3,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { SCHOOL } from "@/shared/config/school";
 import { Icon } from "@/shared/ui/icon";
+import { upcomingEvents } from "@/modules/website";
+import { EventCard } from "./_events";
 
 export const metadata: Metadata = {
   title: { absolute: `${SCHOOL.name} · ${SCHOOL.tagline}` },
@@ -31,7 +33,8 @@ const REASONS: [string, string, string][] = [
   ["layers", "Modern facilities", "Computer and science laboratories, a library, and sports facilities."],
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const events = await upcomingEvents(3);
   return (
     <>
       <section className="hero">
@@ -99,6 +102,16 @@ export default function HomePage() {
           ))}
         </div>
       </section>
+
+      {events.length > 0 && (
+        <section className="pub-sec">
+          <div className="pub-sec-h row between">
+            <div className="stack tight"><span className="eyebrow">What&apos;s on</span><h2>Upcoming events</h2></div>
+            <Link className="btn" href="/events">All events<Icon name="chev" size="sm" /></Link>
+          </div>
+          <div className="grid g3">{events.map((e) => <EventCard key={e.id} e={e} />)}</div>
+        </section>
+      )}
 
       <section className="pub-sec">
         <div className="store-cta">

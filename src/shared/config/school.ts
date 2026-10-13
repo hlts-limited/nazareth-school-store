@@ -47,7 +47,10 @@ export const PUBLIC_NAV: { label: string; href: string; ready: boolean; children
     { label: "Apply online", href: "/admissions/apply" },
     { label: "Admission results", href: "/admissions/results" },
   ] },
-  { label: "Gallery", href: "/gallery", ready: true },
+  { label: "School life", href: "/gallery", ready: true, children: [
+    { label: "Gallery", href: "/gallery" },
+    { label: "Events", href: "/events" },
+  ] },
   { label: "Contact", href: "/contact", ready: true },
 ];
 

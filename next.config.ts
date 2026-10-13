@@ -31,7 +31,7 @@ const headersWith = (policy: string) => [
 ];
 
 /** Paths served by the public website, src/app/(public). */
-const PUBLIC_PATHS = ["/", "/about/:path*", "/schools/:path*", "/academics/:path*", "/admissions/:path*", "/gallery", "/contact"];
+const PUBLIC_PATHS = ["/", "/about/:path*", "/schools/:path*", "/academics/:path*", "/admissions/:path*", "/gallery", "/events", "/contact"];
 
 /** Old website addresses (the static .html site) and section roots, sent to the new pages */
 const REDIRECTS: [string, string][] = [

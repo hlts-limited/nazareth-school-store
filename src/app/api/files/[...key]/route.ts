@@ -3,11 +3,11 @@ import { db } from "@/shared/lib/db";
 import { sniffType, storage } from "@/shared/lib/storage";
 import { getViewAs, getViewer } from "@/modules/auth";
 
-/** Serves stored files. Product photos are public; receipts only for the parent who uploaded them and accounts staff;
+/** Serves stored files. Product and gallery photos are public; receipts only for the parent who uploaded them and accounts staff;
  *  admission documents only for admissions staff. */
 export async function GET(_: Request, { params }: { params: Promise<{ key: string[] }> }) {
   const key = (await params).key.join("/");
-  if (key.startsWith("items/")) return serve(key, "public, max-age=31536000, immutable");
+  if (key.startsWith("items/") || key.startsWith("gallery/")) return serve(key, "public, max-age=31536000, immutable");
   if (key.startsWith("admissions/")) {
     const v = await getViewer();
     if (!v) return new NextResponse("Sign in required", { status: 401 });

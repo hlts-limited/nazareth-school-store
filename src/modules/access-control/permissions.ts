@@ -21,6 +21,7 @@ export const PERMISSIONS = {
   ADMISSIONS_VIEW: "admissions.view",
   ADMISSIONS_MANAGE: "admissions.manage",
   ADMISSIONS_PUBLISH: "admissions.publish",
+  WEBSITE_MANAGE: "website.manage",
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -37,7 +38,7 @@ export const ROLE_DEFS: { id: string; name: string; permissions: Permission[]; r
   },
   {
     id: "secretary", name: "Secretary", requires2fa: false,
-    permissions: [P.PUPILS_VIEW, P.PUPILS_MANAGE, P.PUPILS_DELETE, P.ADMISSIONS_VIEW, P.ADMISSIONS_MANAGE, P.ADMISSIONS_PUBLISH],
+    permissions: [P.PUPILS_VIEW, P.PUPILS_MANAGE, P.PUPILS_DELETE, P.ADMISSIONS_VIEW, P.ADMISSIONS_MANAGE, P.ADMISSIONS_PUBLISH, P.WEBSITE_MANAGE],
   },
   {
     id: "admin", name: "Super Admin", requires2fa: true,
@@ -48,7 +49,7 @@ export const ROLE_DEFS: { id: string; name: string; permissions: Permission[]; r
 export const roleName = (id: string) => ROLE_DEFS.find((r) => r.id === id)?.name ?? id;
 
 /** Staff areas shown in the back office; a person sees the areas their permissions allow. */
-export const STAFF_SECTIONS: { id: string; label: string; perm: Permission; items: { href: string; label: string; icon: string; badge?: "review" | "pack" | "bin" | "apps" }[] }[] = [
+export const STAFF_SECTIONS: { id: string; label: string; perm: Permission; items: { href: string; label: string; icon: string; badge?: "review" | "pack" | "bin" | "apps" | "enq" }[] }[] = [
   {
     id: "admin", label: "Super Admin", perm: P.SETTINGS_MANAGE,
     items: [
@@ -96,6 +97,15 @@ export const STAFF_SECTIONS: { id: string; label: string; perm: Permission; item
     items: [
       { href: "/admin/admissions", label: "Applications", icon: "file", badge: "apps" },
       { href: "/admin/admissions/windows", label: "Windows & exams", icon: "clock" },
+    ],
+  },
+  {
+    id: "website", label: "Website", perm: P.WEBSITE_MANAGE,
+    items: [
+      { href: "/admin/website", label: "Messages", icon: "mail", badge: "enq" },
+      { href: "/admin/website/notices", label: "Notices", icon: "bell" },
+      { href: "/admin/website/events", label: "Events", icon: "clock" },
+      { href: "/admin/website/gallery", label: "Gallery", icon: "layers" },
     ],
   },
 ];

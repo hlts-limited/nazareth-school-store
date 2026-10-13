@@ -6,13 +6,13 @@ import { Icon } from "@/shared/ui/icon";
 import { ThemeToggle } from "@/shared/ui/client";
 import { dashboardPath, getViewer } from "@/modules/auth";
 import { admissionNotice, admissionStatus } from "@/modules/admissions";
+import { activeNotices } from "@/modules/website";
 import { PublicNav } from "./_nav";
 
 export const metadata: Metadata = {
   title: { default: SCHOOL.name, template: `%s · ${SCHOOL.name}` },
   description: `${SCHOOL.name}, Festac Town: a nursery and primary school. ${SCHOOL.motto}.`,
 };
-
 
 const SOCIALS: [keyof typeof SCHOOL.social, string, string][] = [
   ["facebook", "Facebook", "facebook"],
@@ -23,17 +23,21 @@ const SOCIALS: [keyof typeof SCHOOL.social, string, string][] = [
 ];
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
-  const [viewer, admission] = await Promise.all([getViewer(), admissionStatus()]);
-  // Until notices move into the back office (website module), the bar shows the admission status.
-  const notice = admissionNotice(admission);
+  const [viewer, admission, notices] = await Promise.all([getViewer(), admissionStatus(), activeNotices()]);
   const nav = PUBLIC_NAV.filter((n) => n.ready);
 
   return (
     <div className="pub">
       <a className="skip-link" href="#content">Skip to content</a>
+      {/* School notices from the back office (Website → Notices), then the admission status */}
       <div className="pub-notice" role="note">
         <Icon name="info" size="sm" />
-        <span>{notice}{admission.open && <> <Link href="/admissions/apply">Apply online</Link></>}</span>
+        <ul>
+          {notices.map((n) => (
+            <li key={n.id}>{n.text}{n.link && <> <a href={n.link} {...(n.link.startsWith("/") ? {} : { target: "_blank", rel: "noopener noreferrer" })}>Find out more</a></>}</li>
+          ))}
+          <li>{admissionNotice(admission)}{admission.open && <> <Link href="/admissions/apply">Apply online</Link></>}</li>
+        </ul>
       </div>
 
       <header className="pub-top">
