@@ -8,7 +8,7 @@ import { fail, ok, parseForm, runAction, zText, type ActionResult, UserError } f
 import { normalizePhone } from "@/shared/lib/format";
 import { requestMeta } from "@/shared/lib/request";
 import { isProd } from "@/shared/config/env";
-import { ROLE_DEFS } from "@/modules/access-control";
+import { ROLE_DEFS, roleName } from "@/modules/access-control";
 import { audit } from "@/modules/audit";
 import { getSettings } from "@/modules/settings";
 import { notify } from "@/modules/notifications";
@@ -89,7 +89,7 @@ export async function loginStaff(_: ActionResult, form: FormData): Promise<Actio
     }
     await recordAttempt(key, true);
     await createSession("STAFF", { userId: user.id }, { isAdmin: roles.includes("admin") });
-    await audit({ id: user.id, name: `${user.firstName} ${user.lastName}`, role: roles.join(", "), ip }, "Signed in", "Session");
+    await audit({ id: user.id, name: `${user.firstName} ${user.lastName}`, role: roles.map(roleName).join(", "), ip }, "Signed in", "Session");
     return ok(undefined, { redirect: "/admin" });
   });
 }

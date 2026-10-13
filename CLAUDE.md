@@ -3,10 +3,14 @@
 Nazareth School Store: parents buy books and school accessories for all their children in one checkout.
 Stack: Next.js 15 (App Router, server actions), React 19, PostgreSQL + Prisma 6, Tailwind v4 (+ custom CSS in src/app/globals.css), TypeScript. Windows dev machine.
 
-## Status (handover)
-- Code was written in a cloud workspace that couldn't download npm packages, so it has **never been installed, built or run**. First job: `npm install`, set up `.env`, `npm run db:up`, `npm run setup`, `npm run dev`, then fix any build/type errors.
-- Verified so far: unit tests in tests/ (payment maths, encryption, file checks, S3 signing), schema + raw SQL tested on PostgreSQL 16.
+## Status
+- Installs, builds and runs locally on Windows (Node 24, PostgreSQL 18 installed natively; no Docker). `npm test`, `npm run typecheck`, `npm run lint` and `npm run build` all pass. Production runs on Vercel (fra1).
+- Local database without Docker: create role `nazareth` (password `nazareth`, CREATEDB) and database `nazareth_store` in PostgreSQL, then `npm run setup`.
+- Checked by hand with the demo accounts: parent (booklist → cart → simulated Paystack → approved), pupil dashboard, and registrar / secretary / accountant / Super Admin back offices, including role boundaries and the audit log.
 - "Not built yet" list is at the end of README.md.
+
+## In progress: website merge (branch `website-merge`)
+The public school website (previously static HTML in hlts-limited/Nazareth-website) is being moved into this app so the website, admissions and store are one system with one database and one back office. Phases: public site frame → content pages → admissions module → gallery/events/notices → shared navigation → tests → retire the old site. Do not point nazarethpryschool.org at this app until the owner says so.
 
 ## Conventions
 - Modular monolith: features live in src/modules/<name>/ with service.ts (logic + DB), actions.ts ("use server": permission check → zod validation → service → audit log), index.ts (public API). Outside a module, import only from "@/modules/<name>" (ESLint rule enforces this).
