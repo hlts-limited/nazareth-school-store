@@ -1,4 +1,4 @@
-import { DEFAULT_CLASSES } from "../config/school";
+import { DEFAULT_CLASSES, divisionOf } from "../config/school";
 
 /** Admission class by age: 2 → Kindergarten, 3 → Pre-Nursery, 4 → Prep 1 … 10 → Primary 5. Primary 6 doesn't admit new pupils. */
 export const MIN_AGE = 2;
@@ -17,15 +17,16 @@ export function ageOn(dob: string, day: string) {
   return y2 - y1 - (m2 < m1 || (m2 === m1 && d2 < d1) ? 1 : 0);
 }
 
-export type AgeClass = { age: number; on: string; className: string | null; problem: string | null };
+export type AgeClass = { age: number; on: string; className: string | null; school: string | null; problem: string | null };
 
 export function admissionClassFor(dob: string, session: string): AgeClass {
   const on = ageDay(session);
   const age = ageOn(dob, on);
   const when = new Date(`${on}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
-  if (age < MIN_AGE) return { age, on, className: null, problem: `Children must be at least ${MIN_AGE} years old on ${when} (the start of the ${session} session).` };
-  if (age > MAX_AGE) return { age, on, className: null, problem: `Admission is for children aged ${MIN_AGE} to ${MAX_AGE} on ${when}. We don't admit new pupils into Primary 6.` };
-  return { age, on, className: ADMISSION_CLASSES[age - MIN_AGE], problem: null };
+  if (age < MIN_AGE) return { age, on, className: null, school: null, problem: `Children must be at least ${MIN_AGE} years old on ${when} (the start of the ${session} session).` };
+  if (age > MAX_AGE) return { age, on, className: null, school: null, problem: `Admission is for children aged ${MIN_AGE} to ${MAX_AGE} on ${when}. We don't admit new pupils into Primary 6.` };
+  const className = ADMISSION_CLASSES[age - MIN_AGE];
+  return { age, on, className, school: divisionOf(className)?.name ?? null, problem: null };
 }
 
 /** A stored date of birth (midnight in Lagos) back to YYYY-MM-DD */

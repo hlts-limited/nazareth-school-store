@@ -467,7 +467,7 @@ table.t tbody tr.sel:hover td{background:var(--red-soft)}
 .bars .b .track{height:10px;border-radius:9px;background:var(--line-2);overflow:hidden}
 .bars .b .track span{display:block;height:100%;border-radius:9px;background:var(--red)}
 @media (max-width:520px){.bars .b{grid-template-columns:96px 1fr 72px}}
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 
 @media (min-width:981px){.show-md{display:none!important}}
 button.pay-opt{width:100%;text-align:left;color:inherit;font:inherit}
@@ -733,3 +733,85 @@ a.chip{text-decoration:none}
   .pub-foot-in{grid-template-columns:minmax(0,1fr)}
   .pub-top .brand b{font-size:15px}
 }
+
+/* =========================================================================
+   Motion and polish (website, store and back office)
+   Everything here is switched off by the prefers-reduced-motion rule above.
+   ========================================================================= */
+:root{--ease:cubic-bezier(.2,.8,.2,1);--ease-spring:cubic-bezier(.34,1.56,.64,1)}
+
+/* Buttons: soft lift on hover, press-in on click, a light sweep across primary buttons */
+.btn{position:relative;overflow:hidden;isolation:isolate;transition:transform .18s var(--ease),box-shadow .22s var(--ease),background-color .2s,border-color .2s,color .2s;box-shadow:0 1px 0 rgba(35,31,32,.04)}
+.btn:hover{transform:translateY(-1px);box-shadow:0 6px 16px -8px rgba(35,31,32,.28)}
+.btn:active{transform:translateY(0) scale(.97);box-shadow:0 1px 0 rgba(35,31,32,.04);transition-duration:.06s}
+.btn:focus-visible{outline:none;box-shadow:0 0 0 2px var(--surface),0 0 0 4.5px var(--red)}
+.btn.ghost,.btn.ghost:hover{box-shadow:none}
+.btn[disabled]:hover,.btn.is-disabled:hover,.btn[disabled]:active{transform:none;box-shadow:none}
+.btn.primary{background:linear-gradient(180deg,color-mix(in srgb,var(--red-fill,var(--red)) 86%,#fff) 0%,var(--red-fill,var(--red)) 60%);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 6px 16px -8px color-mix(in srgb,var(--red) 75%,transparent)}
+.btn.primary:hover{background:linear-gradient(180deg,var(--red-fill,var(--red)) 0%,var(--red-fill-hover,var(--red-ink)) 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 12px 24px -10px color-mix(in srgb,var(--red) 85%,transparent)}
+.btn.primary::after,.btn.success::after,.btn.wa::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(110deg,transparent 35%,rgba(255,255,255,.3) 50%,transparent 65%);transform:translateX(-130%);transition:transform .7s var(--ease);pointer-events:none}
+.btn.primary:hover::after,.btn.success:hover::after,.btn.wa:hover::after{transform:translateX(130%)}
+.btn.success,.btn.wa{box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 6px 16px -8px rgba(28,124,71,.6)}
+.btn.dark:hover{box-shadow:0 10px 22px -10px rgba(35,31,32,.6)}
+.btn svg{transition:transform .22s var(--ease)}
+.btn:hover>svg:last-child:not(:first-child){transform:translateX(3px)}
+.icon-btn{transition:background-color .2s,color .2s,transform .18s var(--ease)}
+.icon-btn:active{transform:scale(.92)}
+.chip{transition:border-color .2s,background-color .2s,color .2s,transform .18s var(--ease)}
+.chip:hover{transform:translateY(-1px)}
+
+/* Form fields: gentle highlight on hover and focus */
+.input{transition:border-color .2s,box-shadow .2s,background-color .2s}
+.input:hover:not(:focus):not([disabled]){border-color:var(--faint)}
+
+/* Cards that lead somewhere lift towards the pointer; photos zoom slightly */
+.lift,.school-card{transition:transform .3s var(--ease),box-shadow .3s var(--ease),border-color .3s}
+.lift:hover,.school-card:has(.card-link):hover{transform:translateY(-4px);box-shadow:var(--shadow-lg);border-color:transparent}
+.school-card-img{overflow:hidden}
+.school-card-img img{transition:transform .8s var(--ease)}
+.school-card:hover .school-card-img img{transform:scale(1.05)}
+
+/* Tables and the back-office menu */
+.t tbody tr{transition:background-color .15s}
+.t tbody tr:hover{background:var(--surface-2)}
+.side .nav{position:relative;transition:background-color .2s,color .2s}
+.side .nav.on::before{content:"";position:absolute;left:-12px;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--red);animation:bar-in .3s var(--ease-spring)}
+@keyframes bar-in{from{transform:scaleY(0)}}
+
+/* Website menu: dropdowns and the phone menu slide in */
+.pub-nav>a,.pub-dd>summary{transition:background-color .2s,color .2s}
+.pub-dd-menu{transform-origin:top left}
+.pub-dd[open]>.pub-dd-menu{animation:dd-in .2s var(--ease)}
+.pub-dd-menu a{transition:background-color .15s,color .15s,padding-left .2s var(--ease)}
+.pub-dd-menu a:hover{padding-left:16px}
+@keyframes dd-in{from{opacity:0;transform:translateY(-6px) scale(.97)}}
+.pub-menu-btn svg{transition:transform .3s var(--ease-spring)}
+.pub-menu-btn.is-open svg{transform:rotate(90deg)}
+@media (max-width:1060px){
+  .pub-nav.open{animation:menu-in .25s var(--ease)}
+  .pub-dd[open]>.pub-dd-menu{animation:fade .2s}
+}
+@keyframes menu-in{from{opacity:0;transform:translateY(-10px)}}
+
+/* Homepage hero: the photo settles in and the words rise one after another */
+.hero-img{animation:settle 14s var(--ease) both}
+@keyframes settle{from{transform:scale(1.08)}}
+.hero-in>*,.page-hero-in>*{animation:rise-in .8s var(--ease) both}
+.hero-in>:nth-child(2),.page-hero-in>:nth-child(2){animation-delay:.08s}
+.hero-in>:nth-child(3),.page-hero-in>:nth-child(3){animation-delay:.16s}
+.hero-in>:nth-child(4),.page-hero-in>:nth-child(4){animation-delay:.24s}
+@keyframes rise-in{from{opacity:0;translate:0 18px}}
+
+/* Pages fade in when you move between them */
+.page-in{animation:page-in .35s var(--ease) both}
+@keyframes page-in{from{opacity:0;translate:0 8px}}
+
+/* Website sections reveal as you scroll (browsers without scroll-driven animations simply show them) */
+@supports (animation-timeline: view()){
+  .pub-main :is(.pub-sec-h,.grid>*,.welcome,.steps>li,.faq>details,.store-cta){animation:reveal linear both;animation-timeline:view();animation-range:entry 0% entry 30%}
+}
+@keyframes reveal{from{opacity:0;translate:0 28px}}
+
+/* Notifications slide in from the side */
+.toast{animation:toast-in .35s var(--ease-spring)}
+@keyframes toast-in{from{opacity:0;transform:translateX(24px) scale(.96)}}

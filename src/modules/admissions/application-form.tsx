@@ -100,7 +100,7 @@ export function ApplicationFields({ action, mode, windows, classes = [], submitL
             <span className="lbl">Class</span>
             <div className={`age-class ${byAge?.problem ? "bad" : ""}`} aria-live="polite">
               {!byAge ? <span className="muted">Chosen by age once you enter the date of birth.</span>
-                : byAge.className ? <><b>{byAge.className}</b><span className="small muted"> · age {byAge.age} on {AGE_DAY} {byAge.on.slice(0, 4)}</span></>
+                : byAge.className ? <><b>{byAge.className}</b>{byAge.school && <span className="pill plain">{byAge.school}</span>}<span className="small muted"> · age {byAge.age} on {AGE_DAY} {byAge.on.slice(0, 4)}</span></>
                   : <span>{byAge.problem}</span>}
             </div>
             {office && (

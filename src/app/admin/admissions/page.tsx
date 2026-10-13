@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { fmtDate, fmtDateTime } from "@/shared/lib/format";
+import { SCHOOL_DIVISIONS, divisionOf } from "@/shared/config/school";
 import { LinkButton, PageHeader, Empty } from "@/shared/ui/primitives";
 import { ActionForm, SearchParamInput, SearchParamSelect, SubmitButton } from "@/shared/ui/client";
 import { Icon } from "@/shared/ui/icon";
@@ -11,14 +12,14 @@ import { SelectAll } from "./_select";
 
 export const metadata = { title: "Applications" };
 
-export default async function ApplicationsPage({ searchParams }: { searchParams: Promise<{ w?: string; status?: string; cls?: string; q?: string; page?: string }> }) {
+export default async function ApplicationsPage({ searchParams }: { searchParams: Promise<{ w?: string; status?: string; cls?: string; school?: string; q?: string; page?: string }> }) {
   const v = await requireStaff("admissions.view");
   const sp = await searchParams;
   const [windows, classes, current] = await Promise.all([listWindows(), listClasses(), admissionStatus()]);
   const windowId = sp.w === "all" ? undefined : (sp.w ?? current.window?.id);
-  const res = await listApplications({ windowId, status: sp.status, classId: sp.cls, q: sp.q, page: Number(sp.page) || 1 });
+  const res = await listApplications({ windowId, status: sp.status, classId: sp.cls, school: sp.school, q: sp.q, page: Number(sp.page) || 1 });
   const required = DOC_KINDS.filter((d) => d.required).map((d) => d.kind);
-  const params = (extra: Record<string, string>) => `/admin/admissions?${new URLSearchParams({ ...(sp.w ? { w: sp.w } : {}), ...(sp.cls ? { cls: sp.cls } : {}), ...(sp.q ? { q: sp.q } : {}), ...(sp.status ? { status: sp.status } : {}), ...extra })}`;
+  const params = (extra: Record<string, string>) => `/admin/admissions?${new URLSearchParams({ ...(sp.w ? { w: sp.w } : {}), ...(sp.cls ? { cls: sp.cls } : {}), ...(sp.school ? { school: sp.school } : {}), ...(sp.q ? { q: sp.q } : {}), ...(sp.status ? { status: sp.status } : {}), ...extra })}`;
   const total = Object.values(res.counts).reduce((a, b) => a + (b ?? 0), 0);
   const canManage = v.permissions.has("admissions.manage");
   const slots = windows.find((w) => w.id === windowId)?.examSlots.filter((s) => s.startsAt > new Date()) ?? [];
@@ -57,6 +58,7 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
         <section className="card"><div className="row">
           <SearchParamInput param="q" id="ap-q" placeholder="Name, application number or phone" width={260} />
           <SearchParamSelect param="w" id="ap-w" label="Session" options={[...windows.map((w) => [w.id, w.session] as [string, string]), ["all", "All sessions"]]} />
+          <SearchParamSelect param="school" id="ap-school" label="School" options={[["", "All schools"], ...SCHOOL_DIVISIONS.map((d) => [d.id, d.name] as [string, string])]} />
           <SearchParamSelect param="cls" id="ap-cls" label="Class" options={[["", "All classes"], ...classes.map((c) => [c.id, c.name] as [string, string])]} />
         </div></section>
 
@@ -71,7 +73,7 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
                   <option value="" disabled>Choose…</option>
                   <optgroup label="Book the entrance exam">
                     {slots.length ? slots.map((s) => <option key={s.id} value={`slot:${s.id}`}>{fmtDateTime(s.startsAt)} · {s.venue} ({s._count.applications}/{s.capacity})</option>)
-                      : <option value="" disabled>No upcoming exam slots: add them under Windows &amp; exams</option>}
+                      : <option value="no-slots" disabled>No upcoming exam slots: add them under Windows &amp; exams</option>}
                   </optgroup>
                   <optgroup label="Record the exam result">
                     <option value="ADMITTED">Passed: admit</option>
@@ -92,7 +94,7 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
                       {canManage && <td data-label=""><input type="checkbox" name="ids" value={a.id} form="bulk-form" aria-label={`Select ${a.otherNames} ${a.surname}`} /></td>}
                       <td data-label="Application"><Link className="mono" href={`/admin/admissions/${a.id}`}>{a.number}</Link></td>
                       <td data-label="Child"><b>{a.surname}</b>, {a.otherNames}</td>
-                      <td data-label="Class">{a.class.name}</td>
+                      <td data-label="Class">{a.class.name}<div className="small muted">{divisionOf(a.class.name)?.name}</div></td>
                       <td data-label="Parent">{a.parentName}<div className="small muted">{a.parentPhone}</div></td>
                       <td data-label="Documents">{have === required.length ? <span className="pill ok">Complete</span> : <span className="pill warn">{have}/{required.length} required</span>}</td>
                       <td data-label="Status"><span className={`pill ${STATUS_TONE[a.status]}`}>{STATUS_LABEL[a.status]}</span>{a.examSlot && a.status === "EXAM_SCHEDULED" && <div className="small muted">{fmtDate(a.examSlot.startsAt)}</div>}</td>

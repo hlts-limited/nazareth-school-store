@@ -21,22 +21,22 @@ export default async function ApplyPage() {
             {admissionNotice(s)}
             {s.open && s.window && <> {s.window.formFee ? `The form fee is ${naira(s.window.formFee)}, paid securely online.` : "There is no form fee."}</>}
           </Note>
-          <div className="grid g2">
+          <div className="grid g3">
             {SCHOOLS.map((sc) => (
-              <article key={sc.href} className="card stack">
+              <article key={sc.href} className="card stack lift">
                 <div className="stack tight">
                   <span className="eyebrow">Admission form</span>
                   <h2>{sc.name}</h2>
                   <p className="muted">For children joining:</p>
                 </div>
                 <div className="row tight">
-                  {STAGES.filter((st) => sc.stages.includes(st.id)).flatMap((st) => st.classes).map((c) => <span key={c} className="pill plain">{c}</span>)}
+                  {STAGES.filter((st) => (sc.stages as string[]).includes(st.id)).flatMap((st) => st.classes).map((c) => <span key={c} className="pill plain">{c}</span>)}
                 </div>
                 <div className="row" style={{ marginTop: "auto" }}>
                   {s.open
                     ? <Link className="btn primary" href={`/admissions/apply/form?school=${sc.href.split("/").pop()}`}>Start application<Icon name="chev" size="sm" /></Link>
                     : <button type="button" className="btn primary" disabled>Applications closed</button>}
-                  <Link className="btn" href={sc.href}>About the {sc.name}</Link>
+                  <Link className="btn" href={sc.href}>About {sc.name}</Link>
                 </div>
               </article>
             ))}

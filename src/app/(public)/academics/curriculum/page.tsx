@@ -11,7 +11,7 @@ export default function CurriculumPage() {
   return (
     <>
       <PageHero crumb={[["Academics"], ["Curriculum"]]} title="Our curriculum" lead="Excellence in education, one pupil at a time — from Kindergarten through Primary 6." img="/images/cultural-day/07.jpg" />
-      <Section title="Our academic programmes" lead={`${SCHOOL.name} offers a full education from Kindergarten through Primary School. Our curriculum and experienced educators help pupils achieve strong results at every level, while our foundation of faith and discipline nurtures their character and moral values.`}>
+      <Section title="Our academic programmes" lead={`${SCHOOL.name} offers a full education from Kindergarten to Primary 6, across our Pre-School, School A and School B. Our curriculum and experienced educators help pupils achieve strong results at every level, while our foundation of faith and discipline nurtures their character and moral values.`}>
         <nav className="row tight" aria-label="Jump to stage">
           {STAGES.map((s) => <a key={s.id} className="chip" href={`#${s.id}`}>{s.name}</a>)}
           <a className="chip" href="#subjects">Subjects &amp; facilities</a>

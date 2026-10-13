@@ -4,7 +4,7 @@ import { fmtDate, fmtDateTime, naira } from "@/shared/lib/format";
 import { ActionForm, FieldError, SubmitButton } from "@/shared/ui/client";
 import { Icon } from "@/shared/ui/icon";
 import { Note, PageHeader } from "@/shared/ui/primitives";
-import { SCHOOL } from "@/shared/config/school";
+import { SCHOOL, divisionOf } from "@/shared/config/school";
 import { AGE_DAY, admissionClassFor, lagosDay } from "@/shared/lib/admission-age";
 import { requireStaff } from "@/modules/auth";
 import { listClasses } from "@/modules/catalogue";
@@ -47,7 +47,7 @@ export default async function ApplicationDetailPage({ params, searchParams }: { 
     <div style={{ maxWidth: 1080 }}>
       <PageHeader
         title={<span className="row tight">{app.surname}, {app.otherNames} <span className={`pill ${STATUS_TONE[app.status]}`}>{STATUS_LABEL[app.status]}</span></span>}
-        sub={<><span className="mono">{app.number}</span> · {app.class.name} · {app.window.session} session</>}
+        sub={<><span className="mono">{app.number}</span> · {app.class.name}{divisionOf(app.class.name) ? ` (${divisionOf(app.class.name)!.name})` : ""} · {app.window.session} session</>}
         actions={<Link className="btn" href="/admin/admissions"><Icon name="back" size="sm" />All applications</Link>}
       />
       <div className="detail-grid">
@@ -62,7 +62,7 @@ export default async function ApplicationDetailPage({ params, searchParams }: { 
               <div><dt>Full name</dt><dd>{app.otherNames} {app.surname}</dd></div>
               <div><dt>Date of birth</dt><dd>{fmtDate(app.dateOfBirth)} (age {age(app.dateOfBirth)} now, {byAge.age} on {AGE_DAY} {byAge.on.slice(0, 4)}{byAge.className ? `: ${byAge.className} by age` : ""})</dd></div>
               <div><dt>Gender</dt><dd>{app.gender}</dd></div>
-              <div><dt>Applying for</dt><dd>{app.class.name}</dd></div>
+              <div><dt>Applying for</dt><dd>{app.class.name}{divisionOf(app.class.name) ? `, ${divisionOf(app.class.name)!.name}` : ""}</dd></div>
               <div><dt>Previous school</dt><dd>{app.previousSchool ?? "—"}</dd></div>
               {DETAIL_LABELS.slice(0, 5).filter(([k]) => details[k]).map(([k, l]) => <div key={k}><dt>{l}</dt><dd>{details[k]}</dd></div>)}
             </dl>

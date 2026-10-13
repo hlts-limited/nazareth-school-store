@@ -1,4 +1,4 @@
-import { DEFAULT_CLASSES } from "@/shared/config/school";
+import { DEFAULT_CLASSES, SCHOOL_DIVISIONS } from "@/shared/config/school";
 
 // Content shared by the Our schools, Curriculum and Admissions pages.
 // Class lists come from DEFAULT_CLASSES so they always match the store (including Prep 2).
@@ -15,37 +15,34 @@ export const STAGES = [
     areas: ["Phonics & numeracy", "Creative arts & music", "Social skills development", "Play-based & structured learning"],
   },
   {
-    id: "lower-primary",
-    name: "Lower Primary",
+    id: "school-a",
+    name: "School A",
     classes: classes("Prep 1", "Primary 2"),
     text: "Strong academic foundations, with a balanced curriculum that develops critical thinking and problem-solving abilities.",
     areas: ["English, Mathematics & Science", "Computer Studies", "French Language"],
   },
   {
-    id: "upper-primary",
-    name: "Upper Primary",
+    id: "school-b",
+    name: "School B",
     classes: classes("Primary 3", "Primary 6"),
     text: "A rigorous programme aligned with national standards that prepares pupils for the next stage of their education.",
     areas: ["FSLC (First School Leaving Certificate) preparation", "Coding programmes", "Core subjects aligned with national standards"],
   },
 ];
 
-export const SCHOOLS = [
-  {
-    href: "/schools/pre-school",
-    name: "Pre-School",
-    classes: "Kindergarten & Pre-Nursery",
-    stages: ["pre-school"],
-    summary: "A nurturing start where young learners build foundational skills through play-based and structured learning.",
-  },
-  {
-    href: "/schools/primary",
-    name: "Primary School",
-    classes: "Prep 1 – Primary 6",
-    stages: ["lower-primary", "upper-primary"],
-    summary: "A balanced curriculum that builds strong foundations, critical thinking, and readiness for the FSLC examination.",
-  },
-];
+/** The three schools, in order. Classes come from SCHOOL_DIVISIONS so admissions and the back office agree. */
+export const SCHOOLS = SCHOOL_DIVISIONS.map((d) => ({
+  id: d.id,
+  href: `/schools/${d.id}`,
+  name: d.name,
+  classes: `${d.classes[0]} – ${d.classes[d.classes.length - 1]}`.replace("Kindergarten – Pre-Nursery", "Kindergarten & Pre-Nursery"),
+  stages: [d.id],
+  ...{
+    "pre-school": { summary: "A nurturing start where young learners build foundational skills through play-based and structured learning.", img: "/images/cultural-day/05.jpg" },
+    "school-a": { summary: "Strong foundations in reading, numbers and science, with a balanced curriculum that builds confident thinkers.", img: "/images/cultural-day/12.jpg" },
+    "school-b": { summary: "A rigorous programme that builds critical thinking and prepares pupils for the FSLC examination and secondary school.", img: "/images/cultural-day/13.jpg" },
+  }[d.id],
+}));
 
 export const SUBJECTS = ["Mathematics", "English Language", "Science", "History", "Computer Science", "Coding", "General Paper", "Home Economics"];
 

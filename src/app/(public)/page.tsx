@@ -5,27 +5,12 @@ import { SCHOOL } from "@/shared/config/school";
 import { Icon } from "@/shared/ui/icon";
 import { upcomingEvents } from "@/modules/website";
 import { EventCard } from "./_events";
+import { SCHOOLS } from "./_content";
 
 export const metadata: Metadata = {
   title: { absolute: `${SCHOOL.name} · ${SCHOOL.tagline}` },
 };
 
-const SCHOOLS = [
-  {
-    name: "Pre-School",
-    href: "/schools/pre-school",
-    classes: "Kindergarten & Pre-Nursery",
-    text: "A nurturing start where young learners build foundational skills through play-based and structured learning.",
-    img: "/images/cultural-day/05.jpg",
-  },
-  {
-    name: "Primary School",
-    href: "/schools/primary",
-    classes: "Prep 1 – Primary 6",
-    text: "A balanced curriculum that builds strong foundations, critical thinking, and readiness for the FSLC examination.",
-    img: "/images/cultural-day/13.jpg",
-  },
-];
 
 const REASONS: [string, string, string][] = [
   ["shield", "Faith & discipline", "Built on a strong foundation of faith, discipline, and academic excellence."],
@@ -55,16 +40,16 @@ export default async function HomePage() {
           <span className="eyebrow">Our schools</span>
           <h2>From Kindergarten to Primary 6</h2>
         </div>
-        <div className="grid g2">
+        <div className="grid g3">
           {SCHOOLS.map((s) => (
-            <article key={s.name} className="card pad-0 school-card">
+            <article key={s.name} className="card pad-0 school-card lift">
               <div className="school-card-img">
-                <Image src={s.img} alt={`${s.name} pupils at Cultural Day`} fill sizes="(max-width: 860px) 100vw, 600px" />
+                <Image src={s.img} alt={`${s.name} pupils at Cultural Day`} fill sizes="(max-width: 860px) 100vw, 400px" />
                 <span className="pill plain">{s.classes}</span>
               </div>
               <div className="stack tight card-b">
                 <h3><Link className="card-link" href={s.href}>{s.name}</Link></h3>
-                <p className="muted">{s.text}</p>
+                <p className="muted">{s.summary}</p>
               </div>
             </article>
           ))}

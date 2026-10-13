@@ -34,7 +34,8 @@ export const PUBLIC_NAV: { label: string; href: string; ready: boolean; children
   ] },
   { label: "Our schools", href: "/schools/pre-school", ready: true, children: [
     { label: "Pre-School", href: "/schools/pre-school" },
-    { label: "Primary School", href: "/schools/primary" },
+    { label: "School A", href: "/schools/school-a" },
+    { label: "School B", href: "/schools/school-b" },
   ] },
   { label: "Academics", href: "/academics/curriculum", ready: true, children: [
     { label: "Curriculum", href: "/academics/curriculum" },
@@ -67,5 +68,17 @@ export const DEFAULT_CLASSES = [
   "Primary 5",
   "Primary 6",
 ] as const;
+
+/** The school's three sections, by class. Used by the website, admissions and the back office. */
+export const SCHOOL_DIVISIONS = [
+  { id: "pre-school", name: "Pre-School", classes: ["Kindergarten", "Pre-Nursery"] },
+  { id: "school-a", name: "School A", classes: ["Prep 1", "Prep 2", "Primary 1", "Primary 2"] },
+  { id: "school-b", name: "School B", classes: ["Primary 3", "Primary 4", "Primary 5", "Primary 6"] },
+] as const satisfies readonly { id: string; name: string; classes: readonly (typeof DEFAULT_CLASSES)[number][] }[];
+
+export type DivisionId = (typeof SCHOOL_DIVISIONS)[number]["id"];
+
+/** Which school a class belongs to (null for a class the school added later and hasn't placed yet) */
+export const divisionOf = (className: string) => SCHOOL_DIVISIONS.find((d) => (d.classes as readonly string[]).includes(className)) ?? null;
 
 export const ORDER_NUMBER_OFFSET = 24800;

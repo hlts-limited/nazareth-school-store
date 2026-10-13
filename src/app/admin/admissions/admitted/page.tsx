@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { fmtDate } from "@/shared/lib/format";
+import { divisionOf } from "@/shared/config/school";
 import { ActionForm, SearchParamSelect, SubmitButton } from "@/shared/ui/client";
 import { Empty, Note, PageHeader } from "@/shared/ui/primitives";
 import { Icon } from "@/shared/ui/icon";
@@ -37,7 +38,7 @@ export default async function AdmittedPage({ searchParams }: { searchParams: Pro
                     <tr key={a.id}>
                       {canMove && <td data-label=""><input type="checkbox" name="ids" value={a.id} defaultChecked aria-label={`Select ${a.otherNames} ${a.surname}`} /></td>}
                       <td data-label="Child"><b>{a.surname}</b>, {a.otherNames}</td>
-                      <td data-label="Class">{a.class.name}</td>
+                      <td data-label="Class">{a.class.name}<div className="small muted">{divisionOf(a.class.name)?.name}</div></td>
                       <td data-label="Parent">{a.parentName}<div className="small muted">{a.parentPhone}</div></td>
                       <td data-label="Application"><Link className="mono" href={`/admin/admissions/${a.id}`}>{a.number}</Link></td>
                     </tr>

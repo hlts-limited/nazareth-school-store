@@ -5,6 +5,7 @@ import { UserError } from "@/shared/lib/action";
 import { randomToken, safeEqual, sha256 } from "@/shared/lib/crypto";
 import { storage } from "@/shared/lib/storage";
 import { env } from "@/shared/config/env";
+import { SCHOOL_DIVISIONS } from "@/shared/config/school";
 import { initializeTransaction, verifyTransaction } from "@/modules/payments";
 import { addPupil, suggestRegNumber } from "@/modules/pupils";
 import { admissionClassFor, lagosDay } from "@/shared/lib/admission-age";
@@ -219,13 +220,15 @@ export const STATUS_LABEL: Record<ApplicationStatus, string> = {
 
 export const PER_PAGE = 25;
 
-export type ApplicationSearch = { windowId?: string; status?: string; classId?: string; q?: string; page?: number };
+export type ApplicationSearch = { windowId?: string; status?: string; classId?: string; school?: string; q?: string; page?: number };
 
 export async function listApplications(s: ApplicationSearch) {
   const where: Prisma.ApplicationWhereInput = {};
   if (s.windowId) where.windowId = s.windowId;
   if (s.status && s.status in STATUS_LABEL) where.status = s.status as ApplicationStatus;
   if (s.classId) where.classId = s.classId;
+  const division = SCHOOL_DIVISIONS.find((d) => d.id === s.school);
+  if (division) where.class = { name: { in: [...division.classes] } };
   const q = s.q?.trim();
   if (q) {
     where.AND = q.split(/\s+/).map((w) => ({
