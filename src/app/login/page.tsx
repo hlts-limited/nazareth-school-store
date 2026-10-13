@@ -4,7 +4,7 @@ import { SCHOOL } from "@/shared/config/school";
 import { requestMeta } from "@/shared/lib/request";
 import { Icon } from "@/shared/ui/icon";
 import { Note } from "@/shared/ui/primitives";
-import { CAPTCHA_AFTER, endedSessionReason, getViewer, loginParent, loginPupil, loginStaff, makeCaptcha, recentFailures } from "@/modules/auth";
+import { CAPTCHA_AFTER, dashboardPath, endedSessionReason, getViewer, loginParent, loginPupil, loginStaff, makeCaptcha, recentFailures } from "@/modules/auth";
 import { LoginForms } from "./login-forms";
 import { LoginScene } from "./login-scene";
 
@@ -12,7 +12,7 @@ export const metadata = { title: "Sign in" };
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const v = await getViewer();
-  if (v) redirect("/");
+  if (v) redirect(dashboardPath(v));
   const { tab } = await searchParams;
   const { ip } = await requestMeta();
   const needCaptcha = (await recentFailures(`pupil-ip:${ip}`)) >= CAPTCHA_AFTER;

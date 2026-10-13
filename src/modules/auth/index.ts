@@ -1,6 +1,6 @@
 export {
   getViewer, requireStaff, staffFor, getViewAs, requireParentActor, requirePupilActor,
-  parentForAction, pupilForAction, auditActor, displayName,
+  parentForAction, pupilForAction, auditActor, displayName, dashboardPath,
 } from "./current";
 export type { Viewer, StaffViewer, ParentViewer, PupilViewer, ViewAs } from "./current";
 export { listActiveSessions, revokeAllForUser, idleInfo, endedSessionReason } from "./session";
