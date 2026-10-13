@@ -9,11 +9,12 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
-    "vercel-build": "prisma generate && DATABASE_URL=${DATABASE_URL_UNPOOLED:-$DATABASE_URL} sh -c \"prisma migrate deploy && npm run db:harden && prisma db seed\" && next build",
+    "vercel-build": "prisma generate && if [ \"$VERCEL_ENV\" = production ] || [ -n \"$MIGRATE_ON_BUILD\" ]; then DATABASE_URL=${DATABASE_URL_UNPOOLED:-$DATABASE_URL} sh -c \"prisma migrate deploy && npm run db:harden && prisma db seed\"; else echo 'Skipping migrations: not a production build (set MIGRATE_ON_BUILD on a preview that has its own database)'; fi && next build",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",
+    "test:db": "tsx --env-file=.env scripts/test-db.ts",
     "db:up": "docker compose up -d db",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy && npm run db:harden",
@@ -22,6 +23,7 @@
     "db:studio": "prisma studio",
     "setup": "prisma migrate dev --name init && npm run db:harden && prisma db seed",
     "totp": "tsx --env-file=.env scripts/totp.ts",
+    "set-admin": "tsx --env-file=.env scripts/set-admin.ts",
     "cron": "tsx --env-file=.env scripts/cron.ts"
   },
   "prisma": {

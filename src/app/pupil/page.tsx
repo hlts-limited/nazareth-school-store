@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { SchoolFooter } from "@/shared/ui/school-footer";
 import { naira, orderNo } from "@/shared/lib/format";
 import { SCHOOL } from "@/shared/config/school";
 import { Avatar, Card, CardHeader, Empty, Pill } from "@/shared/ui/primitives";
@@ -85,7 +86,7 @@ export default async function PupilPage() {
               </Card>
             </div>
           </div>
-        </div></main>
+        </div><SchoolFooter /></main>
       </div>
       {!viewAs && <IdleWatcher idleSeconds={idle.idleSeconds} keepAlive={keepAlive} logout={logout} />}
     </>

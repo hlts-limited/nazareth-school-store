@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useActionState, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, startTransition, useActionState, useCallback, useContext, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Icon } from "./icon";
@@ -37,6 +37,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 type Action = (prev: ActionResult, form: FormData) => Promise<ActionResult>;
 const FormResultCtx = createContext<ActionResult>({ ok: false });
 export const useFormResult = () => useContext(FormResultCtx);
+const FormPendingCtx = createContext(false);
 
 /**
  * <ActionForm action={serverAction}> — runs the action, shows its message as a toast,
@@ -45,7 +46,7 @@ export const useFormResult = () => useContext(FormResultCtx);
 export function ActionForm({ action, children, className, onDone, resetOnSuccess, id }: {
   action: Action; children: ReactNode; className?: string; onDone?: (r: ActionResult) => void; resetOnSuccess?: boolean; id?: string;
 }) {
-  const [state, formAction] = useActionState(action, { ok: false });
+  const [state, formAction, pending] = useActionState(action, { ok: false });
   const toast = useToast();
   const router = useRouter();
   const ref = useRef<HTMLFormElement>(null);
@@ -62,11 +63,22 @@ export function ActionForm({ action, children, className, onDone, resetOnSuccess
     }
     else if (state.ok) router.refresh();
   }, [state, toast, router, onDone, resetOnSuccess]);
+  // Submit through the action ourselves: a plain <form action> is cleared by React after every submit,
+  // which would wipe what someone typed whenever a field fails validation.
+  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (pending) return;
+    const submitter = (e.nativeEvent as SubmitEvent).submitter as HTMLElement | null;
+    const data = new FormData(e.currentTarget, submitter);
+    startTransition(() => formAction(data));
+  };
   return (
     <FormResultCtx.Provider value={state}>
-      <form ref={ref} action={formAction} className={className} id={id} noValidate>
-        {children}
-      </form>
+      <FormPendingCtx.Provider value={pending}>
+        <form ref={ref} onSubmit={onSubmit} className={className} id={id} noValidate>
+          {children}
+        </form>
+      </FormPendingCtx.Provider>
     </FormResultCtx.Provider>
   );
 }
@@ -80,7 +92,8 @@ export function FieldError({ name }: { name: string }) {
 export function SubmitButton({ children, variant = "primary", size, block, icon, confirmText, disabled, name, value }: {
   children: ReactNode; variant?: string; size?: "sm" | "lg"; block?: boolean; icon?: string; confirmText?: string; disabled?: boolean; name?: string; value?: string;
 }) {
-  const { pending } = useFormStatus();
+  const status = useFormStatus();
+  const pending = useContext(FormPendingCtx) || status.pending;
   return (
     <button
       type="submit"

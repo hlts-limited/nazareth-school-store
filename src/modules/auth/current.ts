@@ -129,4 +129,7 @@ export async function auditActor(v: Viewer): Promise<AuditActor> {
   return { id: v.user.id, name: `${v.user.firstName} ${v.user.lastName}`, role: v.roles.map(roleName).join(", "), ip };
 }
 
-export const displayName = (u: { title?: string | null; firstName: string; lastName: string }) => `${u.title ? u.title + " " : ""}${u.firstName} ${u.lastName}`;
+/** Where a signed-in person's own area starts ("/" is the public homepage). */
+export const dashboardPath = (v: Viewer) => (v.kind === "parent" ? "/home" : v.kind === "pupil" ? "/pupil" : "/admin");
+
+export const displayName =(u: { title?: string | null; firstName: string; lastName: string }) => `${u.title ? u.title + " " : ""}${u.firstName} ${u.lastName}`;

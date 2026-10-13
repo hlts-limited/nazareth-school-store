@@ -113,11 +113,12 @@ model LoginAttempt {
 // ---------- School ----------
 
 model Class {
-  id        String  @id @default(uuid())
-  name      String  @unique
-  sortOrder Int
-  pupils    Pupil[]
-  items     ItemClass[]
+  id           String        @id @default(uuid())
+  name         String        @unique
+  sortOrder    Int
+  pupils       Pupil[]
+  items        ItemClass[]
+  applications Application[]
 }
 
 enum PupilStatus {
@@ -126,25 +127,26 @@ enum PupilStatus {
 }
 
 model Pupil {
-  id          String      @id @default(uuid())
-  firstName   String
-  lastName    String
-  regNumber   String      @unique
-  gender      String?
-  classId     String
-  class       Class       @relation(fields: [classId], references: [id])
-  pinHash     String?
-  status      PupilStatus @default(ACTIVE)
-  deletedAt   DateTime?
-  deletedBy   String?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id        String      @id @default(uuid())
+  firstName String
+  lastName  String
+  regNumber String      @unique
+  gender    String?
+  classId   String
+  class     Class       @relation(fields: [classId], references: [id])
+  pinHash   String?
+  status    PupilStatus @default(ACTIVE)
+  deletedAt DateTime?
+  deletedBy String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
 
-  guardians  Guardian[]
-  lines      OrderLine[]
-  cartItems  CartItem[]
-  wallet     Wallet?
-  wishlist   WishlistItem[]
+  guardians   Guardian[]
+  lines       OrderLine[]
+  cartItems   CartItem[]
+  wallet      Wallet?
+  wishlist    WishlistItem[]
+  application Application?
 
   @@index([lastName])
   @@index([classId])
@@ -176,27 +178,27 @@ model Category {
 }
 
 model Item {
-  id           String        @id @default(uuid())
-  sku          String        @unique
+  id           String         @id @default(uuid())
+  sku          String         @unique
   name         String
   description  String?
   categoryId   String
-  category     Category      @relation(fields: [categoryId], references: [id])
+  category     Category       @relation(fields: [categoryId], references: [id])
   price        Int
   imageKey     String?
-  isActive     Boolean       @default(true)
-  reorderLevel Int           @default(5)
-  hasVariants  Boolean       @default(false)
+  isActive     Boolean        @default(true)
+  reorderLevel Int            @default(5)
+  hasVariants  Boolean        @default(false)
   // A pile (e.g. core textbooks) is sold as one product but made of real books with their own stock.
   // Its price is kept equal to the sum of its books; it holds no stock itself.
-  isPile       Boolean       @default(false)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  isPile       Boolean        @default(false)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
   variants     ItemVariant[]
   classes      ItemClass[]
   wishlist     WishlistItem[]
-  pileParts    PilePart[]    @relation("PileParts")
-  inPiles      PilePart[]    @relation("PileBooks")
+  pileParts    PilePart[]     @relation("PileParts")
+  inPiles      PilePart[]     @relation("PileBooks")
 
   @@index([categoryId])
 }
@@ -482,6 +484,159 @@ model WalletTransaction {
   createdAt DateTime     @default(now())
 
   @@index([walletId, createdAt])
+}
+
+// ---------- Admissions ----------
+
+// A period when families can apply for a session. formFee 0 = free form.
+model AdmissionWindow {
+  id                 String        @id @default(uuid())
+  session            String // e.g. "2027/2028"
+  opensAt            DateTime
+  closesAt           DateTime
+  formFee            Int           @default(0)
+  note               String?
+  resultsPublishedAt DateTime?
+  createdAt          DateTime      @default(now())
+  applications       Application[]
+  examSlots          ExamSlot[]
+
+  @@index([opensAt, closesAt])
+}
+
+model ExamSlot {
+  id           String          @id @default(uuid())
+  windowId     String
+  window       AdmissionWindow @relation(fields: [windowId], references: [id], onDelete: Cascade)
+  startsAt     DateTime
+  venue        String
+  capacity     Int
+  note         String?
+  applications Application[]
+
+  @@index([windowId, startsAt])
+}
+
+enum ApplicationStatus {
+  AWAITING_PAYMENT // form fee not paid yet
+  SUBMITTED
+  EXAM_SCHEDULED
+  ADMITTED
+  WAITLISTED
+  NOT_ADMITTED
+  ENROLLED
+  WITHDRAWN
+}
+
+model Application {
+  id              String            @id @default(uuid())
+  number          String            @unique // NZA27-XXXXXX, random so results can't be guessed in sequence
+  accessTokenHash String // sha256 of the private link token given to the family
+  windowId        String
+  window          AdmissionWindow   @relation(fields: [windowId], references: [id])
+  classId         String
+  class           Class             @relation(fields: [classId], references: [id])
+  status          ApplicationStatus @default(SUBMITTED)
+
+  surname        String
+  otherNames     String
+  dateOfBirth    DateTime
+  gender         String
+  previousSchool String?
+  parentName     String
+  relationship   String
+  parentPhone    String // normalised 0XXXXXXXXXX
+  parentEmail    String?
+  address        String
+  details        Json // the rest of the form: second parent, nationality, health notes, etc.
+
+  feeAmount Int       @default(0)
+  feeRef    String?   @unique
+  feePaidAt DateTime?
+
+  examSlotId   String?
+  examSlot     ExamSlot? @relation(fields: [examSlotId], references: [id], onDelete: SetNull)
+  decisionNote String?
+  decidedById  String?
+  decidedAt    DateTime?
+  pupilId      String?   @unique
+  pupil        Pupil?    @relation(fields: [pupilId], references: [id], onDelete: SetNull)
+
+  submittedAt DateTime?
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+  documents   ApplicationDocument[]
+
+  @@index([windowId, status])
+  @@index([surname])
+}
+
+model ApplicationDocument {
+  id            String      @id @default(uuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  kind          String // passport | birth | result | testimonial
+  fileKey       String
+  fileName      String
+  mimeType      String
+  size          Int
+  uploadedAt    DateTime    @default(now())
+
+  @@unique([applicationId, kind])
+}
+
+// ---------- Public website content ----------
+
+// Announcement bar messages, shown between startsAt and endsAt
+model Notice {
+  id          String    @id @default(uuid())
+  text        String
+  link        String?
+  startsAt    DateTime  @default(now())
+  endsAt      DateTime?
+  createdById String?
+  createdAt   DateTime  @default(now())
+
+  @@index([startsAt, endsAt])
+}
+
+model Event {
+  id          String    @id @default(uuid())
+  title       String
+  startsAt    DateTime
+  endsAt      DateTime?
+  venue       String?
+  description String?
+  published   Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+
+  @@index([startsAt])
+}
+
+model GalleryPhoto {
+  id        String   @id @default(uuid())
+  album     String // e.g. "Inter-house sports 2026"; photos are grouped by this name
+  caption   String?
+  fileKey   String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([album, sortOrder])
+}
+
+// Messages sent from the website's Contact page
+model Enquiry {
+  id          String    @id @default(uuid())
+  name        String
+  email       String?
+  phone       String?
+  subject     String
+  message     String
+  handledAt   DateTime?
+  handledById String?
+  createdAt   DateTime  @default(now())
+
+  @@index([handledAt, createdAt])
 }
 
 // ---------- System ----------

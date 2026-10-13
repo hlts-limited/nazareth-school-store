@@ -14,6 +14,7 @@ const PERM_LABELS: [string, string][] = [
   ["catalogue.manage", "Manage items & categories"], ["stock.manage", "Manage stock"], ["fulfilment.manage", "Pack & hand out orders"],
   ["pupils.manage", "Add & import pupils"], ["pupils.delete", "Delete pupils"], ["pupils.empty_bin", "Empty the bin"],
   ["viewas.use", "View as parent / pupil"], ["backup.manage", "Backup & restore"], ["staff.manage", "Manage staff"], ["settings.manage", "School settings"], ["audit.view", "Audit log"],
+  ["admissions.view", "See applications"], ["admissions.manage", "Handle applications & enrol"], ["admissions.publish", "Open admission & publish results"], ["website.manage", "Website notices, events, gallery & messages"],
 ];
 
 export default async function StaffPage() {

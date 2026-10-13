@@ -16,8 +16,10 @@ const TABLES = [
   ["order", "Order"], ["orderLine", "OrderLine"], ["orderEvent", "OrderEvent"], ["payment", "Payment"], ["receipt", "Receipt"], ["invoice", "Invoice"], ["pickup", "Pickup"],
   ["wallet", "Wallet"], ["walletTransaction", "WalletTransaction"], ["stockMovement", "StockMovement"], ["cartItem", "CartItem"], ["wishlistItem", "WishlistItem"],
   ["notification", "Notification"], ["auditLog", "AuditLog"],
+  ["admissionWindow", "AdmissionWindow"], ["examSlot", "ExamSlot"], ["application", "Application"], ["applicationDocument", "ApplicationDocument"],
+  ["notice", "Notice"], ["event", "Event"], ["galleryPhoto", "GalleryPhoto"], ["enquiry", "Enquiry"],
 ] as const;
-const FILE_PREFIXES = ["receipts/", "items/"];
+const FILE_PREFIXES = ["receipts/", "items/", "admissions/", "gallery/"];
 
 type Delegate = { findMany: (a?: unknown) => Promise<Record<string, unknown>[]>; createMany: (a: { data: unknown[] }) => Promise<unknown> };
 const delegate = (client: unknown, name: string) => (client as Record<string, Delegate>)[name];

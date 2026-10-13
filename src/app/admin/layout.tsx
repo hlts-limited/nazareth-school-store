@@ -21,6 +21,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <aside className="side">
           <span className="brand"><Image src="/logo.png" alt="" width={36} height={36} /><span><b>{SCHOOL.name}</b><small>Store back office</small></span></span>
           <StaffNav sections={sections} counts={counts} variant="side" />
+          <Link className="side-site" href="/" target="_blank" rel="noopener"><Icon name="eye" size="sm" />View the school website</Link>
           <div className="side-foot">
             <div className="row nowrap">
               <span className="avatar" style={{ background: "var(--ink)" }}>{initials}</span>
@@ -35,6 +36,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <WorkspaceSwitch sections={sections} />
             <div className="grow" />
             <IdleWatcher idleSeconds={idle.idleSeconds} keepAlive={keepAlive} logout={logout} showTimer />
+            <Link href="/" target="_blank" rel="noopener" className="icon-btn show-md" aria-label="View the school website"><Icon name="home" size="sm" /></Link>
             <ThemeToggle />
             <Link href="/admin/account" className="icon-btn show-md" aria-label="My account"><Icon name="users" size="sm" /></Link>
             <form action={logout} className="show-md"><button className="icon-btn" type="submit" aria-label="Sign out"><Icon name="logout" size="sm" /></button></form>
