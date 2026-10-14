@@ -24,6 +24,17 @@ export function ParentNav({ cartCount, variant }: { cartCount: number; variant: 
   );
 }
 
+/** The workspace whose link best matches the page (longest match), so /admin is Super Admin's Overview and
+ *  /admin/alpha/... is Alpha's, even for an account that has both. */
+function currentSection<S extends { items: { href: string }[] }>(sections: S[], path: string): S | undefined {
+  let best: S | undefined;
+  let len = -1;
+  for (const s of sections) for (const i of s.items) {
+    if ((path === i.href || path.startsWith(i.href + "/")) && i.href.length > len) { best = s; len = i.href.length; }
+  }
+  return best ?? sections[0];
+}
+
 /** Back-office side menu and phone tab strip */
 export function StaffNav({ sections, counts, variant }: {
   sections: { id: string; label: string; items: { href: string; label: string; icon: string; badge?: string }[] }[];
@@ -31,7 +42,7 @@ export function StaffNav({ sections, counts, variant }: {
   variant: "side" | "tabs";
 }) {
   const path = usePathname();
-  const current = sections.find((s) => s.items.some((i) => i.href !== "/admin" && path.startsWith(i.href))) ?? sections[0];
+  const current = currentSection(sections, path);
   const items = current?.items ?? [];
   // The active item is the one whose link is the longest match for the current page
   const best = items.filter((i) => path === i.href || path.startsWith(i.href + "/")).sort((a, b) => b.href.length - a.href.length)[0]?.href;
@@ -64,7 +75,7 @@ export function StaffNav({ sections, counts, variant }: {
 export function WorkspaceSwitch({ sections }: { sections: { id: string; label: string; items: { href: string }[] }[] }) {
   const path = usePathname();
   const router = useRouter();
-  const current = sections.find((s) => s.items.some((i) => i.href !== "/admin" && path.startsWith(i.href))) ?? sections[0];
+  const current = currentSection(sections, path);
   if (sections.length < 2) return <b className="hide-sm">{current?.label}</b>;
   return (
     <div className="ws-switch">
