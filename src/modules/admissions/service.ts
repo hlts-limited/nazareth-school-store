@@ -289,6 +289,26 @@ export async function decide(id: string, decision: Decision, note: string | unde
   return db.application.update({ where: { id }, data: { status: decision, decisionNote: note ?? null, decidedById: staffId, decidedAt: new Date() } });
 }
 
+/** "Passed: admit": record the decision, then put the child straight into the class they applied for, so the
+ *  family can shop in the School Store. If that fails (e.g. a clash), the child stays on "Admitted pupils" to move later. */
+export async function admit(id: string, note: string | undefined, staffId: string) {
+  const app = await decide(id, "ADMITTED", note, staffId);
+  try {
+    const r = await enrol(id, { regNumber: await suggestRegNumber(), classId: app.classId });
+    return { app, pupil: r.pupil, parentCreated: r.parentCreated, problem: null };
+  } catch (e) {
+    return { app, pupil: null, parentCreated: false, problem: e instanceof UserError ? e.message : "the pupil could not be created" };
+  }
+}
+
+/** Remove an application and its uploaded documents for good. A pupil already created from it is kept. */
+export async function deleteApplication(id: string) {
+  const app = await db.application.findUniqueOrThrow({ where: { id }, include: { documents: true, pupil: true } });
+  await db.application.delete({ where: { id } });
+  for (const d of app.documents) await storage().delete(d.fileKey).catch(() => undefined);
+  return app;
+}
+
 export async function withdraw(id: string) {
   const app = await db.application.findUniqueOrThrow({ where: { id } });
   if (app.status === "ENROLLED") throw new UserError("This child is already enrolled. Archive the pupil instead.");

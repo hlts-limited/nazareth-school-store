@@ -11,12 +11,12 @@ import { paystackReady } from "@/modules/payments";
 import { listClasses } from "@/modules/catalogue";
 import { suggestRegNumber } from "@/modules/pupils";
 import {
-  applicationDetail, decideAction, DOC_KINDS, docLabel, enrolAction, markFeePaidAction, missingDocs, renewLinkAction, setExamSlotAction, staffUploadDocAction, STATUS_LABEL, withdrawAction,
+  applicationDetail, decideAction, deleteApplicationAction, DOC_KINDS, docLabel, enrolAction, markFeePaidAction, missingDocs, renewLinkAction, setExamSlotAction, staffUploadDocAction, STATUS_LABEL, withdrawAction,
 } from "@/modules/admissions";
 import { STATUS_TONE } from "../_tone";
 import { FamilyLink } from "./_family-link";
 
-const DECISIONS = [["ADMITTED", "Passed: admit"], ["WAITLISTED", "Waiting list"], ["NOT_ADMITTED", "Did not pass"]] as const;
+const DECISIONS = [["ADMITTED", "Passed: admit and move into class"], ["WAITLISTED", "Waiting list"], ["NOT_ADMITTED", "Did not pass"]] as const;
 
 export const metadata = { title: "Application" };
 
@@ -206,6 +206,12 @@ export default async function ApplicationDetailPage({ params, searchParams }: { 
               <ActionForm action={withdrawAction}>
                 <input type="hidden" name="id" value={app.id} />
                 <SubmitButton variant="ghost" size="sm" confirmText="Mark this application as withdrawn?">Mark as withdrawn</SubmitButton>
+              </ActionForm>
+            )}
+            {canManage && (
+              <ActionForm action={deleteApplicationAction}>
+                <input type="hidden" name="id" value={app.id} />
+                <SubmitButton variant="danger" size="sm" icon="trash" confirmText={`Delete application ${app.number} and its documents for good? This can't be undone.${app.pupil ? " The pupil record is kept." : ""}`}>Delete application</SubmitButton>
               </ActionForm>
             )}
           </section>

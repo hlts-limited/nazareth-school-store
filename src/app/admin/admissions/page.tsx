@@ -76,12 +76,13 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
                       : <option value="no-slots" disabled>No upcoming exam slots: add them under Windows &amp; exams</option>}
                   </optgroup>
                   <optgroup label="Record the exam result">
-                    <option value="ADMITTED">Passed: admit</option>
+                    <option value="ADMITTED">Passed: admit and move into class</option>
                     <option value="WAITLISTED">Waiting list</option>
                     <option value="NOT_ADMITTED">Did not pass</option>
                   </optgroup>
                 </select>
                 <SubmitButton size="sm" variant="default" icon="check">Apply</SubmitButton>
+                <SubmitButton size="sm" variant="ghost" icon="trash" name="bulkDelete" value="1" confirmText="Delete the ticked applications and their documents for good? This can't be undone.">Delete</SubmitButton>
               </ActionForm>
             )}
             <div className="tbl-wrap"><table className="t rt">

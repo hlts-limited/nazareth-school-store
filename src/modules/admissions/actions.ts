@@ -10,7 +10,7 @@ import { auditActor, isLocked, recordAttempt, staffFor } from "@/modules/auth";
 import { audit } from "@/modules/audit";
 import { notifyContact } from "@/modules/notifications";
 import {
-  addExamSlot, applicationByToken, createApplication, decide, deleteExamSlot, DOC_KINDS, docLabel, enrol, enrolMany, examMessage, lookupResult, RELIGIONS,
+  addExamSlot, admit, applicationByToken, createApplication, decide, deleteApplication, deleteExamSlot, DOC_KINDS, docLabel, enrol, enrolMany, examMessage, lookupResult, RELIGIONS,
   markFeePaidAtOffice, renewAccessLink, saveDocument, saveWindow, setExamSlot, setResultsPublished, startApplicationFee, withdraw, type Decision, type DocKind,
 } from "./service";
 
@@ -176,15 +176,27 @@ export async function bulkApplicationsAction(_: ActionResult, form: FormData): P
     const v = await staffFor("admissions.manage");
     const ids = form.getAll("ids").map(String).filter(Boolean);
     if (!ids.length) return fail("Tick at least one application first.");
-    const op = String(form.get("op") ?? "");
+    const op = form.get("bulkDelete") ? "DELETE" : String(form.get("op") ?? "");
     const actor = await auditActor(v);
+    const canEnrol = v.permissions.has("pupils.manage");
     let done = 0;
+    let enrolled = 0;
     const problems: string[] = [];
     for (const id of ids) {
       const app = await db.application.findUnique({ where: { id }, select: { number: true } });
       if (!app) continue;
       try {
-        if (op.startsWith("slot:")) {
+        if (op === "DELETE") {
+          const gone = await deleteApplication(id);
+          await audit(actor, "Deleted application", "Application", id, deletedDetails(gone));
+        } else if (op === "ADMITTED" && canEnrol) {
+          const r = await admit(id, undefined, v.user.id);
+          await audit(actor, "Recorded admission decision", "Application", id, { number: app.number, decision: op });
+          if (r.pupil) {
+            enrolled++;
+            await audit(actor, "Enrolled applicant as pupil", "Application", id, { reg: r.pupil.regNumber, class: r.app.classId });
+          } else problems.push(`${app.number}: admitted, but not moved into class (${r.problem})`);
+        } else if (op.startsWith("slot:")) {
           const { app: a, told } = await scheduleAndTell(id, op.slice(5));
           if (!told) problems.push(`${a.number}: text/email not sent`);
           await audit(actor, "Scheduled entrance exam", "Application", id, { number: a.number, slot: a.examSlot?.startsAt.toISOString() });
@@ -197,8 +209,9 @@ export async function bulkApplicationsAction(_: ActionResult, form: FormData): P
         problems.push(`${app.number}: ${e instanceof Error ? e.message : "failed"}`);
       }
     }
-    const what = op.startsWith("slot:") ? "booked for the exam" : "updated";
-    return { ok: done > 0, message: `${done} application${done === 1 ? "" : "s"} ${what}.${problems.length ? ` Not done: ${problems.slice(0, 3).join("; ")}${problems.length > 3 ? ` and ${problems.length - 3} more` : ""}.` : ""}` };
+    const what = op === "DELETE" ? "deleted" : op.startsWith("slot:") ? "booked for the exam" : "updated";
+    const moved = op === "ADMITTED" && enrolled ? ` ${enrolled} moved into their class${enrolled === 1 ? "" : "es"} for the School Store.` : "";
+    return { ok: done > 0, message: `${done} application${done === 1 ? "" : "s"} ${what}.${moved}${problems.length ? ` Not done: ${problems.slice(0, 3).join("; ")}${problems.length > 3 ? ` and ${problems.length - 3} more` : ""}.` : ""}` };
   });
 }
 
@@ -257,8 +270,16 @@ export async function decideAction(_: ActionResult, form: FormData): Promise<Act
   return runAction(async () => {
     const v = await staffFor("admissions.manage");
     const d = parseForm(z.object({ id: zText(100), decision: z.enum(["ADMITTED", "WAITLISTED", "NOT_ADMITTED"]), note: zOptText(300) }), form);
+    const actor = await auditActor(v);
+    if (d.decision === "ADMITTED" && v.permissions.has("pupils.manage")) {
+      const r = await admit(d.id, d.note, v.user.id);
+      await audit(actor, "Recorded admission decision", "Application", r.app.id, { number: r.app.number, decision: d.decision });
+      if (!r.pupil) return ok(`Admitted, but not moved into class yet: ${r.problem}. Move them from Admitted pupils.`);
+      await audit(actor, "Enrolled applicant as pupil", "Pupil", r.pupil.id, { application: r.app.id, reg: r.pupil.regNumber, by: staffName(v) });
+      return ok(`Admitted and moved into class as ${r.pupil.regNumber}. The parent can now buy books and items in the School Store.${r.parentCreated ? " A School Store invite has been sent to the parent." : ""}`);
+    }
     const app = await decide(d.id, d.decision, d.note, v.user.id);
-    await audit(await auditActor(v), "Recorded admission decision", "Application", app.id, { number: app.number, decision: d.decision });
+    await audit(actor, "Recorded admission decision", "Application", app.id, { number: app.number, decision: d.decision });
     const w = await db.admissionWindow.findUnique({ where: { id: app.windowId } });
     return ok(w?.resultsPublishedAt ? "Decision saved. Results are published, so the family can see it now." : "Decision saved. Families see decisions once you publish results.");
   });
@@ -270,6 +291,21 @@ export async function withdrawAction(_: ActionResult, form: FormData): Promise<A
     const app = await withdraw(String(form.get("id")));
     await audit(await auditActor(v), "Withdrew application", "Application", app.id, { number: app.number });
     return ok("Application marked as withdrawn.");
+  });
+}
+
+const deletedDetails = (a: Awaited<ReturnType<typeof deleteApplication>>) => ({
+  number: a.number, child: `${a.otherNames} ${a.surname}`, parentPhone: a.parentPhone, status: a.status,
+  feeAmount: a.feeAmount, feePaid: !!a.feePaidAt, feeRef: a.feeRef, pupil: a.pupil?.regNumber ?? null,
+});
+
+/** Delete an application and its documents for good (e.g. a duplicate or test entry). Kept in the audit log. */
+export async function deleteApplicationAction(_: ActionResult, form: FormData): Promise<ActionResult> {
+  return runAction(async () => {
+    const v = await staffFor("admissions.manage");
+    const app = await deleteApplication(String(form.get("id")));
+    await audit(await auditActor(v), "Deleted application", "Application", app.id, deletedDetails(app));
+    return { ok: true, message: `Application ${app.number} deleted.${app.pupil ? ` The pupil ${app.pupil.regNumber} is kept.` : ""}`, redirect: "/admin/admissions" };
   });
 }
 

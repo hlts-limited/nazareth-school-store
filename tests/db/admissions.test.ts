@@ -2,10 +2,11 @@
 import { test, before } from "node:test";
 import assert from "node:assert/strict";
 import { db } from "../../src/shared/lib/db";
+import { storage } from "../../src/shared/lib/storage";
 import { UserError } from "../../src/shared/lib/action";
 import {
-  addExamSlot, admissionNotice, admissionStatus, admittedList, applicationByToken, confirmApplicationFee, createApplication, decide, enrol, enrolMany,
-  lookupResult, markFeePaidAtOffice, renewAccessLink, saveWindow, setExamSlot, setResultsPublished, startApplicationFee, withdraw, type NewApplication,
+  addExamSlot, admit, admissionNotice, admissionStatus, admittedList, applicationByToken, confirmApplicationFee, createApplication, decide, deleteApplication, enrol, enrolMany,
+  lookupResult, markFeePaidAtOffice, renewAccessLink, saveDocument, saveWindow, setExamSlot, setResultsPublished, startApplicationFee, withdraw, type NewApplication,
 } from "../../src/modules/admissions/service";
 
 const DAY = 86_400_000;
@@ -207,6 +208,37 @@ test("admitted children move into the class they applied for, with new reg numbe
   assert.equal(pb.class.name, "Primary 3", "born Feb 2019: 8 on 31 Dec 2027");
   assert.notEqual(pa.regNumber, pb.regNumber);
   assert.equal(pa.guardians[0].parentId, pb.guardians[0].parentId, "brother and sister share one parent account");
+});
+
+test("passed: admit puts the child straight into their class for the School Store", async () => {
+  const s = await admissionStatus();
+  const { app } = await createApplication(child({ surname: "Straight", otherNames: "Ife", parentPhone: "08039990085" }), { windowId: s.window!.id, fee: "waived", by: "Test" });
+  const r = await admit(app.id, "Strong in maths", staffId);
+  assert.ok(r.pupil, r.problem ?? "no pupil");
+  const after = await db.application.findUniqueOrThrow({ where: { id: app.id }, include: { pupil: { include: { class: true, guardians: { include: { parent: true } } } } } });
+  assert.equal(after.status, "ENROLLED");
+  assert.equal(after.decisionNote, "Strong in maths");
+  assert.equal(after.pupil!.class.name, "Prep 2");
+  assert.equal(after.pupil!.guardians[0].parent.phone, "08039990085", "linked to the parent so they can shop");
+  assert.ok(!(await admittedList(s.window!.id)).waiting.some((x) => x.id === app.id), "nothing left to move");
+});
+
+test("deleting an application removes it and its documents, and keeps any pupil", async () => {
+  const s = await admissionStatus();
+  const { app } = await createApplication(child({ surname: "Gone", parentPhone: "08039990086" }), { windowId: s.window!.id, fee: "waived", by: "Test" });
+  await saveDocument(app.id, "birth", { buf: Buffer.from("%PDF-1.4 test"), mime: "application/pdf", ext: "pdf", name: "birth.pdf" });
+  const doc = await db.applicationDocument.findFirstOrThrow({ where: { applicationId: app.id } });
+  assert.ok(await storage().get(doc.fileKey));
+  await deleteApplication(app.id);
+  assert.equal(await db.application.findUnique({ where: { id: app.id } }), null);
+  assert.equal(await db.applicationDocument.count({ where: { applicationId: app.id } }), 0);
+  assert.equal(await storage().get(doc.fileKey).catch(() => null), null, "file removed from storage");
+
+  const kept = await createApplication(child({ surname: "Kept", parentPhone: "08039990087" }), { windowId: s.window!.id, fee: "waived", by: "Test" });
+  const r = await admit(kept.app.id, undefined, staffId);
+  const gone = await deleteApplication(kept.app.id);
+  assert.equal(gone.pupil?.id, r.pupil!.id);
+  assert.ok(await db.pupil.findUnique({ where: { id: r.pupil!.id } }), "the pupil stays");
 });
 
 test("application numbers are unique", async () => {
