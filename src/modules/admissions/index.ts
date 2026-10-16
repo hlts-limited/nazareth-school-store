@@ -1,6 +1,6 @@
 export {
   admissionStatus, admissionNotice, applicationByToken, applicationPath, confirmApplicationFee, isApplicationFeeRef, missingDocs, upcomingExams,
-  listApplications, applicationDetail, listWindows, admittedList, DOC_KINDS, RELIGIONS, docLabel, DECIDED, STATUS_LABEL, PER_PAGE, affidavits,
+  listApplications, applicationDetail, listWindows, admittedList, DOC_KINDS, RELIGIONS, docLabel, DECIDED, STATUS_LABEL, PER_PAGE, affidavits, applicationForDocLink,
 } from "./service";
 export type { AdmissionStatus, ApplicationSearch, OfficeFee, Correction } from "./service";
 export {

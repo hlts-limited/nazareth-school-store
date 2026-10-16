@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import type { AdmissionWindow, ApplicationStatus, Prisma } from "@prisma/client";
 import { db } from "@/shared/lib/db";
 import { UserError } from "@/shared/lib/action";
-import { randomToken, safeEqual, sha256 } from "@/shared/lib/crypto";
+import { hmac, randomToken, safeEqual, sha256 } from "@/shared/lib/crypto";
 import { storage } from "@/shared/lib/storage";
 import { env } from "@/shared/config/env";
 import { SCHOOL_DIVISIONS } from "@/shared/config/school";
@@ -260,6 +260,28 @@ export async function lookupResult(number: string, surnameInitial: string) {
     exam: app.examSlot ? { startsAt: app.examSlot.startsAt, venue: app.examSlot.venue } : null,
     outcome: published && DECIDED.includes(app.status) ? (app.status === "ENROLLED" ? "ADMITTED" : app.status) : app.status === "WITHDRAWN" ? "WITHDRAWN" : null,
   };
+}
+
+// ---------- Short-lived document links (from the results page) ----------
+
+export type FamilyDoc = "letter" | "form";
+const DOC_LINK_HOURS = 2;
+const docSig = (number: string, doc: FamilyDoc, exp: number) => hmac(env().SESSION_SECRET, `family-doc:${number}:${doc}:${exp}`);
+
+/** A link to the admission letter or form that works for 2 hours, given to a family who just checked their result. */
+export function familyDocLink(number: string, doc: FamilyDoc) {
+  const exp = Math.floor(Date.now() / 1000) + DOC_LINK_HOURS * 3600;
+  return `/admissions/results/document?n=${encodeURIComponent(number)}&doc=${doc}&exp=${exp}&sig=${docSig(number, doc, exp)}`;
+}
+
+/** The application a document link points to, if the link is genuine and not expired. */
+export async function applicationForDocLink(q: { n?: string | null; doc?: string | null; exp?: string | null; sig?: string | null }) {
+  const doc = q.doc === "letter" || q.doc === "form" ? q.doc : null;
+  const exp = Number(q.exp);
+  if (!q.n || !doc || !Number.isFinite(exp) || !q.sig || exp < Date.now() / 1000) return null;
+  if (!safeEqual(q.sig, docSig(q.n, doc, exp))) return null;
+  const app = await db.application.findUnique({ where: { number: q.n } });
+  return app ? { app, doc } : null;
 }
 
 export async function upcomingExams() {

@@ -85,7 +85,10 @@ export default async function ApplicationPage({ params, searchParams }: { params
                     <p className="muted small">Your child&apos;s offer of admission for the {app.window.session} session, signed by the school. Bring a printed copy to the school office.</p>
                   </div>
                 </div>
-                <div><a className="btn primary" href={`${applicationPath(app.number, token)}/letter`} download><Icon name="download" size="sm" />Download admission letter (PDF)</a></div>
+                <div className="row tight">
+                  <a className="btn primary" href={`${applicationPath(app.number, token)}/letter?print=1`} target="_blank" rel="noopener"><Icon name="print" size="sm" />Print admission letter</a>
+                  <a className="btn" href={`${applicationPath(app.number, token)}/letter`} download><Icon name="download" size="sm" />Download (PDF)</a>
+                </div>
               </div>
             )}
 
@@ -165,7 +168,10 @@ export default async function ApplicationPage({ params, searchParams }: { params
                 <div><dt>Parent</dt><dd>{app.parentName}</dd></div>
                 <div><dt>Submitted</dt><dd>{app.submittedAt ? fmtDate(app.submittedAt) : "Not yet"}</dd></div>
               </dl>
-              <a className="btn block" href={`${applicationPath(app.number, token)}/form`} target="_blank" rel="noopener"><Icon name="print" size="sm" />Print application form</a>
+              <div className="row tight">
+                <a className="btn grow" href={`${applicationPath(app.number, token)}/form`} target="_blank" rel="noopener"><Icon name="print" size="sm" />Print form</a>
+                <a className="btn grow" href={`${applicationPath(app.number, token)}/form?download=1`} download><Icon name="download" size="sm" />Download form</a>
+              </div>
               <Link className="btn block" href="/admissions/results">Check a result</Link>
             </div>
           </aside>

@@ -52,7 +52,7 @@ export default async function ApplicationDetailPage({ params, searchParams }: { 
       <PageHeader
         title={<span className="row tight">{app.surname}, {app.otherNames} <span className={`pill ${STATUS_TONE[app.status]}`}>{STATUS_LABEL[app.status]}</span></span>}
         sub={<><span className="mono">{app.number}</span> · {app.class.name}{divisionOf(app.class.name) ? ` (${divisionOf(app.class.name)!.name})` : ""} · {app.window.session} session</>}
-        actions={<div className="row tight"><a className="btn" href={`/api/admin/admissions/${app.id}/form`} target="_blank" rel="noopener"><Icon name="print" size="sm" />Print form</a><Link className="btn" href="/admin/admissions"><Icon name="back" size="sm" />All applications</Link></div>}
+        actions={<div className="row tight"><a className="btn" href={`/api/admin/admissions/${app.id}/form`} target="_blank" rel="noopener"><Icon name="print" size="sm" />Print form</a><a className="btn" href={`/api/admin/admissions/${app.id}/form?download=1`} download><Icon name="download" size="sm" />Download form</a><Link className="btn" href="/admin/admissions"><Icon name="back" size="sm" />All applications</Link></div>}
       />
       <div className="detail-grid">
         <div className="stack">
@@ -236,7 +236,10 @@ export default async function ApplicationDetailPage({ params, searchParams }: { 
               {app.window.resultsPublishedAt ? (
                 <>
                   <p className="small muted">The family can download it from their application page. Print one here if they ask at the office.</p>
-                  <a className="btn sm" href={`/api/admin/admissions/${app.id}/letter`} download><Icon name="download" size="sm" />Download letter (PDF)</a>
+                  <div className="row tight">
+                    <a className="btn sm" href={`/api/admin/admissions/${app.id}/letter?print=1`} target="_blank" rel="noopener"><Icon name="print" size="sm" />Print letter</a>
+                    <a className="btn sm" href={`/api/admin/admissions/${app.id}/letter`} download><Icon name="download" size="sm" />Download (PDF)</a>
+                  </div>
                 </>
               ) : <p className="small muted">Ready once you publish results for {app.window.session}, so no family sees it early.</p>}
             </section>

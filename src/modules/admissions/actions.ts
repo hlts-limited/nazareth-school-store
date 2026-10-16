@@ -10,7 +10,7 @@ import { auditActor, isLocked, recordAttempt, staffFor } from "@/modules/auth";
 import { audit } from "@/modules/audit";
 import { notifyContact } from "@/modules/notifications";
 import {
-  addExamSlot, admit, applicationByToken, changeParentPhone, correctChildDetails, createApplication, decide, deleteApplication, deleteExamSlot, DOC_KINDS, docLabel, enrol, enrolMany, examMessage, lookupResult, RELIGIONS,
+  addExamSlot, admit, applicationByToken, changeParentPhone, familyDocLink, correctChildDetails, createApplication, decide, deleteApplication, deleteExamSlot, DOC_KINDS, docLabel, enrol, enrolMany, examMessage, lookupResult, RELIGIONS,
   markFeePaidAtOffice, renewAccessLink, saveDocument, saveWindow, setExamSlot, setResultsPublished, startApplicationFee, withdraw, type Decision, type DocKind,
 } from "./service";
 
@@ -129,7 +129,7 @@ export async function uploadApplicationDocAction(_: ActionResult, form: FormData
   });
 }
 
-export type ResultLookup = ActionResult & { result?: Awaited<ReturnType<typeof lookupResult>> | null; values?: { number: string; initial: string } };
+export type ResultLookup = ActionResult & { result?: Awaited<ReturnType<typeof lookupResult>> | null; values?: { number: string; initial: string }; links?: { letter?: string; form: string } };
 
 export async function lookupResultAction(_: ResultLookup, form: FormData): Promise<ResultLookup> {
   const { ip } = await requestMeta();
@@ -142,7 +142,9 @@ export async function lookupResultAction(_: ResultLookup, form: FormData): Promi
   const result = await lookupResult(number, initial);
   await recordAttempt(key, !!result);
   if (!result) return { ok: false, values, message: "We couldn't find that application. Check the number and the first letter of the child's surname." };
-  return { ok: true, result, values };
+  // Links to print or download the application form, and the admission letter for a child who passed
+  const links = { form: familyDocLink(result.number, "form"), ...(result.outcome === "ADMITTED" ? { letter: familyDocLink(result.number, "letter") } : {}) };
+  return { ok: true, result, values, links };
 }
 
 // ---------- Back office ----------

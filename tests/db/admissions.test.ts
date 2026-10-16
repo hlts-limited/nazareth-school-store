@@ -6,7 +6,7 @@ import { storage } from "../../src/shared/lib/storage";
 import { admissionLetterPdf, applicationFormPdf, LetterNotReady } from "../../src/modules/admissions/letter";
 import { UserError } from "../../src/shared/lib/action";
 import {
-  addExamSlot, admit, admissionNotice, changeParentPhone, correctChildDetails, admissionStatus, admittedList, applicationByToken, confirmApplicationFee, createApplication, decide, deleteApplication, enrol, enrolMany,
+  addExamSlot, admit, admissionNotice, applicationForDocLink, familyDocLink, changeParentPhone, correctChildDetails, admissionStatus, admittedList, applicationByToken, confirmApplicationFee, createApplication, decide, deleteApplication, enrol, enrolMany,
   lookupResult, markFeePaidAtOffice, renewAccessLink, saveDocument, saveWindow, setExamSlot, setResultsPublished, startApplicationFee, withdraw, type NewApplication,
 } from "../../src/modules/admissions/service";
 
@@ -282,6 +282,17 @@ test("the office corrects a name or date of birth only with an affidavit, and th
 
   const form = await applicationFormPdf(app.id);
   assert.equal(form.bytes.subarray(0, 5).toString(), "%PDF-");
+});
+
+test("results-page document links work only as issued and expire", async () => {
+  const { app } = await createApplication(child({ surname: "Link", otherNames: "Doc", parentPhone: "08039990091" }));
+  const q = (href: string) => Object.fromEntries(new URL(href, "http://x").searchParams) as Record<string, string>;
+  const link = q(familyDocLink(app.number, "letter"));
+  assert.equal((await applicationForDocLink(link))?.app.id, app.id);
+  assert.equal(await applicationForDocLink({ ...link, doc: "form" }), null, "can't swap the document");
+  assert.equal(await applicationForDocLink({ ...link, n: "NZA27-ZZZZZZ" }), null, "can't swap the application");
+  assert.equal(await applicationForDocLink({ ...link, exp: String(Number(link.exp) + 3600) }), null, "can't extend it");
+  assert.equal(await applicationForDocLink({ ...link, exp: "1000" }), null);
 });
 
 test("application numbers are unique", async () => {

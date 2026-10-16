@@ -53,6 +53,23 @@ export function ResultLookupForm({ action }: { action: Action }) {
           {o ? <p>{o[2]}</p> : <p className="muted">Results for this session have not been published yet. Please check again later.</p>}
           {r.exam && !o && <div className="note"><Icon name="clock" /><span>Entrance exam: <b>{when(r.exam.startsAt)}</b> at {r.exam.venue}. Please arrive 30 minutes early.</span></div>}
           {!r.exam && !o && <p className="small muted">The entrance exam date hasn&apos;t been set yet. It will show here once the school schedules it.</p>}
+          {state.links && (
+            <div className="stack tight result-docs">
+              {state.links.letter && (
+                <div className="row tight">
+                  <b className="grow">Admission letter</b>
+                  <a className="btn primary sm" href={state.links.letter} target="_blank" rel="noopener"><Icon name="print" size="sm" />Print</a>
+                  <a className="btn sm" href={`${state.links.letter}&download=1`} download><Icon name="download" size="sm" />Download</a>
+                </div>
+              )}
+              <div className="row tight">
+                <b className="grow">Application form</b>
+                <a className="btn sm" href={state.links.form} target="_blank" rel="noopener"><Icon name="print" size="sm" />Print</a>
+                <a className="btn sm" href={`${state.links.form}&download=1`} download><Icon name="download" size="sm" />Download</a>
+              </div>
+              <p className="small muted">These links work for 2 hours. Check the result again for new ones.</p>
+            </div>
+          )}
         </div>
       )}
     </div>
