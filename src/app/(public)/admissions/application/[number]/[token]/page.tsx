@@ -114,7 +114,7 @@ export default async function ApplicationPage({ params, searchParams }: { params
                   <h2>Documents</h2>
                   {missing.length === 0 ? <span className="pill ok">All required documents uploaded</span> : <span className="pill warn">{missing.length} required still to upload</span>}
                 </div>
-                <p className="muted small">JPG, PNG, WebP or PDF, up to 4 MB each. A clear phone photo is fine. You can replace a document until the exam result is out.</p>
+                <p className="muted small">{missing.length && canUpload ? "Upload what's still missing: JPG, PNG, WebP or PDF, up to 4 MB each. A clear phone photo is fine. " : ""}To change a document or any detail on the form, please contact the school office.</p>
                 <ul className="doc-list">
                   {DOC_KINDS.map((d) => {
                     const doc = app.documents.find((x) => x.kind === d.kind);
@@ -128,13 +128,13 @@ export default async function ApplicationPage({ params, searchParams }: { params
                             <div className="small muted">{doc ? `${doc.fileName} · uploaded ${fmtDate(doc.uploadedAt)}` : d.required ? "Required" : "Optional"}</div>
                           </div>
                         </div>
-                        {canUpload && (
+                        {canUpload && !doc && (
                           <ActionForm action={uploadApplicationDocAction} className="row tight doc-up" resetOnSuccess>
                             <input type="hidden" name="number" value={app.number} />
                             <input type="hidden" name="token" value={token} />
                             <input type="hidden" name="kind" value={d.kind} />
                             <input className="input" type="file" name="file" aria-label={`Choose ${label}`} accept={d.kind === "passport" ? "image/jpeg,image/png,image/webp" : "image/jpeg,image/png,image/webp,application/pdf"} />
-                            <SubmitButton variant="default" size="sm" icon="upload">{doc ? "Replace" : "Upload"}</SubmitButton>
+                            <SubmitButton variant="default" size="sm" icon="upload">Upload</SubmitButton>
                             <FieldError name={`file-${d.kind}`} />
                           </ActionForm>
                         )}
@@ -165,6 +165,7 @@ export default async function ApplicationPage({ params, searchParams }: { params
                 <div><dt>Parent</dt><dd>{app.parentName}</dd></div>
                 <div><dt>Submitted</dt><dd>{app.submittedAt ? fmtDate(app.submittedAt) : "Not yet"}</dd></div>
               </dl>
+              <a className="btn block" href={`${applicationPath(app.number, token)}/form`} target="_blank" rel="noopener"><Icon name="print" size="sm" />Print application form</a>
               <Link className="btn block" href="/admissions/results">Check a result</Link>
             </div>
           </aside>

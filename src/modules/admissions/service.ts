@@ -176,7 +176,7 @@ export async function markFeePaidAtOffice(id: string, by: string) {
 
 // ---------- Documents ----------
 
-export async function saveDocument(applicationId: string, kind: DocKind, file: { buf: Buffer; mime: string; ext: string; name: string }) {
+export async function saveDocument(applicationId: string, kind: DocKind | `affidavit-${number}`, file: { buf: Buffer; mime: string; ext: string; name: string }) {
   const key = `admissions/${applicationId}/${kind}-${randomToken(8).replace(/[^a-zA-Z0-9]/g, "")}.${file.ext}`;
   await storage().put(key, file.buf, file.mime);
   const old = await db.applicationDocument.findUnique({ where: { applicationId_kind: { applicationId, kind } } });
@@ -186,6 +186,59 @@ export async function saveDocument(applicationId: string, kind: DocKind, file: {
     update: { fileKey: key, fileName: file.name.slice(0, 120), mimeType: file.mime, size: file.buf.length, uploadedAt: new Date() },
   });
   if (old) await storage().delete(old.fileKey);
+}
+
+/** Affidavits filed with name or date-of-birth corrections, oldest first */
+export const affidavits = <D extends { kind: string; uploadedAt: Date }>(docs: D[]) =>
+  docs.filter((d) => d.kind.startsWith("affidavit-")).sort((a, b) => a.uploadedAt.getTime() - b.uploadedAt.getTime());
+
+export type Correction = { at: string; by: string; from: { surname: string; otherNames: string; dateOfBirth: string }; to: { surname: string; otherNames: string; dateOfBirth: string }; affidavit: string; classFrom?: string; classTo?: string };
+
+/**
+ * The office corrects the child's name or date of birth after the form was submitted. A sworn affidavit must be
+ * uploaded with every such change; it is kept with the application, and the change is recorded in its history.
+ * A new date of birth re-checks the class by age (for a child not yet in class).
+ */
+export async function correctChildDetails(id: string, to: { surname: string; otherNames: string; dateOfBirth: Date }, affidavit: { buf: Buffer; mime: string; ext: string; name: string } | null, by: string) {
+  const app = await db.application.findUniqueOrThrow({ where: { id }, include: { class: true, window: true, documents: true, pupil: true } });
+  const day = lagosDay;
+  const nameChanged = app.surname !== to.surname || app.otherNames !== to.otherNames;
+  const dobChanged = day(app.dateOfBirth) !== day(to.dateOfBirth);
+  if (!nameChanged && !dobChanged) throw new UserError("Nothing has changed. Edit the name or date of birth first.");
+  if (!affidavit) throw new UserError("Upload the sworn affidavit for this change.", { affidavit: "Required for a name or date-of-birth change" });
+
+  let classId = app.classId, classTo: string | undefined;
+  if (dobChanged && app.status !== "ENROLLED") {
+    const r = await classForChild(to.dateOfBirth, app.window.session);
+    if (!r.classId) throw new UserError(r.problem ?? "With this date of birth the child can't be admitted this session.", { dateOfBirth: "Outside the admission ages" });
+    if (r.classId !== app.classId) { classId = r.classId; classTo = r.className ?? undefined; }
+  }
+
+  const n = affidavits(app.documents).length + 1;
+  const kind = `affidavit-${n}` as const;
+  await saveDocument(app.id, kind, affidavit);
+  const correction: Correction = {
+    at: new Date().toISOString(), by,
+    from: { surname: app.surname, otherNames: app.otherNames, dateOfBirth: day(app.dateOfBirth) },
+    to: { surname: to.surname, otherNames: to.otherNames, dateOfBirth: day(to.dateOfBirth) },
+    affidavit: kind, ...(classTo ? { classFrom: app.class.name, classTo } : {}),
+  };
+  const details = (app.details ?? {}) as Record<string, unknown>;
+  const corrections = Array.isArray(details.corrections) ? (details.corrections as Correction[]) : [];
+  const updated = await db.application.update({
+    where: { id },
+    data: { surname: to.surname, otherNames: to.otherNames, dateOfBirth: to.dateOfBirth, classId, details: { ...details, corrections: [...corrections, correction] } as Prisma.InputJsonValue },
+  });
+  // A child already in class: their pupil record carries the name too
+  if (app.pupil && nameChanged) await db.pupil.update({ where: { id: app.pupil.id }, data: { firstName: to.otherNames, lastName: to.surname } });
+  return { app: updated, correction, enrolled: !!app.pupil };
+}
+
+/** The office updates the parent's phone number. No document is needed. */
+export async function changeParentPhone(id: string, phone: string) {
+  const app = await db.application.findUniqueOrThrow({ where: { id } });
+  if (app.parentPhone === phone) throw new UserError("That is already the phone number on the application.", { phone: "Unchanged" });
+  return { before: app.parentPhone, app: await db.application.update({ where: { id }, data: { parentPhone: phone } }) };
 }
 
 export const missingDocs = (docs: { kind: string }[]) => DOC_KINDS.filter((d) => d.required && !docs.some((x) => x.kind === d.kind));

@@ -3,10 +3,10 @@ import { test, before } from "node:test";
 import assert from "node:assert/strict";
 import { db } from "../../src/shared/lib/db";
 import { storage } from "../../src/shared/lib/storage";
-import { admissionLetterPdf, LetterNotReady } from "../../src/modules/admissions/letter";
+import { admissionLetterPdf, applicationFormPdf, LetterNotReady } from "../../src/modules/admissions/letter";
 import { UserError } from "../../src/shared/lib/action";
 import {
-  addExamSlot, admit, admissionNotice, admissionStatus, admittedList, applicationByToken, confirmApplicationFee, createApplication, decide, deleteApplication, enrol, enrolMany,
+  addExamSlot, admit, admissionNotice, changeParentPhone, correctChildDetails, admissionStatus, admittedList, applicationByToken, confirmApplicationFee, createApplication, decide, deleteApplication, enrol, enrolMany,
   lookupResult, markFeePaidAtOffice, renewAccessLink, saveDocument, saveWindow, setExamSlot, setResultsPublished, startApplicationFee, withdraw, type NewApplication,
 } from "../../src/modules/admissions/service";
 
@@ -255,6 +255,33 @@ test("the admission letter is only for admitted children, after results are publ
   assert.equal(pdf.bytes.subarray(0, 5).toString(), "%PDF-");
   assert.equal(pdf.name, `admission-letter-${app.number}.pdf`);
   await setResultsPublished(w.id, false);
+});
+
+test("the office corrects a name or date of birth only with an affidavit, and the class follows the new age", async () => {
+  const s = await admissionStatus();
+  const { app } = await createApplication(child({ surname: "Fix", otherNames: "Chika", parentPhone: "08039990089" }), { windowId: s.window!.id, fee: "waived", by: "Test" });
+  const aff = { buf: Buffer.from("%PDF-1.4 affidavit"), mime: "application/pdf", ext: "pdf", name: "affidavit.pdf" };
+  await assert.rejects(correctChildDetails(app.id, { surname: "Fix", otherNames: "Chika", dateOfBirth: app.dateOfBirth }, aff, "Joy"), /Nothing has changed/);
+  await assert.rejects(correctChildDetails(app.id, { surname: "Fixed", otherNames: "Chika", dateOfBirth: app.dateOfBirth }, null, "Joy"), /affidavit/);
+
+  // Born Feb 2019: 8 on 31 December 2027, so Primary 3 instead of Prep 2
+  const r = await correctChildDetails(app.id, { surname: "Fixed", otherNames: "Chika Ada", dateOfBirth: new Date("2019-02-01T00:00:00+01:00") }, aff, "Joy");
+  assert.equal(r.app.surname, "Fixed");
+  assert.equal(r.correction.from.dateOfBirth, "2022-03-04");
+  assert.equal(r.correction.to.dateOfBirth, "2019-02-01");
+  assert.equal(r.correction.classTo, "Primary 3");
+  const after = await db.application.findUniqueOrThrow({ where: { id: app.id }, include: { class: true, documents: true } });
+  assert.equal(after.class.name, "Primary 3");
+  assert.ok(after.documents.some((d) => d.kind === "affidavit-1"), "the affidavit is kept with the application");
+  const second = await correctChildDetails(app.id, { surname: "Fixed", otherNames: "Chika", dateOfBirth: after.dateOfBirth }, aff, "Joy");
+  assert.equal(second.correction.affidavit, "affidavit-2", "each change keeps its own affidavit");
+  assert.equal(((await db.application.findUniqueOrThrow({ where: { id: app.id } })).details as { corrections: unknown[] }).corrections.length, 2);
+
+  await assert.rejects(changeParentPhone(app.id, "08039990089"), /already/);
+  assert.equal((await changeParentPhone(app.id, "08039990099")).app.parentPhone, "08039990099");
+
+  const form = await applicationFormPdf(app.id);
+  assert.equal(form.bytes.subarray(0, 5).toString(), "%PDF-");
 });
 
 test("application numbers are unique", async () => {

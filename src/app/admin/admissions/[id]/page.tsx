@@ -6,12 +6,13 @@ import { Icon } from "@/shared/ui/icon";
 import { Note, PageHeader } from "@/shared/ui/primitives";
 import { SCHOOL, divisionOf } from "@/shared/config/school";
 import { AGE_DAY, admissionClassFor, lagosDay } from "@/shared/lib/admission-age";
+import type { Correction } from "@/modules/admissions";
 import { requireStaff } from "@/modules/auth";
 import { paystackReady } from "@/modules/payments";
 import { listClasses } from "@/modules/catalogue";
 import { suggestRegNumber } from "@/modules/pupils";
 import {
-  applicationDetail, decideAction, deleteApplicationAction, DOC_KINDS, docLabel, enrolAction, markFeePaidAction, missingDocs, renewLinkAction, setExamSlotAction, staffUploadDocAction, STATUS_LABEL, withdrawAction,
+  affidavits, applicationDetail, changeParentPhoneAction, correctChildAction, CorrectChildForm, decideAction, deleteApplicationAction, DOC_KINDS, docLabel, enrolAction, markFeePaidAction, missingDocs, renewLinkAction, setExamSlotAction, staffUploadDocAction, STATUS_LABEL, withdrawAction,
 } from "@/modules/admissions";
 import { STATUS_TONE } from "../_tone";
 import { FamilyLink } from "./_family-link";
@@ -42,6 +43,8 @@ export default async function ApplicationDetailPage({ params, searchParams }: { 
   const details = (app.details ?? {}) as Record<string, string | undefined>;
   const byAge = admissionClassFor(lagosDay(app.dateOfBirth), app.window.session);
   const missing = missingDocs(app.documents);
+  const rawCorrections = (app.details as Record<string, unknown> | null)?.corrections;
+  const corrections = (Array.isArray(rawCorrections) ? rawCorrections : []) as Correction[];
   const open = ["SUBMITTED", "EXAM_SCHEDULED", "ADMITTED", "WAITLISTED", "NOT_ADMITTED"].includes(app.status);
 
   return (
@@ -49,7 +52,7 @@ export default async function ApplicationDetailPage({ params, searchParams }: { 
       <PageHeader
         title={<span className="row tight">{app.surname}, {app.otherNames} <span className={`pill ${STATUS_TONE[app.status]}`}>{STATUS_LABEL[app.status]}</span></span>}
         sub={<><span className="mono">{app.number}</span> · {app.class.name}{divisionOf(app.class.name) ? ` (${divisionOf(app.class.name)!.name})` : ""} · {app.window.session} session</>}
-        actions={<Link className="btn" href="/admin/admissions"><Icon name="back" size="sm" />All applications</Link>}
+        actions={<div className="row tight"><a className="btn" href={`/api/admin/admissions/${app.id}/form`} target="_blank" rel="noopener"><Icon name="print" size="sm" />Print form</a><Link className="btn" href="/admin/admissions"><Icon name="back" size="sm" />All applications</Link></div>}
       />
       <div className="detail-grid">
         <div className="stack">
@@ -78,6 +81,29 @@ export default async function ApplicationDetailPage({ params, searchParams }: { 
               {DETAIL_LABELS.slice(0, 5).filter(([k]) => details[k]).map(([k, l]) => <div key={k}><dt>{l}</dt><dd>{details[k]}</dd></div>)}
             </dl>
             {details.health && <Note tone="warn" icon="heart"><b>Health or learning needs:</b> {details.health}</Note>}
+            {canManage && (
+              <details className="fold">
+                <summary>Correct the child&apos;s name or date of birth</summary>
+                <p className="small muted">Only the school office can change these, and a sworn affidavit must be uploaded with every change.{app.pupil ? " The pupil record gets the new name too; move the pupil to another class from Pupils if needed." : ""}</p>
+                <CorrectChildForm action={correctChildAction} id={app.id} surname={app.surname} otherNames={app.otherNames} dateOfBirth={lagosDay(app.dateOfBirth)} />
+              </details>
+            )}
+            {corrections.length > 0 && (
+              <div className="stack tight">
+                <b className="small">Corrections</b>
+                <ul className="small plain-list">
+                  {corrections.map((c, i) => {
+                    const aff = app.documents.find((x) => x.kind === c.affidavit);
+                    return (
+                      <li key={i}>
+                        {fmtDateTime(c.at)} by {c.by}: {c.from.otherNames} {c.from.surname}, born {fmtDate(c.from.dateOfBirth)} → <b>{c.to.otherNames} {c.to.surname}, born {fmtDate(c.to.dateOfBirth)}</b>
+                        {c.classTo ? ` (class ${c.classFrom} → ${c.classTo})` : ""}{aff ? <> · <a href={`/api/files/${aff.fileKey}`} target="_blank" rel="noreferrer">Affidavit</a></> : null}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
           </section>
 
           <section className="card stack">
@@ -89,6 +115,15 @@ export default async function ApplicationDetailPage({ params, searchParams }: { 
               <div><dt>Address</dt><dd>{app.address}</dd></div>
               {DETAIL_LABELS.slice(5).filter(([k]) => details[k]).map(([k, l]) => <div key={k}><dt>{l}</dt><dd>{details[k]}</dd></div>)}
             </dl>
+            {canManage && (
+              <ActionForm action={changeParentPhoneAction} className="row tight" resetOnSuccess>
+                <input type="hidden" name="id" value={app.id} />
+                <label className="lbl" htmlFor="new-phone">Change phone number</label>
+                <input className="input sm" id="new-phone" name="phone" type="tel" inputMode="tel" placeholder="0803 123 4567" style={{ maxWidth: 180 }} />
+                <SubmitButton size="sm" variant="default">Save</SubmitButton>
+                <FieldError name="phone" />
+              </ActionForm>
+            )}
           </section>
 
           <section className="card stack">
@@ -107,7 +142,7 @@ export default async function ApplicationDetailPage({ params, searchParams }: { 
                     <div className="stack tight grow">
                       <b className="small">{label}</b>
                       {doc ? <a className="small" href={src!} target="_blank" rel="noreferrer">Open {doc.mimeType === "application/pdf" ? "PDF" : "image"}</a> : <span className="small muted">{d.required ? "Not uploaded" : "Not provided"}</span>}
-                      {canManage && open && (
+                      {canManage && (!doc || d.kind === "passport") && app.status !== "WITHDRAWN" && (
                         <ActionForm action={staffUploadDocAction} className="stack tight" resetOnSuccess>
                           <input type="hidden" name="id" value={app.id} />
                           <input type="hidden" name="kind" value={d.kind} />
@@ -121,6 +156,15 @@ export default async function ApplicationDetailPage({ params, searchParams }: { 
                 );
               })}
             </div>
+            <p className="small muted">Only the passport photograph can be replaced. The certificates stay as the family sent them.</p>
+            {affidavits(app.documents).length > 0 && (
+              <div className="stack tight">
+                <b className="small">Affidavits on file</b>
+                <ul className="small plain-list">
+                  {affidavits(app.documents).map((a) => <li key={a.id}><a href={`/api/files/${a.fileKey}`} target="_blank" rel="noreferrer">{a.fileName}</a> · {fmtDate(a.uploadedAt)}</li>)}
+                </ul>
+              </div>
+            )}
           </section>
         </div>
 

@@ -10,7 +10,7 @@ import { auditActor, isLocked, recordAttempt, staffFor } from "@/modules/auth";
 import { audit } from "@/modules/audit";
 import { notifyContact } from "@/modules/notifications";
 import {
-  addExamSlot, admit, applicationByToken, createApplication, decide, deleteApplication, deleteExamSlot, DOC_KINDS, docLabel, enrol, enrolMany, examMessage, lookupResult, RELIGIONS,
+  addExamSlot, admit, applicationByToken, changeParentPhone, correctChildDetails, createApplication, decide, deleteApplication, deleteExamSlot, DOC_KINDS, docLabel, enrol, enrolMany, examMessage, lookupResult, RELIGIONS,
   markFeePaidAtOffice, renewAccessLink, saveDocument, saveWindow, setExamSlot, setResultsPublished, startApplicationFee, withdraw, type Decision, type DocKind,
 } from "./service";
 
@@ -116,6 +116,8 @@ export async function uploadApplicationDocAction(_: ActionResult, form: FormData
     const app = await applicationByToken(String(form.get("number") ?? ""), String(form.get("token") ?? ""));
     if (!app) return fail("Application not found.");
     if (!["SUBMITTED", "EXAM_SCHEDULED"].includes(app.status)) return fail("Documents can't be changed on this application any more. Please contact the school office.");
+    // After the form is sent, families may only add a document that is still missing; changes are made by the office
+    if (app.documents.some((d) => d.kind === String(form.get("kind")))) return fail("This document is already with the school. To change it, please contact the school office.");
     const kind = String(form.get("kind")) as DocKind;
     const doc = DOC_KINDS.find((k) => k.kind === kind);
     if (!doc) return fail("Choose a document.");
@@ -247,12 +249,48 @@ export async function staffUploadDocAction(_: ActionResult, form: FormData): Pro
     const app = await db.application.findUniqueOrThrow({ where: { id: String(form.get("id")) } });
     const kind = String(form.get("kind")) as DocKind;
     if (!DOC_KINDS.some((k) => k.kind === kind)) return fail("Choose a document.");
+    const existing = await db.applicationDocument.findUnique({ where: { applicationId_kind: { applicationId: app.id, kind } } });
+    if (existing && kind !== "passport") return fail("Only the passport photograph can be replaced. The certificates stay as the family sent them.");
     const file = form.get("file") as File | null;
     const up = await readUpload(file, { allowPdf: kind !== "passport" });
     if ("error" in up) return fail(up.error!, { [`file-${kind}`]: up.error! });
     await saveDocument(app.id, kind, { buf: up.buf, mime: up.mime, ext: up.ext, name: file?.name ?? kind });
-    await audit(await auditActor(v), "Uploaded applicant document", "Application", app.id, { number: app.number, kind });
+    await audit(await auditActor(v), existing ? "Replaced applicant passport photo" : "Uploaded applicant document", "Application", app.id, { number: app.number, kind });
     return ok(`${docLabel(kind, (app.details as Record<string, string> | null)?.religion)} uploaded.`);
+  });
+}
+
+/** Correct the child's name or date of birth; a sworn affidavit must come with the change. */
+export async function correctChildAction(_: ActionResult, form: FormData): Promise<ActionResult> {
+  return runAction(async () => {
+    const v = await staffFor("admissions.manage");
+    const d = parseForm(z.object({
+      id: zText(100), surname: zText(80, "Enter the child's surname"), otherNames: zText(120, "Enter the child's other names"), dateOfBirth: zDay("Enter the date of birth"),
+    }), form);
+    const file = form.get("affidavit") as File | null;
+    let affidavit = null;
+    if (file && file.size) {
+      const up = await readUpload(file, { allowPdf: true });
+      if ("error" in up) return fail(up.error!, { affidavit: up.error! });
+      affidavit = { buf: up.buf, mime: up.mime, ext: up.ext, name: file.name || "affidavit" };
+    }
+    const dob = lagos(d.dateOfBirth);
+    if (Number.isNaN(dob.getTime()) || dob > new Date()) return fail("Check the date of birth.", { dateOfBirth: "Check the date of birth" });
+    const r = await correctChildDetails(d.id, { surname: d.surname, otherNames: d.otherNames, dateOfBirth: dob }, affidavit, staffName(v));
+    await audit(await auditActor(v), "Corrected child's details", "Application", d.id, { number: r.app.number, from: r.correction.from, to: r.correction.to, affidavit: r.correction.affidavit, classFrom: r.correction.classFrom, classTo: r.correction.classTo });
+    const cls = r.correction.classTo ? ` The class is now ${r.correction.classTo}, by the new age.` : "";
+    return ok(`Details corrected and the affidavit saved.${cls}${r.enrolled ? " The pupil record has the new name too." : ""}`);
+  });
+}
+
+export async function changeParentPhoneAction(_: ActionResult, form: FormData): Promise<ActionResult> {
+  return runAction(async () => {
+    const v = await staffFor("admissions.manage");
+    const phone = normalizePhone(String(form.get("phone") ?? ""));
+    if (!phone) return fail("Enter a valid Nigerian phone number.", { phone: "Not a valid number" });
+    const r = await changeParentPhone(String(form.get("id")), phone);
+    await audit(await auditActor(v), "Changed parent phone", "Application", r.app.id, { number: r.app.number, from: r.before, to: phone });
+    return ok("Phone number updated.");
   });
 }
 
