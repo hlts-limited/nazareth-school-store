@@ -76,6 +76,19 @@ export default async function ApplicationPage({ params, searchParams }: { params
               </div>
             )}
 
+            {outcome?.tone === "ok" && (
+              <div className="card stack letter-card">
+                <div className="row nowrap" style={{ gap: 14 }}>
+                  <span className="doc-ic done"><Icon name="file" /></span>
+                  <div className="grow">
+                    <h2>Admission letter</h2>
+                    <p className="muted small">Your child&apos;s offer of admission for the {app.window.session} session, signed by the school. Bring a printed copy to the school office.</p>
+                  </div>
+                </div>
+                <div><a className="btn primary" href={`${applicationPath(app.number, token)}/letter`} download><Icon name="download" size="sm" />Download admission letter (PDF)</a></div>
+              </div>
+            )}
+
             {app.examSlot ? (
               <div className="card stack">
                 <h2>Entrance exam</h2>

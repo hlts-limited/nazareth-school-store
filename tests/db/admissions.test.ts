@@ -3,6 +3,7 @@ import { test, before } from "node:test";
 import assert from "node:assert/strict";
 import { db } from "../../src/shared/lib/db";
 import { storage } from "../../src/shared/lib/storage";
+import { admissionLetterPdf, LetterNotReady } from "../../src/modules/admissions/letter";
 import { UserError } from "../../src/shared/lib/action";
 import {
   addExamSlot, admit, admissionNotice, admissionStatus, admittedList, applicationByToken, confirmApplicationFee, createApplication, decide, deleteApplication, enrol, enrolMany,
@@ -239,6 +240,21 @@ test("deleting an application removes it and its documents, and keeps any pupil"
   const gone = await deleteApplication(kept.app.id);
   assert.equal(gone.pupil?.id, r.pupil!.id);
   assert.ok(await db.pupil.findUnique({ where: { id: r.pupil!.id } }), "the pupil stays");
+});
+
+test("the admission letter is only for admitted children, after results are published", async () => {
+  const s = await admissionStatus();
+  const w = s.window!;
+  await setResultsPublished(w.id, false);
+  const { app } = await createApplication(child({ surname: "Letter", otherNames: "Tolu", parentPhone: "08039990088" }), { windowId: w.id, fee: "waived", by: "Test" });
+  await assert.rejects(admissionLetterPdf(app.id), LetterNotReady, "not admitted yet");
+  await admit(app.id, undefined, staffId);
+  await assert.rejects(admissionLetterPdf(app.id), LetterNotReady, "results not published yet");
+  await setResultsPublished(w.id, true);
+  const pdf = await admissionLetterPdf(app.id);
+  assert.equal(pdf.bytes.subarray(0, 5).toString(), "%PDF-");
+  assert.equal(pdf.name, `admission-letter-${app.number}.pdf`);
+  await setResultsPublished(w.id, false);
 });
 
 test("application numbers are unique", async () => {

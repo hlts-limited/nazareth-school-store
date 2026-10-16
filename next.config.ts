@@ -69,6 +69,11 @@ const nextConfig: NextConfig = {
     serverActions: { bodySizeLimit: "60mb" }, // receipts are capped at 5 MB in code; backups can be large
   },
   serverExternalPackages: ["exceljs", "pdf-lib", "jszip", "bcryptjs", "qrcode"],
+  // PDFs (admission letters, invoices) read the logo from disk: ship it with the server functions
+  outputFileTracingIncludes: {
+    "/admissions/application/**": ["./public/logo.png"],
+    "/api/admin/admissions/**": ["./public/logo.png"],
+  },
   async redirects() {
     return REDIRECTS.map(([source, destination]) => ({ source, destination, permanent: true }));
   },

@@ -186,6 +186,18 @@ export default async function ApplicationDetailPage({ params, searchParams }: { 
             </section>
           )}
 
+          {["ADMITTED", "ENROLLED"].includes(app.status) && (
+            <section className="card stack">
+              <h3>Admission letter</h3>
+              {app.window.resultsPublishedAt ? (
+                <>
+                  <p className="small muted">The family can download it from their application page. Print one here if they ask at the office.</p>
+                  <a className="btn sm" href={`/api/admin/admissions/${app.id}/letter`} download><Icon name="download" size="sm" />Download letter (PDF)</a>
+                </>
+              ) : <p className="small muted">Ready once you publish results for {app.window.session}, so no family sees it early.</p>}
+            </section>
+          )}
+
           {app.pupil && (
             <section className="card stack">
               <h3>Enrolled</h3>
