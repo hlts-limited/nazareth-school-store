@@ -36,7 +36,7 @@ export default async function MyProfilePage() {
               <div className="field"><label htmlFor="me-rsa">RSA PIN</label><input className="input mono" id="me-rsa" name="rsaPin" defaultValue={e.rsaPin ?? ""} /></div>
               <div className="field"><label htmlFor="me-nhf">NHF number</label><input className="input mono" id="me-nhf" name="nhfNumber" defaultValue={e.nhfNumber ?? ""} /></div>
               <div className="field"><label htmlFor="me-nhis">NHIS / NHIA number</label><input className="input mono" id="me-nhis" name="nhisNumber" defaultValue={e.nhisNumber ?? ""} /></div>
-              <div className="field"><label htmlFor="me-rent">Annual rent paid (₦)</label><input className="input" id="me-rent" name="annualRent" inputMode="decimal" defaultValue={Number(e.annualRentKobo) ? Number(e.annualRentKobo) / 100 : ""} /><span className="hint">For rent relief on tax, if any.</span></div>
+              <div className="field"><label htmlFor="me-rent">Annual rent paid (₦)</label><input className="input" id="me-rent" name="annualRent" inputMode="decimal" defaultValue={e.annualRentNaira || ""} /><span className="hint">For rent relief on tax, if any.</span></div>
             </div>
             <div><SubmitButton size="sm" icon="check">Save my details</SubmitButton></div>
           </ActionForm>

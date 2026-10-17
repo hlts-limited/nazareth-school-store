@@ -46,7 +46,7 @@ const recordFields = z.object({
 const toInput = (d: z.infer<typeof recordFields>): Omit<EmployeeInput, "email"> => ({
   firstName: d.firstName, lastName: d.lastName, phone: d.phone, gender: d.gender, dateOfBirth: d.dateOfBirth, section: d.section, position: d.position,
   isTeacher: d.isTeacher === "on", hireDate: day(d.hireDate), employmentType: d.employmentType, monthlyGrossKobo: Math.round((d.monthlyGross ?? 0) * 100),
-  tin: d.tin, pfaName: d.pfaName, rsaPin: d.rsaPin, nhfNumber: d.nhfNumber, nhisNumber: d.nhisNumber, annualRentKobo: BigInt(Math.round(d.annualRent * 100)),
+  tin: d.tin, pfaName: d.pfaName, rsaPin: d.rsaPin, nhfNumber: d.nhfNumber, nhisNumber: d.nhisNumber, annualRentNaira: Math.round(d.annualRent),
 });
 
 /** Roles HR may give from Staff records. Higher roles (HR, Bursar, Proprietor) need Staff & roles permission. */
@@ -193,7 +193,7 @@ export async function updateOwnProfileAction(_: ActionResult, form: FormData): P
   return runAction(async () => {
     const v = await staffFor("self.service");
     const d = parseForm(z.object({ phone: zPhone, gender: z.enum(["Female", "Male"]).optional().or(z.literal("").transform(() => undefined)), dateOfBirth: zOptDay, ...statutory }), form);
-    const e = await updateOwnProfile(v.user.id, { ...d, annualRentKobo: BigInt(Math.round(d.annualRent * 100)) });
+    const e = await updateOwnProfile(v.user.id, { ...d, annualRentNaira: Math.round(d.annualRent) });
     await audit(await auditActor(v), "Updated own staff profile", "Employee", e.id, { staffCode: e.staffCode });
     return ok("Your details are saved.");
   });

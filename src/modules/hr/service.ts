@@ -30,7 +30,7 @@ export const staffInviteText = (firstName: string, token: string) =>
 export type EmployeeInput = {
   firstName: string; lastName: string; email: string; phone?: string; gender?: string; dateOfBirth?: Date;
   section: string; position: string; isTeacher: boolean; hireDate: Date; employmentType: EmploymentType;
-  monthlyGrossKobo: number; tin?: string; pfaName?: string; rsaPin?: string; nhfNumber?: string; nhisNumber?: string; annualRentKobo: bigint;
+  monthlyGrossKobo: number; tin?: string; pfaName?: string; rsaPin?: string; nhfNumber?: string; nhisNumber?: string; annualRentNaira: number;
 };
 
 /** Roles a staff record can be given from Staff records (the back-office roles stay on Staff & roles). */
@@ -57,7 +57,7 @@ export async function registerStaff(input: EmployeeInput, extraRoles: string[] =
     gender: input.gender ?? null, dateOfBirth: input.dateOfBirth ?? null, section: input.section, position: input.position, isTeacher: input.isTeacher,
     hireDate: input.hireDate, employmentType: input.employmentType, monthlyGrossKobo: input.monthlyGrossKobo,
     tin: input.tin ?? null, pfaName: input.pfaName ?? null, rsaPin: input.rsaPin ?? null, nhfNumber: input.nhfNumber ?? null, nhisNumber: input.nhisNumber ?? null,
-    annualRentKobo: input.annualRentKobo,
+    annualRentNaira: input.annualRentNaira,
   };
 
   for (let attempt = 0; ; attempt++) {
@@ -99,14 +99,14 @@ export async function updateEmployee(id: string, input: Omit<EmployeeInput, "ema
       gender: input.gender ?? null, dateOfBirth: input.dateOfBirth ?? null, section: input.section, position: input.position, isTeacher: input.isTeacher,
       hireDate: input.hireDate, employmentType: input.employmentType,
       tin: input.tin ?? null, pfaName: input.pfaName ?? null, rsaPin: input.rsaPin ?? null, nhfNumber: input.nhfNumber ?? null, nhisNumber: input.nhisNumber ?? null,
-      annualRentKobo: input.annualRentKobo,
+      annualRentNaira: input.annualRentNaira,
       ...(opts.salary ? { monthlyGrossKobo: input.monthlyGrossKobo } : {}),
     },
   });
 }
 
 /** The fields staff fill in themselves on their own page. */
-export type SelfInput = { phone?: string; gender?: string; dateOfBirth?: Date; tin?: string; pfaName?: string; rsaPin?: string; nhfNumber?: string; nhisNumber?: string; annualRentKobo: bigint };
+export type SelfInput = { phone?: string; gender?: string; dateOfBirth?: Date; tin?: string; pfaName?: string; rsaPin?: string; nhfNumber?: string; nhisNumber?: string; annualRentNaira: number };
 
 export async function updateOwnProfile(userId: string, input: SelfInput) {
   const emp = await db.employee.findUniqueOrThrow({ where: { userId } });
@@ -115,7 +115,7 @@ export async function updateOwnProfile(userId: string, input: SelfInput) {
     data: {
       phone: input.phone ?? null,
       gender: input.gender ?? null, dateOfBirth: input.dateOfBirth ?? null, tin: input.tin ?? null, pfaName: input.pfaName ?? null,
-      rsaPin: input.rsaPin ?? null, nhfNumber: input.nhfNumber ?? null, nhisNumber: input.nhisNumber ?? null, annualRentKobo: input.annualRentKobo,
+      rsaPin: input.rsaPin ?? null, nhfNumber: input.nhfNumber ?? null, nhisNumber: input.nhisNumber ?? null, annualRentNaira: input.annualRentNaira,
     },
   });
 }

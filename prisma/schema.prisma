@@ -739,7 +739,7 @@ model Employee {
   rsaPin             String?
   nhfNumber          String?
   nhisNumber         String?
-  annualRentKobo     BigInt         @default(0) // for rent relief
+  annualRentNaira    Int            @default(0) // declared yearly rent, for rent relief (whole naira)
   statutoryOverrides Json? // e.g. {"pension":{"off":true,"reason":"on probation"}}
   // Bank: the account number and name are encrypted; only the last 4 digits are kept in the clear
   bankCode           String?

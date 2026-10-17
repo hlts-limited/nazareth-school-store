@@ -57,7 +57,7 @@ export default async function StaffRecordPage({ params }: { params: Promise<{ id
               <RecordFields salary={salary} email={false} v={{
                 firstName: u.firstName, lastName: u.lastName, phone: e.phone, gender: e.gender, dateOfBirth: day(e.dateOfBirth), section: e.section, position: e.position,
                 isTeacher: e.isTeacher, hireDate: day(e.hireDate), employmentType: e.employmentType, monthlyGross: e.monthlyGrossKobo / 100,
-                tin: e.tin, pfaName: e.pfaName, rsaPin: e.rsaPin, nhfNumber: e.nhfNumber, nhisNumber: e.nhisNumber, annualRent: Number(e.annualRentKobo) / 100,
+                tin: e.tin, pfaName: e.pfaName, rsaPin: e.rsaPin, nhfNumber: e.nhfNumber, nhisNumber: e.nhisNumber, annualRent: e.annualRentNaira,
               }} />
               <div className="row"><SubmitButton icon="check">Save record</SubmitButton></div>
             </ActionForm>

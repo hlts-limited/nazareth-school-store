@@ -12,7 +12,7 @@ let hrId = "";
 const person = (n: number, over: Partial<EmployeeInput> = {}): EmployeeInput => ({
   firstName: "Grace", lastName: `Teacher${n}`, email: `t${n}.${RUN}@example.com`, phone: `0809000${String(1000 + n).slice(-4)}`,
   section: "school-a", position: "Class Teacher", isTeacher: true, hireDate: new Date("2026-09-01T00:00:00Z"), employmentType: "FULL_TIME",
-  monthlyGrossKobo: 100_000_00, annualRentKobo: 0n, ...over,
+  monthlyGrossKobo: 100_000_00, annualRentNaira: 0, ...over,
 });
 const pdf = { buf: Buffer.from("%PDF-1.4 test"), mime: "application/pdf", ext: "pdf", name: "doc.pdf" };
 const jpg = { buf: Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 0x10]), mime: "image/jpeg", ext: "jpg", name: "photo.jpg" };
