@@ -760,6 +760,8 @@ model Employee {
   attendance         Attendance[]
   captureTokens      CaptureToken[]
   leaveRequests      LeaveRequest[]
+  payrollItems       PayrollItem[]
+  adjustments        PayrollAdjustment[]
 
   @@index([section])
 }
@@ -868,4 +870,84 @@ model LeaveRequest {
 
   @@index([employeeId, status])
   @@index([fromDate, toDate])
+}
+
+// ---------- Staff app: payroll ----------
+
+enum PayrollStatus {
+  DRAFT
+  STATUTORY_REVIEWED
+  TAX_REVIEWED
+  DEFAULTS_REVIEWED // ready for approval
+  APPROVED
+  PAID
+  LOCKED
+}
+
+model PayrollRun {
+  id                 String        @id @default(uuid())
+  period             String        @unique // YYYY-MM
+  status             PayrollStatus @default(DRAFT)
+  rates              Json? // the rates and tax bands this run used, copied at stage 1
+  statutoryCalcBy    String?
+  statutoryCalcAt    DateTime?
+  statutoryRevBy     String?
+  statutoryRevAt     DateTime?
+  taxCalcBy          String?
+  taxCalcAt          DateTime?
+  taxRevBy           String?
+  taxRevAt           DateTime?
+  defaultsCalcBy     String?
+  defaultsCalcAt     DateTime?
+  defaultsRevBy      String?
+  defaultsRevAt      DateTime?
+  preparerIds        String[] // everyone who calculated or reviewed a stage: none of them may approve
+  approvedBy         String?
+  approvedById       String?
+  approvedAt         DateTime?
+  sentBackNote       String?
+  paidAt             DateTime?
+  lockedAt           DateTime?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  items              PayrollItem[]
+}
+
+model PayrollItem {
+  id            String     @id @default(uuid())
+  runId         String
+  run           PayrollRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  employeeId    String
+  employee      Employee   @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  // Monthly amounts in kobo (annual figures are in `lines`)
+  grossKobo     Int
+  pensionKobo   Int        @default(0)
+  nhfKobo       Int        @default(0)
+  nhisKobo      Int        @default(0)
+  taxKobo       Int        @default(0)
+  penaltiesKobo Int        @default(0)
+  carryKobo     Int        @default(0) // penalties carried to next month
+  netKobo       Int        @default(0)
+  held          Boolean    @default(false) // not paid: bank not verified
+  heldReason    String?
+  lines         Json? // stage-by-stage breakdown for the payslip
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@unique([runId, employeeId])
+}
+
+model PayrollAdjustment {
+  id         String   @id @default(uuid())
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  period     String // YYYY-MM
+  kind       String // penalty | waiver
+  amountKobo Int
+  reason     String
+  by         String
+  byId       String
+  createdAt  DateTime @default(now())
+
+  @@index([period])
 }

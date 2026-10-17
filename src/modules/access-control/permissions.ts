@@ -41,6 +41,16 @@ export const PERMISSIONS = {
   ATTENDANCE_MANAGE: "attendance.manage",
   /** Look at clock-in photos (each view is logged) */
   ATTENDANCE_PHOTOS: "attendance.photos",
+  /** See payroll runs and their figures */
+  PAYROLL_VIEW: "payroll.view",
+  /** Calculate and mark reviewed the three stages; set rates and tax bands */
+  PAYROLL_RUN: "payroll.run",
+  /** Enter penalties and waivers */
+  PAYROLL_PENALTIES: "payroll.penalties",
+  /** Approve a run (never one you prepared) */
+  PAYROLL_APPROVE: "payroll.approve",
+  /** Press Pay (the Proprietor only) */
+  PAYROLL_PAY: "payroll.pay",
   /** Alpha Admin only: raw data editing, SQL console. Never part of a role; see ALPHA_ADMIN_EMAIL. */
   ALPHA: "system.alpha",
 } as const;
@@ -63,15 +73,15 @@ export const ROLE_DEFS: { id: string; name: string; permissions: Permission[]; r
   },
   {
     id: "proprietor", name: "Proprietor", requires2fa: true,
-    permissions: [P.SELF_SERVICE, P.HR_VIEW_SECTION, P.HR_VIEW, P.HR_MANAGE, P.HR_SALARY, P.ATTENDANCE_VIEW_SECTION, P.ATTENDANCE_MANAGE, P.ATTENDANCE_PHOTOS],
+    permissions: [P.SELF_SERVICE, P.HR_VIEW_SECTION, P.HR_VIEW, P.HR_MANAGE, P.HR_SALARY, P.ATTENDANCE_VIEW_SECTION, P.ATTENDANCE_MANAGE, P.ATTENDANCE_PHOTOS, P.PAYROLL_VIEW, P.PAYROLL_PENALTIES, P.PAYROLL_APPROVE, P.PAYROLL_PAY],
   },
   {
     id: "bursar", name: "Bursar", requires2fa: true,
-    permissions: [P.SELF_SERVICE, P.HR_VIEW_SECTION, P.HR_VIEW, P.HR_SALARY, P.HR_BANK_APPROVE, P.ATTENDANCE_VIEW_SECTION],
+    permissions: [P.SELF_SERVICE, P.HR_VIEW_SECTION, P.HR_VIEW, P.HR_SALARY, P.HR_BANK_APPROVE, P.ATTENDANCE_VIEW_SECTION, P.PAYROLL_VIEW, P.PAYROLL_RUN],
   },
   {
     id: "hr", name: "Admin / HR", requires2fa: true,
-    permissions: [P.SELF_SERVICE, P.HR_VIEW_SECTION, P.HR_VIEW, P.HR_MANAGE, P.HR_SALARY, P.ATTENDANCE_VIEW_SECTION, P.ATTENDANCE_MANAGE, P.ATTENDANCE_PHOTOS],
+    permissions: [P.SELF_SERVICE, P.HR_VIEW_SECTION, P.HR_VIEW, P.HR_MANAGE, P.HR_SALARY, P.ATTENDANCE_VIEW_SECTION, P.ATTENDANCE_MANAGE, P.ATTENDANCE_PHOTOS, P.PAYROLL_VIEW, P.PAYROLL_PENALTIES],
   },
   {
     id: "head", name: "Head teacher", requires2fa: false,
@@ -83,7 +93,8 @@ export const ROLE_DEFS: { id: string; name: string; permissions: Permission[]; r
   },
   {
     id: "admin", name: "Super Admin", requires2fa: true,
-    permissions: (Object.values(P) as Permission[]).filter((p) => p !== P.ALPHA),
+    // Everything except Alpha; approving and paying salaries stays with the Proprietor
+    permissions: (Object.values(P) as Permission[]).filter((p) => p !== P.ALPHA && p !== P.PAYROLL_APPROVE && p !== P.PAYROLL_PAY),
   },
 ];
 
@@ -181,6 +192,14 @@ export const STAFF_SECTIONS: { id: string; label: string; perm: Permission; item
       { href: "/admin/attendance/month", label: "Month", icon: "list" },
       { href: "/admin/attendance/leave", label: "Leave requests", icon: "file", badge: "leave" },
       { href: "/admin/attendance/settings", label: "Settings & holidays", icon: "cog" },
+    ],
+  },
+  {
+    id: "payroll", label: "Payroll", perm: P.PAYROLL_VIEW,
+    items: [
+      { href: "/admin/payroll", label: "Payroll runs", icon: "wallet" },
+      { href: "/admin/payroll/penalties", label: "Penalties & waivers", icon: "alert" },
+      { href: "/admin/payroll/settings", label: "Rates & tax bands", icon: "cog" },
     ],
   },
   {

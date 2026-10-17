@@ -843,3 +843,11 @@ a.chip{text-decoration:none}
   body:has(.print-qr) .print-qr,body:has(.print-qr) .print-qr *{visibility:visible}
   body:has(.print-qr) .print-qr{position:absolute;left:0;top:0;border:0}
 }
+
+/* ---------- Staff app: payroll stages ---------- */
+.pad{padding:14px 18px}
+.pr-stage .card-h h3{display:flex;align-items:center;gap:8px}
+.pr-stage .card-h .step-n{width:26px;height:26px;font-size:13px;background:var(--muted)}
+.pr-stage.open{border-color:var(--red-line);box-shadow:0 0 0 3px var(--red-soft)}
+.pr-stage.open .card-h .step-n{background:var(--red-fill,var(--red))}
+.pr-stage.done .card-h .step-n{background:var(--ok)}

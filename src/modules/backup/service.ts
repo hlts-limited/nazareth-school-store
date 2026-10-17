@@ -19,6 +19,7 @@ const TABLES = [
   ["admissionWindow", "AdmissionWindow"], ["examSlot", "ExamSlot"], ["application", "Application"], ["applicationDocument", "ApplicationDocument"],
   ["notice", "Notice"], ["event", "Event"], ["galleryPhoto", "GalleryPhoto"], ["enquiry", "Enquiry"],
   ["employee", "Employee"], ["employeeDocument", "EmployeeDocument"], ["attendance", "Attendance"], ["holiday", "Holiday"], ["leaveRequest", "LeaveRequest"],
+  ["payrollRun", "PayrollRun"], ["payrollItem", "PayrollItem"], ["payrollAdjustment", "PayrollAdjustment"],
 ] as const;
 // Attendance photos ("attendance/") are deliberately left out: they must not outlive their 31 days in a backup.
 const FILE_PREFIXES = ["receipts/", "items/", "admissions/", "gallery/", "staff/"];

@@ -10,6 +10,7 @@ import { auditActor, getViewer, staffFor, type StaffViewer } from "@/modules/aut
 import { audit } from "@/modules/audit";
 import { listBanks } from "@/modules/payments";
 import { sendStaffInvite } from "@/modules/staff";
+import { resetOpenRuns } from "@/modules/payroll";
 import {
   STAFF_DOC_KINDS, STAFF_SECTIONS_LIST, deleteStaffDocument, registerStaff, reviewBank, reviewStaffDocument, saveStaffDocument, setBankDetails,
   setEmployeeStatus, staffDocLabel, updateEmployee, updateOwnProfile, type EmployeeInput, type StaffDocKind,
@@ -81,6 +82,8 @@ export async function updateEmployeeAction(_: ActionResult, form: FormData): Pro
     const e = await updateEmployee(d.id, toInput(d), { salary });
     const changed = salary && before.monthlyGrossKobo !== e.monthlyGrossKobo ? { salaryFrom: before.monthlyGrossKobo / 100, salaryTo: e.monthlyGrossKobo / 100 } : {};
     await audit(await auditActor(v), salary && "salaryFrom" in changed ? "Changed salary" : "Updated staff record", "Employee", e.id, { staffCode: e.staffCode, ...changed });
+    // A salary or rent change makes open payroll runs out of date
+    if ("salaryFrom" in changed || before.annualRentNaira !== e.annualRentNaira) await resetOpenRuns("DRAFT");
     return ok("Staff record saved.");
   });
 }
@@ -93,6 +96,7 @@ export async function setEmployeeStatusAction(_: ActionResult, form: FormData): 
     const target = await db.employee.findUniqueOrThrow({ where: { id } });
     if (target.userId === v.user.id) return fail("You can't change your own record's status.");
     const e = await setEmployeeStatus(id, status);
+    await resetOpenRuns("DRAFT");
     await audit(await auditActor(v), status === "ACTIVE" ? "Reactivated staff" : "Made staff inactive", "Employee", e.id, { staffCode: e.staffCode });
     return ok(status === "ACTIVE" ? "Staff member is active again." : "Staff member marked as left. They can no longer sign in; their record is kept.");
   });
@@ -182,6 +186,7 @@ export async function reviewBankAction(_: ActionResult, form: FormData): Promise
     const v = await staffFor("hr.bank.approve");
     const d = parseForm(z.object({ id: zText(100), decision: z.enum(["approve", "reject"]), note: zOptText(300) }), form);
     const e = await reviewBank(d.id, d.decision === "approve", d.note, v.user.id);
+    await resetOpenRuns("DRAFT"); // who can be paid has changed
     await audit(await auditActor(v), d.decision === "approve" ? "Verified bank details" : "Rejected bank details", "Employee", e.id, { staffCode: e.staffCode, bank: e.bankName, last4: e.accountLast4, note: d.note });
     return ok(d.decision === "approve" ? "Bank details verified. This person can now be paid." : "Bank details rejected. They've been told why.");
   });
