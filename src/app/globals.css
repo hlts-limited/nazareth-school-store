@@ -821,3 +821,25 @@ a.chip{text-decoration:none}
 /* Notifications slide in from the side */
 .toast{animation:toast-in .35s var(--ease-spring)}
 @keyframes toast-in{from{opacity:0;transform:translateX(24px) scale(.96)}}
+
+/* ---------- Staff app: clock-in camera, gate screen, attendance photos ---------- */
+.clock-view{display:none;position:relative;border-radius:14px;overflow:hidden;background:#000;aspect-ratio:3/4;max-height:62vh}
+.clock-view.on{display:block}
+.clock-view video{width:100%;height:100%;object-fit:cover;display:block}
+.clock-frame{position:absolute;inset:22% 16%;border:3px solid #fff;border-radius:16px;box-shadow:0 0 0 999px rgba(0,0,0,.35);animation:clock-pulse 1.6s ease-in-out infinite}
+@keyframes clock-pulse{50%{border-color:rgba(255,255,255,.55)}}
+.center{text-align:center}
+.att-thumb{width:44px;height:58px;object-fit:cover;border-radius:6px;border:1px solid var(--line);display:block}
+.gate{min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;background:#fff;color:#231F20;text-align:center}
+.gate h1{margin:0;font-size:clamp(26px,5vw,44px);color:#231F20}
+.gate-sub{margin:0;font-size:clamp(16px,2.6vw,22px);color:#555}
+.gate-code{width:min(78vw,72vh);aspect-ratio:1;display:grid;place-items:center;border:10px solid #D7262D;border-radius:24px;padding:12px;background:#fff}
+.gate-code img{width:100%;height:100%;image-rendering:pixelated}
+.gate-time{margin:0;font-size:clamp(20px,4vw,34px);font-variant-numeric:tabular-nums;font-weight:700}
+.gate-err{margin:0;color:#B11D23;font-weight:600}
+.print-qr{align-items:center;text-align:center;padding:16px;border:1px dashed var(--line);border-radius:12px;width:fit-content}
+@media print{
+  body:has(.print-qr) *{visibility:hidden}
+  body:has(.print-qr) .print-qr,body:has(.print-qr) .print-qr *{visibility:visible}
+  body:has(.print-qr) .print-qr{position:absolute;left:0;top:0;border:0}
+}

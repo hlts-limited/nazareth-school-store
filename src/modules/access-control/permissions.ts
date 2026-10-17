@@ -35,6 +35,12 @@ export const PERMISSIONS = {
   HR_SALARY: "hr.salary",
   /** Approve staff bank details for payment */
   HR_BANK_APPROVE: "hr.bank.approve",
+  /** See attendance for your own section (head teachers) */
+  ATTENDANCE_VIEW_SECTION: "attendance.view.section",
+  /** Today's attendance for everyone, manual clock, Close day, leave decisions, holidays, settings */
+  ATTENDANCE_MANAGE: "attendance.manage",
+  /** Look at clock-in photos (each view is logged) */
+  ATTENDANCE_PHOTOS: "attendance.photos",
   /** Alpha Admin only: raw data editing, SQL console. Never part of a role; see ALPHA_ADMIN_EMAIL. */
   ALPHA: "system.alpha",
 } as const;
@@ -57,19 +63,19 @@ export const ROLE_DEFS: { id: string; name: string; permissions: Permission[]; r
   },
   {
     id: "proprietor", name: "Proprietor", requires2fa: true,
-    permissions: [P.SELF_SERVICE, P.HR_VIEW_SECTION, P.HR_VIEW, P.HR_MANAGE, P.HR_SALARY],
+    permissions: [P.SELF_SERVICE, P.HR_VIEW_SECTION, P.HR_VIEW, P.HR_MANAGE, P.HR_SALARY, P.ATTENDANCE_VIEW_SECTION, P.ATTENDANCE_MANAGE, P.ATTENDANCE_PHOTOS],
   },
   {
     id: "bursar", name: "Bursar", requires2fa: true,
-    permissions: [P.SELF_SERVICE, P.HR_VIEW_SECTION, P.HR_VIEW, P.HR_SALARY, P.HR_BANK_APPROVE],
+    permissions: [P.SELF_SERVICE, P.HR_VIEW_SECTION, P.HR_VIEW, P.HR_SALARY, P.HR_BANK_APPROVE, P.ATTENDANCE_VIEW_SECTION],
   },
   {
     id: "hr", name: "Admin / HR", requires2fa: true,
-    permissions: [P.SELF_SERVICE, P.HR_VIEW_SECTION, P.HR_VIEW, P.HR_MANAGE, P.HR_SALARY],
+    permissions: [P.SELF_SERVICE, P.HR_VIEW_SECTION, P.HR_VIEW, P.HR_MANAGE, P.HR_SALARY, P.ATTENDANCE_VIEW_SECTION, P.ATTENDANCE_MANAGE, P.ATTENDANCE_PHOTOS],
   },
   {
     id: "head", name: "Head teacher", requires2fa: false,
-    permissions: [P.SELF_SERVICE, P.HR_VIEW_SECTION],
+    permissions: [P.SELF_SERVICE, P.HR_VIEW_SECTION, P.ATTENDANCE_VIEW_SECTION],
   },
   {
     id: "staff", name: "Staff", requires2fa: false,
@@ -89,7 +95,7 @@ export const ALL_PERMISSIONS = Object.values(P) as Permission[];
 export const roleName = (id: string) => (id === ALPHA_ROLE ? "Alpha Admin" : ROLE_DEFS.find((r) => r.id === id)?.name ?? id);
 
 /** Staff areas shown in the back office; a person sees the areas their permissions allow. */
-export const STAFF_SECTIONS: { id: string; label: string; perm: Permission; items: { href: string; label: string; icon: string; badge?: "review" | "pack" | "bin" | "apps" | "enq" | "hr" }[] }[] = [
+export const STAFF_SECTIONS: { id: string; label: string; perm: Permission; items: { href: string; label: string; icon: string; badge?: "review" | "pack" | "bin" | "apps" | "enq" | "hr" | "leave" }[] }[] = [
   {
     id: "alpha", label: "Alpha", perm: P.ALPHA,
     items: [
@@ -169,8 +175,19 @@ export const STAFF_SECTIONS: { id: string; label: string; perm: Permission; item
     ],
   },
   {
+    id: "attendance", label: "Attendance", perm: P.ATTENDANCE_VIEW_SECTION,
+    items: [
+      { href: "/admin/attendance", label: "Today", icon: "clock" },
+      { href: "/admin/attendance/month", label: "Month", icon: "list" },
+      { href: "/admin/attendance/leave", label: "Leave requests", icon: "file", badge: "leave" },
+      { href: "/admin/attendance/settings", label: "Settings & holidays", icon: "cog" },
+    ],
+  },
+  {
     id: "me", label: "My staff page", perm: P.SELF_SERVICE,
     items: [
+      { href: "/admin/me/clock", label: "Clock in / out", icon: "qr" },
+      { href: "/admin/me/attendance", label: "My attendance & leave", icon: "clock" },
       { href: "/admin/me", label: "My profile", icon: "users" },
     ],
   },

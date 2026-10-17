@@ -83,6 +83,9 @@ const nextConfig: NextConfig = {
     return [
       { source: "/((?!api/files).*)", headers: headersWith(csp) },
       ...PUBLIC_PATHS.map((source) => ({ source, headers: headersWith(publicCsp) })),
+      // Staff clock in with the camera and location, and HR sets the school's location. The back office moves between
+      // pages without reloading, so the whole staff area (our own site only) may ask; the public website may not.
+      { source: "/admin/:path*", headers: [{ key: "Permissions-Policy", value: "camera=(self), microphone=(), geolocation=(self), payment=()" }] },
     ];
   },
 };

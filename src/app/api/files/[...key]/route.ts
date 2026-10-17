@@ -16,6 +16,16 @@ export async function GET(_: Request, { params }: { params: Promise<{ key: strin
     if (v.kind !== "staff" || !v.permissions.has("admissions.view")) return new NextResponse("Not allowed", { status: 403 });
     return serve(key, "private, no-store");
   }
+  if (key.startsWith("attendance/")) {
+    // Clock-in photos: the staff member and those allowed to review photos (the review page logs each look)
+    const v = await getViewer();
+    if (!v) return new NextResponse("Sign in required", { status: 401 });
+    if (v.kind !== "staff") return new NextResponse("Not allowed", { status: 403 });
+    const rec = await db.attendance.findFirst({ where: { OR: [{ inPhotoKey: key }, { outPhotoKey: key }] }, include: { employee: true } });
+    if (!rec) return new NextResponse("Not found", { status: 404 });
+    if (rec.employee.userId !== v.user.id && !v.permissions.has("attendance.photos")) return new NextResponse("Not allowed", { status: 403 });
+    return serve(key, "private, no-store");
+  }
   if (key.startsWith("staff/")) {
     // Staff documents: the staff member, HR and the Proprietor/Bursar. Every view of an ID or guarantor form is logged.
     const v = await getViewer();

@@ -4,6 +4,7 @@ import { applyRetention, createBackup } from "@/modules/backup";
 import { expireUnpaidOrders } from "@/modules/orders";
 import { emptyBin } from "@/modules/pupils";
 import { remindExpiringDocuments } from "@/modules/hr";
+import { purgeOldPhotos } from "@/modules/attendance";
 
 /** Everything that runs once a day (see /api/cron/daily and scripts/cron.ts). */
 export async function runDailyJobs() {
@@ -12,12 +13,13 @@ export async function runDailyJobs() {
   const removedBackups = await applyRetention();
   const purgedPupils = await emptyBin(30);
   const expiryReminders = await remindExpiringDocuments();
+  const attendancePhotos = await purgeOldPhotos();
   const since = new Date(Date.now() - 30 * 86400_000);
   const [attempts, sessions] = await Promise.all([
     db.loginAttempt.deleteMany({ where: { createdAt: { lt: since } } }),
     db.session.deleteMany({ where: { OR: [{ revokedAt: { lt: since } }, { expiresAt: { lt: since } }] } }),
   ]);
-  const result = { ...orders, backup: backup.fileName, removedBackups, purgedPupils, expiryReminders, oldLoginAttempts: attempts.count, oldSessions: sessions.count };
+  const result = { ...orders, backup: backup.fileName, removedBackups, purgedPupils, expiryReminders, attendancePhotos, oldLoginAttempts: attempts.count, oldSessions: sessions.count };
   await audit({ name: "System", role: "Scheduled job" }, "Daily jobs ran", "System", null, result);
   return result;
 }

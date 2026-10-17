@@ -753,9 +753,13 @@ model Employee {
   bankReviewedById   String?
   bankReviewedAt     DateTime?
   paystackRecipient  String? // transfer recipient code, reset when the bank changes
+  attendanceConsentAt DateTime? // accepted the photo and location notice (NDPA 2023)
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
   documents          EmployeeDocument[]
+  attendance         Attendance[]
+  captureTokens      CaptureToken[]
+  leaveRequests      LeaveRequest[]
 
   @@index([section])
 }
@@ -785,4 +789,83 @@ model EmployeeDocument {
 
   @@index([employeeId, kind])
   @@index([status])
+}
+
+// ---------- Staff app: attendance ----------
+
+enum AttendanceStatus {
+  PRESENT
+  LATE
+  ABSENT // no clock-in by Close day, no leave, not a holiday
+  LEAVE // approved leave
+  HOLIDAY
+}
+
+model Attendance {
+  id               String           @id @default(uuid())
+  employeeId       String
+  employee         Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date             DateTime         @db.Date // the school day (Lagos)
+  status           AttendanceStatus
+  clockInAt        DateTime?
+  clockOutAt       DateTime?
+  inPhotoKey       String?
+  outPhotoKey      String?
+  photoDeletedAt   DateTime? // photos are deleted after 31 days; the record stays
+  inLat            Float?
+  inLng            Float?
+  outLat           Float?
+  outLng           Float?
+  qrVerified       Boolean          @default(false)
+  manualNote       String? // why HR or the Proprietor clocked them by hand
+  manualBy         String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@unique([employeeId, date])
+  @@index([date])
+}
+
+/** Issued after a valid QR scan; the photo must come back with it within 60 seconds, once. */
+model CaptureToken {
+  id         String    @id @default(uuid())
+  employeeId String
+  employee   Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  kind       String // in | out
+  issuedAt   DateTime  @default(now())
+  expiresAt  DateTime
+  usedAt     DateTime?
+
+  @@index([employeeId])
+}
+
+model Holiday {
+  id   String   @id @default(uuid())
+  date DateTime @unique @db.Date
+  name String
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+model LeaveRequest {
+  id         String      @id @default(uuid())
+  employeeId String
+  employee   Employee    @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  type       String // annual | sick | maternity | paternity | compassionate | other
+  fromDate   DateTime    @db.Date
+  toDate     DateTime    @db.Date
+  reason     String?
+  status     LeaveStatus @default(PENDING)
+  decidedBy  String?
+  decidedAt  DateTime?
+  note       String?
+  createdAt  DateTime    @default(now())
+
+  @@index([employeeId, status])
+  @@index([fromDate, toDate])
 }

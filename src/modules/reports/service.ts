@@ -2,7 +2,7 @@ import { db } from "@/shared/lib/db";
 import { ORDER_STATUS, PAID_STATUSES } from "@/modules/orders";
 
 export async function navCounts() {
-  const [review, pack, bin, apps, enq, hrDocs, hrBanks] = await Promise.all([
+  const [review, pack, bin, apps, enq, hrDocs, hrBanks, leave] = await Promise.all([
     db.order.count({ where: { status: "AWAITING_VERIFICATION" } }),
     db.order.count({ where: { status: { in: ["PAYMENT_APPROVED", "PACKING"] } } }),
     db.pupil.count({ where: { deletedAt: { not: null } } }),
@@ -10,8 +10,9 @@ export async function navCounts() {
     db.enquiry.count({ where: { handledAt: null } }),
     db.employeeDocument.count({ where: { status: "PENDING" } }),
     db.employee.count({ where: { bankStatus: "PENDING" } }),
+    db.leaveRequest.count({ where: { status: "PENDING" } }),
   ]);
-  return { review, pack, bin, apps, enq, hr: hrDocs + hrBanks };
+  return { review, pack, bin, apps, enq, hr: hrDocs + hrBanks, leave };
 }
 
 export async function adminOverview() {
