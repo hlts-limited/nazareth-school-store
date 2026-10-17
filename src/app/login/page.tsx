@@ -11,11 +11,10 @@ import { LoginScene } from "./login-scene";
 
 export const metadata = { title: "Sign in" };
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ tab?: string; next?: string }> }) {
-  const { tab, next } = await searchParams;
-  const toClock = next === "clock";
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const v = await getViewer();
-  if (v) redirect(toClock && v.kind === "staff" ? "/admin/me/clock" : dashboardPath(v));
+  if (v) redirect(dashboardPath(v));
+  const { tab } = await searchParams;
   const { ip } = await requestMeta();
   const needCaptcha = (await recentFailures(`pupil-ip:${ip}`)) >= CAPTCHA_AFTER;
   const captcha = needCaptcha ? makeCaptcha() : null;
@@ -53,8 +52,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             </Note>
           )}
           <LoginForms
-            initialTab={toClock || tab === "staff" ? "staff" : tab === "pupil" ? "pupil" : "parent"}
-            toClock={toClock}
+            initialTab={tab === "pupil" || tab === "staff" ? tab : "parent"}
             captcha={captcha}
             actions={{ parent: loginParent, pupil: loginPupil, staff: loginStaff }}
           />

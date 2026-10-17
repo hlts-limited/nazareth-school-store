@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 /** The gate device's screen: the current code, refreshed before it changes every 30 seconds. */
-export function GateScreen({ token, school, clockUrl }: { token: string; school: string; clockUrl: string }) {
+export function GateScreen({ token, school }: { token: string; school: string }) {
   const [code, setCode] = useState<{ img: string; secondsLeft: number | null } | null>(null);
   const [err, setErr] = useState(false);
   const [now, setNow] = useState(() => new Date());
@@ -28,7 +28,7 @@ export function GateScreen({ token, school, clockUrl }: { token: string; school:
   return (
     <main className="gate">
       <h1>{school}</h1>
-      <p className="gate-sub">Staff: on your phone go to <b className="gate-url">{clockUrl}</b>, sign in, then scan this code</p>
+      <p className="gate-sub">Staff: open <b>Clock in / out</b> on your phone and scan this code</p>
       <div className="gate-code">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         {code ? <img src={code.img} alt="Gate code for clocking in" /> : <span>Loading…</span>}
