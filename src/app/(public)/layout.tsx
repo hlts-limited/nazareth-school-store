@@ -87,7 +87,7 @@ export default async function PublicLayout({ children }: { children: React.React
             <h2>Parents &amp; pupils</h2>
             <Link href="/login">School Store</Link>
             <Link href="/login?tab=pupil">Pupil sign-in</Link>
-            <Link href="/login?tab=staff">Staff sign-in</Link>
+            <Link href="/staff/login">Staff sign-in</Link>
           </div>
 
           <div className="stack tight">

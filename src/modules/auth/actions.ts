@@ -99,7 +99,7 @@ export async function logout() {
   const v = await getViewer();
   if (v) await audit(await auditActor(v), "Signed out", "Session");
   await destroyCurrentSession();
-  redirect("/login");
+  redirect(v?.kind === "staff" ? "/staff/login" : "/login");
 }
 
 /** Called by the idle watcher so active users aren't signed out. */
@@ -126,7 +126,7 @@ export async function acceptInvite(_: ActionResult, form: FormData): Promise<Act
     await revokeAllForUser(user.id, "Password changed");
     const { ip } = await requestMeta();
     await audit({ id: user.id, name: `${user.firstName} ${user.lastName}`, role: user.type === "PARENT" ? "Parent" : "Staff", ip }, "Accepted invite", "User", user.id);
-    return ok("Password set. You can sign in now.", { redirect: "/login" + (user.type === "STAFF" ? "?tab=staff" : "") });
+    return ok("Password set. You can sign in now.", { redirect: user.type === "STAFF" ? "/staff/login" : "/login" });
   });
 }
 

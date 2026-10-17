@@ -46,6 +46,6 @@ export async function restoreAction(_: ActionResult, form: FormData): Promise<Ac
     const actor = await auditActor(v);
     const manifest = await runRestore(String(form.get("token")), who(v));
     await audit(actor, "Restored backup", "Backup", null, { createdAt: manifest.createdAt, counts: manifest.counts });
-    return ok("Restore complete. Everyone has been signed out; sign in again.", { redirect: "/login?tab=staff" });
+    return ok("Restore complete. Everyone has been signed out; sign in again.", { redirect: "/staff/login" });
   });
 }

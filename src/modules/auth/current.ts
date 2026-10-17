@@ -42,7 +42,7 @@ export const getViewer = cache(async (): Promise<Viewer | null> => {
 
 export async function requireStaff(perm?: Permission): Promise<StaffViewer> {
   const v = await getViewer();
-  if (!v || v.kind !== "staff") redirect("/login?next=admin");
+  if (!v || v.kind !== "staff") redirect("/staff/login");
   if (perm && !v.permissions.has(perm)) redirect("/admin?denied=1");
   return v;
 }

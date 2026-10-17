@@ -52,7 +52,7 @@ const REDIRECTS: [string, string][] = [
   ["/admission-update.html", "/admissions/results"],
   ["/gallery.html", "/gallery"],
   ["/contact.html", "/contact"],
-  ["/admin-login.html", "/login?tab=staff"],
+  ["/admin-login.html", "/staff/login"],
   ["/admin-dashboard.html", "/admin"],
   ["/about", "/about/welcome"],
   ["/schools", "/schools/pre-school"],

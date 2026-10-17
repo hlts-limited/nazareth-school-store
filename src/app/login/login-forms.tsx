@@ -21,17 +21,17 @@ function RefreshForCaptcha({ shown }: { shown: boolean }) {
 }
 
 export function LoginForms({ initialTab, captcha, actions }: {
-  initialTab: "parent" | "pupil" | "staff";
+  initialTab: "parent" | "pupil";
   captcha: { question: string; token: string } | null;
-  actions: { parent: Action; pupil: Action; staff: Action };
+  actions: { parent: Action; pupil: Action };
 }) {
   const [tab, setTab] = useState(initialTab);
   return (
     <>
       <div className="seg" role="tablist" aria-label="Who is signing in">
-        {(["parent", "pupil", "staff"] as const).map((t) => (
+        {(["parent", "pupil"] as const).map((t) => (
           <button key={t} type="button" role="tab" aria-selected={tab === t} className={tab === t ? "on" : ""} onClick={() => setTab(t)}>
-            {t === "parent" ? "Parent" : t === "pupil" ? "Pupil" : "Staff"}
+            {t === "parent" ? "Parent" : "Pupil"}
           </button>
         ))}
       </div>
@@ -65,16 +65,19 @@ export function LoginForms({ initialTab, captcha, actions }: {
           <SubmitButton size="lg" block>Sign in to pupil dashboard</SubmitButton>
         </ActionForm>
       )}
-
-      {tab === "staff" && (
-        <ActionForm action={actions.staff} className="stack">
-          <FormMessage />
-          <div className="field"><label htmlFor="ls-id">Staff email</label><input className="input" id="ls-id" name="email" type="email" autoComplete="username" required /><FieldError name="email" /></div>
-          <div className="field"><label htmlFor="ls-pw">Password</label><input className="input" id="ls-pw" name="password" type="password" autoComplete="current-password" required /><FieldError name="password" /></div>
-          <div className="field"><label htmlFor="ls-2fa">2FA code <span className="muted">(Accountant and Super Admin)</span></label><input className="input mono" id="ls-2fa" name="code" inputMode="numeric" maxLength={6} autoComplete="one-time-code" /><FieldError name="code" /></div>
-          <SubmitButton variant="dark" size="lg" block>Sign in to back office</SubmitButton>
-        </ActionForm>
-      )}
     </>
+  );
+}
+
+/** The staff sign-in form, on its own page (/staff/login). */
+export function StaffLoginForm({ action }: { action: Action }) {
+  return (
+    <ActionForm action={action} className="stack">
+      <FormMessage />
+      <div className="field"><label htmlFor="ls-id">Staff email</label><input className="input" id="ls-id" name="email" type="email" autoComplete="username" required /><FieldError name="email" /></div>
+      <div className="field"><label htmlFor="ls-pw">Password</label><input className="input" id="ls-pw" name="password" type="password" autoComplete="current-password" required /><FieldError name="password" /></div>
+      <div className="field"><label htmlFor="ls-2fa">2FA code <span className="muted">(Accountant and Super Admin)</span></label><input className="input mono" id="ls-2fa" name="code" inputMode="numeric" maxLength={6} autoComplete="one-time-code" /><FieldError name="code" /></div>
+      <SubmitButton variant="dark" size="lg" block>Sign in to back office</SubmitButton>
+    </ActionForm>
   );
 }
