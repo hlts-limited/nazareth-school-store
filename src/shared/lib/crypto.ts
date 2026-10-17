@@ -1,4 +1,5 @@
-import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import { createCipheriv, createDecipheriv, createHash, createHmac, hkdfSync, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import { env } from "@/shared/config/env";
 
 export const randomToken = (bytes = 32) => randomBytes(bytes).toString("base64url");
 export const sha256 = (data: string | Buffer) => createHash("sha256").update(data).digest("hex");
@@ -42,4 +43,28 @@ export function decryptWithPassword(data: Buffer, password: string): Buffer {
   } catch {
     throw new Error("Wrong backup password, or the file is damaged.");
   }
+}
+
+// ---------- Field encryption (staff bank details) ----------
+// Format: "v1." + base64url(iv(12) | tag(16) | ciphertext) — AES-256-GCM with a key from DATA_ENCRYPTION_KEY.
+
+function fieldKey() {
+  const e = env();
+  const secret = e.DATA_ENCRYPTION_KEY ?? e.SESSION_SECRET;
+  return Buffer.from(hkdfSync("sha256", secret, "nazareth-field-encryption", "v1", 32));
+}
+
+export function encryptField(plain: string): string {
+  const iv = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", fieldKey(), iv);
+  const enc = Buffer.concat([cipher.update(plain, "utf8"), cipher.final()]);
+  return "v1." + Buffer.concat([iv, cipher.getAuthTag(), enc]).toString("base64url");
+}
+
+export function decryptField(value: string): string {
+  if (!value.startsWith("v1.")) throw new Error("Unknown encrypted field format");
+  const buf = Buffer.from(value.slice(3), "base64url");
+  const decipher = createDecipheriv("aes-256-gcm", fieldKey(), buf.subarray(0, 12));
+  decipher.setAuthTag(buf.subarray(12, 28));
+  return Buffer.concat([decipher.update(buf.subarray(28)), decipher.final()]).toString("utf8");
 }

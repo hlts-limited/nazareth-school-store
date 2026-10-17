@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { db } from "@/shared/lib/db";
 import { sniffType, storage } from "@/shared/lib/storage";
-import { getViewAs, getViewer } from "@/modules/auth";
+import { auditActor, getViewAs, getViewer } from "@/modules/auth";
+import { audit } from "@/modules/audit";
+import { isSensitiveDoc, staffDocLabel } from "@/modules/hr";
 
 /** Serves stored files. Product and gallery photos are public; receipts only for the parent who uploaded them and accounts staff;
  *  admission documents only for admissions staff. */
@@ -12,6 +14,18 @@ export async function GET(_: Request, { params }: { params: Promise<{ key: strin
     const v = await getViewer();
     if (!v) return new NextResponse("Sign in required", { status: 401 });
     if (v.kind !== "staff" || !v.permissions.has("admissions.view")) return new NextResponse("Not allowed", { status: 403 });
+    return serve(key, "private, no-store");
+  }
+  if (key.startsWith("staff/")) {
+    // Staff documents: the staff member, HR and the Proprietor/Bursar. Every view of an ID or guarantor form is logged.
+    const v = await getViewer();
+    if (!v) return new NextResponse("Sign in required", { status: 401 });
+    if (v.kind !== "staff") return new NextResponse("Not allowed", { status: 403 });
+    const doc = await db.employeeDocument.findFirst({ where: { fileKey: key }, include: { employee: true } });
+    if (!doc) return new NextResponse("Not found", { status: 404 });
+    const own = doc.employee.userId === v.user.id;
+    if (!own && !v.permissions.has("hr.view")) return new NextResponse("Not allowed", { status: 403 });
+    if (isSensitiveDoc(doc.kind) && !own) await audit(await auditActor(v), "Viewed sensitive staff document", "Employee", doc.employeeId, { staffCode: doc.employee.staffCode, kind: staffDocLabel(doc.kind) });
     return serve(key, "private, no-store");
   }
   if (!key.startsWith("receipts/")) return new NextResponse("Not found", { status: 404 });

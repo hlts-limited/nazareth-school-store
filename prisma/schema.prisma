@@ -45,6 +45,7 @@ model User {
   cartItems     CartItem[]
   orders        Order[]
   notifications Notification[]
+  employee      Employee?
 
   @@index([lastName])
 }
@@ -696,4 +697,92 @@ model Backup {
   createdBy   String
   counts      Json
   createdAt   DateTime   @default(now())
+}
+
+// ---------- Staff app: staff records, documents, bank details ----------
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum BankStatus {
+  NONE // no bank details yet
+  PENDING // entered, waiting for the Bursar
+  VERIFIED // approved by the Bursar: can be paid
+  REJECTED
+}
+
+model Employee {
+  id                 String         @id @default(uuid())
+  staffCode          String         @unique // NS-001
+  userId             String         @unique
+  user               User           @relation(fields: [userId], references: [id], onDelete: Restrict)
+  phone              String? // WhatsApp number for links (kept here: a teacher may also have a parent account with the same number)
+  gender             String?
+  dateOfBirth        DateTime?      @db.Date
+  section            String // pre-school | school-a | school-b | admin
+  position           String // Class Teacher, Bursar, Driver…
+  isTeacher          Boolean        @default(false)
+  hireDate           DateTime       @db.Date
+  employmentType     EmploymentType @default(FULL_TIME)
+  status             EmployeeStatus @default(ACTIVE)
+  monthlyGrossKobo   Int // money is integer kobo
+  // Statutory identifiers for the tax and remittance schedules
+  tin                String?
+  pfaName            String?
+  rsaPin             String?
+  nhfNumber          String?
+  nhisNumber         String?
+  annualRentKobo     BigInt         @default(0) // for rent relief
+  statutoryOverrides Json? // e.g. {"pension":{"off":true,"reason":"on probation"}}
+  // Bank: the account number and name are encrypted; only the last 4 digits are kept in the clear
+  bankCode           String?
+  bankName           String?
+  accountNumberEnc   String?
+  accountLast4       String?
+  accountNameEnc     String?
+  accountNameChecked Boolean        @default(false) // name came from Paystack's account check
+  bankStatus         BankStatus     @default(NONE)
+  bankNote           String?
+  bankReviewedById   String?
+  bankReviewedAt     DateTime?
+  paystackRecipient  String? // transfer recipient code, reset when the bank changes
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  documents          EmployeeDocument[]
+
+  @@index([section])
+}
+
+enum DocStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model EmployeeDocument {
+  id           String    @id @default(uuid())
+  employeeId   String
+  employee     Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  kind         String // cv | certificate | trcn | id | passport | guarantor | reference | contract | other
+  fileKey      String
+  fileName     String
+  mimeType     String
+  size         Int
+  status       DocStatus @default(PENDING)
+  note         String? // HR's reason when rejected
+  expiresAt    DateTime? @db.Date // ID or licence expiry, for reminders
+  uploadedById String
+  uploadedAt   DateTime  @default(now())
+  reviewedById String?
+  reviewedAt   DateTime?
+
+  @@index([employeeId, kind])
+  @@index([status])
 }

@@ -22,6 +22,19 @@ export const PERMISSIONS = {
   ADMISSIONS_MANAGE: "admissions.manage",
   ADMISSIONS_PUBLISH: "admissions.publish",
   WEBSITE_MANAGE: "website.manage",
+  // Staff app
+  /** Own staff page: profile, documents, bank details (and later clock-in and payslips) */
+  SELF_SERVICE: "self.service",
+  /** See staff records in your own section (head teachers) */
+  HR_VIEW_SECTION: "hr.view.section",
+  /** See every staff record */
+  HR_VIEW: "hr.view",
+  /** Register staff, edit records, review documents */
+  HR_MANAGE: "hr.manage",
+  /** See and set salaries */
+  HR_SALARY: "hr.salary",
+  /** Approve staff bank details for payment */
+  HR_BANK_APPROVE: "hr.bank.approve",
   /** Alpha Admin only: raw data editing, SQL console. Never part of a role; see ALPHA_ADMIN_EMAIL. */
   ALPHA: "system.alpha",
 } as const;
@@ -43,6 +56,26 @@ export const ROLE_DEFS: { id: string; name: string; permissions: Permission[]; r
     permissions: [P.PUPILS_VIEW, P.PUPILS_MANAGE, P.PUPILS_DELETE, P.ADMISSIONS_VIEW, P.ADMISSIONS_MANAGE, P.ADMISSIONS_PUBLISH, P.WEBSITE_MANAGE],
   },
   {
+    id: "proprietor", name: "Proprietor", requires2fa: true,
+    permissions: [P.SELF_SERVICE, P.HR_VIEW_SECTION, P.HR_VIEW, P.HR_MANAGE, P.HR_SALARY],
+  },
+  {
+    id: "bursar", name: "Bursar", requires2fa: true,
+    permissions: [P.SELF_SERVICE, P.HR_VIEW_SECTION, P.HR_VIEW, P.HR_SALARY, P.HR_BANK_APPROVE],
+  },
+  {
+    id: "hr", name: "Admin / HR", requires2fa: true,
+    permissions: [P.SELF_SERVICE, P.HR_VIEW_SECTION, P.HR_VIEW, P.HR_MANAGE, P.HR_SALARY],
+  },
+  {
+    id: "head", name: "Head teacher", requires2fa: false,
+    permissions: [P.SELF_SERVICE, P.HR_VIEW_SECTION],
+  },
+  {
+    id: "staff", name: "Staff", requires2fa: false,
+    permissions: [P.SELF_SERVICE],
+  },
+  {
     id: "admin", name: "Super Admin", requires2fa: true,
     permissions: (Object.values(P) as Permission[]).filter((p) => p !== P.ALPHA),
   },
@@ -56,7 +89,7 @@ export const ALL_PERMISSIONS = Object.values(P) as Permission[];
 export const roleName = (id: string) => (id === ALPHA_ROLE ? "Alpha Admin" : ROLE_DEFS.find((r) => r.id === id)?.name ?? id);
 
 /** Staff areas shown in the back office; a person sees the areas their permissions allow. */
-export const STAFF_SECTIONS: { id: string; label: string; perm: Permission; items: { href: string; label: string; icon: string; badge?: "review" | "pack" | "bin" | "apps" | "enq" }[] }[] = [
+export const STAFF_SECTIONS: { id: string; label: string; perm: Permission; items: { href: string; label: string; icon: string; badge?: "review" | "pack" | "bin" | "apps" | "enq" | "hr" }[] }[] = [
   {
     id: "alpha", label: "Alpha", perm: P.ALPHA,
     items: [
@@ -119,12 +152,26 @@ export const STAFF_SECTIONS: { id: string; label: string; perm: Permission; item
     ],
   },
   {
+    id: "hr", label: "Staff records", perm: P.HR_VIEW_SECTION,
+    items: [
+      { href: "/admin/hr", label: "Staff", icon: "users" },
+      { href: "/admin/hr/new", label: "Register staff", icon: "plus" },
+      { href: "/admin/hr/reviews", label: "To review", icon: "check", badge: "hr" },
+    ],
+  },
+  {
     id: "website", label: "Website", perm: P.WEBSITE_MANAGE,
     items: [
       { href: "/admin/website", label: "Messages", icon: "mail", badge: "enq" },
       { href: "/admin/website/notices", label: "Notices", icon: "bell" },
       { href: "/admin/website/events", label: "Events", icon: "clock" },
       { href: "/admin/website/gallery", label: "Gallery", icon: "layers" },
+    ],
+  },
+  {
+    id: "me", label: "My staff page", perm: P.SELF_SERVICE,
+    items: [
+      { href: "/admin/me", label: "My profile", icon: "users" },
     ],
   },
 ];

@@ -24,10 +24,14 @@ async function assertNotOwner(userId: string) {
   if (u?.email && emails.includes(u.email)) throw new UserError("The owner account can't be changed here.");
 }
 
-async function sendStaffInvite(userId: string) {
+/** Email a set-up link. Two-factor sign-in is set up only when one of the person's roles needs it
+ *  (e.g. not for a teacher who only clocks in and sees their payslips). */
+export async function sendStaffInvite(userId: string) {
   const token = randomToken(24);
-  const u = await db.user.update({ where: { id: userId }, data: { inviteToken: token, inviteExpiresAt: new Date(Date.now() + 7 * 86400_000), totpSecret: newTotpSecret() } });
-  await notify(u.id, `Your ${SCHOOL.storeName} staff account`, `Set your password and two-factor sign-in here: ${env().APP_URL}/invite/${token} (valid for 7 days)`, ["email"]);
+  const roles = (await db.userRole.findMany({ where: { userId }, select: { roleId: true } })).map((r) => r.roleId);
+  const needs2fa = ROLE_DEFS.some((r) => roles.includes(r.id) && r.requires2fa);
+  const u = await db.user.update({ where: { id: userId }, data: { inviteToken: token, inviteExpiresAt: new Date(Date.now() + 7 * 86400_000), totpSecret: needs2fa ? newTotpSecret() : null } });
+  await notify(u.id, `Your ${SCHOOL.name} staff account`, `Set your password${needs2fa ? " and two-factor sign-in" : ""} here: ${env().APP_URL}/invite/${token} (valid for 7 days)`, ["email"]);
 }
 
 export async function inviteStaff(input: { firstName: string; lastName: string; email: string; phone?: string; roles: string[] }) {

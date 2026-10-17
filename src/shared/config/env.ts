@@ -19,6 +19,8 @@ const schema = z.object({
   TERMII_SENDER_ID: z.string().default("NazSchool"),
   BACKUP_PASSWORD: z.string().min(8, "BACKUP_PASSWORD must be at least 8 characters"),
   CRON_SECRET: z.string().min(8).optional(),
+  // Encrypts staff bank details. If unset, a key derived from SESSION_SECRET is used (then never change SESSION_SECRET).
+  DATA_ENCRYPTION_KEY: z.string().min(16, "DATA_ENCRYPTION_KEY must be at least 16 characters").optional(),
   // The owner (first Super Admin, created by the seed): hidden from Staff & roles and can't be changed there
   SEED_ADMIN_EMAIL: z.string().trim().toLowerCase().optional(),
   // The Alpha Admin: the one account with unrestricted access (data explorer, SQL console). Must use 2FA.

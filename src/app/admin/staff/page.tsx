@@ -15,6 +15,8 @@ const PERM_LABELS: [string, string][] = [
   ["pupils.manage", "Add & import pupils"], ["pupils.delete", "Delete pupils"], ["pupils.empty_bin", "Empty the bin"],
   ["viewas.use", "View as parent / pupil"], ["backup.manage", "Backup & restore"], ["staff.manage", "Manage staff"], ["settings.manage", "School settings"], ["audit.view", "Audit log"],
   ["admissions.view", "See applications"], ["admissions.manage", "Handle applications & enrol"], ["admissions.publish", "Open admission & publish results"], ["website.manage", "Website notices, events, gallery & messages"],
+  ["self.service", "Own staff page (profile, documents, clock-in, payslips)"], ["hr.view.section", "See own section's staff"], ["hr.view", "See all staff records"],
+  ["hr.manage", "Register staff & review documents"], ["hr.salary", "See and set salaries"], ["hr.bank.approve", "Verify staff bank details"],
 ];
 
 export default async function StaffPage() {
