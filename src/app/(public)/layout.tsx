@@ -52,8 +52,10 @@ export default async function PublicLayout({ children }: { children: React.React
             {viewer ? (
               <Link className="btn primary sm" href={dashboardPath(viewer)}>My account</Link>
             ) : (
-              // One button for everyone: the sign-in page has tabs for parents, pupils and staff
-              <Link className="btn primary sm" href="/login"><Icon name="users" size="sm" />Sign in</Link>
+              <>
+                <Link className="btn sm pub-staff" href="/staff/login"><Icon name="shield" size="sm" />Staff<span className="long">&nbsp;sign-in</span></Link>
+                <Link className="btn primary sm" href="/login"><Icon name="users" size="sm" />Sign in</Link>
+              </>
             )}
           </div>
         </div>

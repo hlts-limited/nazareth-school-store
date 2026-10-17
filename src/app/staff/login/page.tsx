@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { dashboardPath, endedSessionReason, getViewer, loginStaff } from "@/modules/auth";
 import { StaffLoginForm } from "../../login/login-forms";
 import { LoginShell } from "../../login/login-shell";
+import { StaffScene } from "./staff-scene";
 
 export const metadata = { title: "Staff sign-in" };
 
@@ -13,6 +14,7 @@ export default async function StaffLoginPage() {
   return (
     <LoginShell
       heading="Staff sign-in"
+      scene={<StaffScene />}
       lines={["The whole school,", "run from", "one place."]}
       text="Admissions, the School Store, attendance and payroll for Nazareth School staff. You see only what your role needs."
       feats={[["clock", "Clock in and out at the gate"], ["receipt", "Your payslips, leave and staff record"], ["layers", "Admissions, store and school records"]]}

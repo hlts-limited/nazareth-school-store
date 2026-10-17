@@ -7,8 +7,9 @@ import { Note } from "@/shared/ui/primitives";
 import { LoginScene } from "./login-scene";
 
 /** The two-panel sign-in layout. Families and staff each get their own wording on the left. */
-export function LoginShell({ heading = "Sign in", lines, text, feats, sub, ended, children, footer }: {
+export function LoginShell({ heading = "Sign in", scene = <LoginScene />, lines, text, feats, sub, ended, children, footer }: {
   heading?: string;
+  scene?: ReactNode;
   lines: [string, string, string];
   text: string;
   feats: [IconName, string][];
@@ -20,7 +21,7 @@ export function LoginShell({ heading = "Sign in", lines, text, feats, sub, ended
   return (
     <div className="login">
       <section className="login-art">
-        <LoginScene />
+        {scene}
         <Link href="/" className="row nowrap rise login-crest" style={{ gap: 14, position: "relative", zIndex: 1 }}>
           <Image src="/logo.png" alt="Nazareth School crest" width={64} height={64} style={{ background: "#fff", borderRadius: 14, padding: 5 }} priority />
           <div>
