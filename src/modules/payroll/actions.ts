@@ -3,13 +3,14 @@
 import { z } from "zod";
 import { fail, ok, parseForm, runAction, zText, type ActionResult } from "@/shared/lib/action";
 import { db } from "@/shared/lib/db";
-import { auditActor, staffFor, type StaffViewer } from "@/modules/auth";
+import { auditActor, staffFor, verifyTotp, type StaffViewer } from "@/modules/auth";
 import { audit } from "@/modules/audit";
 import type { TaxBand } from "./engine";
 import {
   addAdjustment, calcDefaults, calcStatutory, calcTax, markReviewed, periodLabel, removeAdjustment, runTotals, savePayrollRates, setStatutoryOverride, startRun,
   type Stage,
 } from "./service";
+import { approveRun, payRun, refreshPending, sendBack } from "./pay";
 
 const actor = (v: StaffViewer) => ({ id: v.user.id, name: `${v.user.firstName} ${v.user.lastName}` });
 const naira = (k: number) => `₦${(k / 100).toLocaleString("en-NG", { maximumFractionDigits: 2 })}`;
@@ -102,5 +103,56 @@ export async function saveRatesAction(_: ActionResult, form: FormData): Promise<
     const saved = await savePayrollRates({ ...d, taxBands: bands });
     await audit(await auditActor(v), "Changed payroll rates", "Setting", "payroll", JSON.parse(JSON.stringify(saved)));
     return ok("Rates saved. They apply the next time stage 1 is calculated; runs already calculated keep the rates they used.");
+  });
+}
+
+// ---------- Approval and payment (the Proprietor) ----------
+
+/** Approving and paying need a sign-in in the last 15 minutes, or the 2FA code typed now. */
+function recentlySignedIn(v: StaffViewer, code: string | null) {
+  if (Date.now() - new Date(v.session.createdAt).getTime() < 15 * 60_000) return true;
+  return !!code && !!v.user.totpSecret && verifyTotp(code, v.user.totpSecret);
+}
+
+export async function approveRunAction(_: ActionResult, form: FormData): Promise<ActionResult> {
+  return runAction(async () => {
+    const v = await staffFor("payroll.approve");
+    if (!recentlySignedIn(v, String(form.get("code") ?? ""))) return fail("Enter the 6-digit code from your authenticator app to confirm it's you.", { code: "Required: you signed in more than 15 minutes ago" });
+    const run = await approveRun(String(form.get("runId")), actor(v));
+    const t = runTotals(await db.payrollItem.findMany({ where: { runId: run.id } }));
+    await audit(await auditActor(v), "Approved payroll", "PayrollRun", run.id, { period: run.period, staff: t.staff, held: t.held, gross: t.gross / 100, statutory: t.statutory / 100, tax: t.tax / 100, penalties: t.penalties / 100, net: t.netPayable / 100 });
+    return ok(`${periodLabel(run.period)} payroll approved. A backup was taken first. You can now pay.`);
+  });
+}
+
+export async function sendBackAction(_: ActionResult, form: FormData): Promise<ActionResult> {
+  return runAction(async () => {
+    const v = await staffFor("payroll.approve");
+    const note = String(form.get("note") ?? "");
+    const run = await sendBack(String(form.get("runId")), note, actor(v));
+    await audit(await auditActor(v), "Sent payroll back", "PayrollRun", run.id, { period: run.period, note });
+    return ok("Sent back to the Bursar with your note.");
+  });
+}
+
+export async function payRunAction(_: ActionResult, form: FormData): Promise<ActionResult> {
+  return runAction(async () => {
+    const v = await staffFor("payroll.pay");
+    if (!recentlySignedIn(v, String(form.get("code") ?? ""))) return fail("Enter the 6-digit code from your authenticator app to confirm it's you.", { code: "Required: you signed in more than 15 minutes ago" });
+    const confirm = Number(String(form.get("confirm") ?? "").replace(/[,\s₦]/g, ""));
+    if (!Number.isFinite(confirm) || confirm <= 0) return fail("Type the total to confirm.", { confirm: "Required" });
+    const runId = String(form.get("runId"));
+    const r = await payRun(runId, confirm);
+    const run = await db.payrollRun.findUniqueOrThrow({ where: { id: runId } });
+    await audit(await auditActor(v), "Paid salaries", "PayrollRun", runId, { period: run.period, mode: r.mode, total: r.total / 100, sent: r.sent, failed: r.failed });
+    return ok(`${r.sent} salar${r.sent === 1 ? "y" : "ies"} sent (${naira(r.total)})${r.failed ? `; ${r.failed} failed: see the reasons below and retry once fixed` : ""}.${r.mode === "mock" ? " (Simulated: no Paystack key in development.)" : ""}`);
+  });
+}
+
+export async function refreshPaymentsAction(_: ActionResult, form: FormData): Promise<ActionResult> {
+  return runAction(async () => {
+    await staffFor("payroll.view");
+    const r = await refreshPending(String(form.get("runId")));
+    return ok(r.checked ? `Checked ${r.checked} waiting payment${r.checked === 1 ? "" : "s"} with Paystack: ${r.changed} updated.` : "Nothing is waiting for Paystack.");
   });
 }

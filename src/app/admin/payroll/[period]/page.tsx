@@ -7,6 +7,7 @@ import { Kpi, Note, PageHeader, Pill } from "@/shared/ui/primitives";
 import { requireStaff } from "@/modules/auth";
 import { calculateAction, markReviewedAction, overrideAction, periodLabel, runByPeriod, runTotals, STAGE_ORDER, type Overrides } from "@/modules/payroll";
 import { money, RunStatus } from "../_ui";
+import { ApproveAndPay } from "./_approve";
 
 export const metadata = { title: "Payroll run" };
 export const dynamic = "force-dynamic";
@@ -138,7 +139,7 @@ export default async function PayrollRunPage({ params }: { params: Promise<{ per
           <p className="pad small muted">Penalties come from the month&apos;s attendance and the entries under <Link href="/admin/payroll/penalties">Penalties &amp; waivers</Link>. They are taken after tax and don&apos;t reduce taxable income.</p>
         </Stage>
 
-        {pos >= 3 && <Note tone={pos === 3 ? "warn" : "ok"} icon={pos === 3 ? "clock" : "check"}>{pos === 3 ? "Waiting for the Proprietor to approve." : `Approved by ${run.approvedBy}.`}</Note>}
+        {pos >= 3 && <ApproveAndPay runId={run.id} v={v} />}
       </div>
     </div>
   );

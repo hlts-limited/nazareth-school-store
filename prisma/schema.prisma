@@ -933,6 +933,7 @@ model PayrollItem {
   lines         Json? // stage-by-stage breakdown for the payslip
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
+  payments      SalaryPayment[]
 
   @@unique([runId, employeeId])
 }
@@ -950,4 +951,29 @@ model PayrollAdjustment {
   createdAt  DateTime @default(now())
 
   @@index([period])
+}
+
+enum SalaryPaymentStatus {
+  PENDING // sent to Paystack, waiting for the result
+  SUCCESS
+  FAILED
+  REVERSED
+}
+
+/** One Paystack transfer of one salary. The database allows only one PENDING or SUCCESS payment per payslip. */
+model SalaryPayment {
+  id           String              @id @default(uuid())
+  itemId       String
+  item         PayrollItem         @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  attempt      Int
+  reference    String              @unique // nzs_sal_YYYYMM_<item>_<attempt>
+  amountKobo   Int
+  status       SalaryPaymentStatus @default(PENDING)
+  live         Boolean // a live (not test) Paystack key was used
+  transferCode String?
+  failReason   String?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@unique([itemId, attempt])
 }

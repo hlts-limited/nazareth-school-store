@@ -18,7 +18,7 @@ const pdf = { buf: Buffer.from("%PDF-1.4 test"), mime: "application/pdf", ext: "
 const jpg = { buf: Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 0x10]), mime: "image/jpeg", ext: "jpg", name: "photo.jpg" };
 
 before(async () => {
-  await db.payrollItem.deleteMany(); await db.payrollRun.deleteMany(); await db.payrollAdjustment.deleteMany();
+  await db.salaryPayment.deleteMany(); await db.payrollItem.deleteMany(); await db.payrollRun.deleteMany(); await db.payrollAdjustment.deleteMany();
   await db.employeeDocument.deleteMany();
   await db.employee.deleteMany();
   hrId = (await db.user.findFirstOrThrow({ where: { type: "STAFF", email: "office@example.com" } })).id;

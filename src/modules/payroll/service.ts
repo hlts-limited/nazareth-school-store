@@ -170,6 +170,13 @@ export async function calcDefaults(runId: string, by: Actor) {
   });
 }
 
+/** Do stage 3's stored figures still match attendance and penalties as they are now? */
+export async function defaultsStillCurrent(runId: string) {
+  const run = await db.payrollRun.findUniqueOrThrow({ where: { id: runId } });
+  const fresh = await computeDefaults(run);
+  return fresh.every((f) => f.it.netKobo === f.net && f.it.carryKobo === f.p.carryForward);
+}
+
 // ---------- Mark reviewed (refuses figures that are out of date) ----------
 
 export type Stage = 1 | 2 | 3;

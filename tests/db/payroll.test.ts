@@ -16,7 +16,7 @@ let hrId = "";
 let a = "", b = "";
 
 before(async () => {
-  await db.payrollItem.deleteMany(); await db.payrollRun.deleteMany(); await db.payrollAdjustment.deleteMany();
+  await db.salaryPayment.deleteMany(); await db.payrollItem.deleteMany(); await db.payrollRun.deleteMany(); await db.payrollAdjustment.deleteMany();
   await db.attendance.deleteMany(); await db.captureToken.deleteMany(); await db.leaveRequest.deleteMany(); await db.holiday.deleteMany();
   await db.employeeDocument.deleteMany(); await db.employee.deleteMany();
   await saveAttendanceSettings({ workDays: [1, 2, 3, 4, 5] });
@@ -105,4 +105,52 @@ test("penalties and waivers: new entries reset stage 3; stale attendance is caug
   assert.equal(it.netKobo, 0);
   assert.equal(it.carryKobo, (202_000 - 88_200) * 100, "the rest carries to next month");
   await assert.rejects(addAdjustment({ employeeId: a, period: PERIOD, kind: "penalty", amountNaira: 0, reason: "x" }, bursar), /amount/);
+});
+
+test("approval: never by a preparer; a backup first; send back; pay with the retyped total; no double payment", async () => {
+  const { approveRun, sendBack, payRun, applyTransferResult, lockFinishedRuns } = await import("../../src/modules/payroll/pay");
+  await db.payrollAdjustment.deleteMany({ where: { period: PERIOD } });
+  await db.attendance.deleteMany({ where: { employeeId: a, date: dayValue("2026-09-09") } });
+  const run = (await runByPeriod(PERIOD))!;
+  await resetOpenRuns("DRAFT");
+  await calcStatutory(run.id, bursar); await markReviewed(run.id, 1, bursar);
+  await calcTax(run.id, bursar); await markReviewed(run.id, 2, bursar);
+  await calcDefaults(run.id, bursar); await markReviewed(run.id, 3, bursar);
+
+  const proprietor = { id: "proprietor-test", name: "Proprietor Test" };
+  await assert.rejects(approveRun(run.id, bursar), /can't approve/);
+  await assert.rejects(payRun(run.id, 86_200), /Approve the run/);
+  const backups = await db.backup.count();
+  const approved = await approveRun(run.id, proprietor);
+  assert.equal(approved.status, "APPROVED");
+  assert.equal(await db.backup.count(), backups + 1, "an encrypted backup was taken before approving");
+
+  await sendBack(run.id, "Recheck September attendance", proprietor);
+  assert.equal((await runByPeriod(PERIOD))!.status, "DRAFT");
+  await calcStatutory(run.id, bursar); await markReviewed(run.id, 1, bursar);
+  await calcTax(run.id, bursar); await markReviewed(run.id, 2, bursar);
+  await calcDefaults(run.id, bursar); await markReviewed(run.id, 3, bursar);
+  await approveRun(run.id, proprietor);
+
+  await assert.rejects(payRun(run.id, 86_000), /doesn't match/);
+  const paid = await payRun(run.id, 86_200);
+  assert.equal(paid.mode, "mock", "no Paystack key in tests: transfers are simulated");
+  assert.equal(paid.sent, 1);
+  let r = (await runByPeriod(PERIOD))!;
+  assert.equal(r.status, "PAID");
+  await assert.rejects(payRun(run.id, 86_200), /has been paid/);
+  const pay = await db.salaryPayment.findFirstOrThrow({ where: { item: { runId: run.id } } });
+  assert.match(pay.reference, /^nzs_sal_202609_/);
+  // The database refuses a second live payment for the same payslip
+  await assert.rejects(db.salaryPayment.create({ data: { itemId: pay.itemId, attempt: 9, reference: "dup-test", amountKobo: 1, live: false } }));
+  // A reversal makes it payable again, as a new attempt
+  await applyTransferResult(pay.reference, "REVERSED", "Account closed");
+  await payRun(run.id, 86_200);
+  const tries = await db.salaryPayment.findMany({ where: { itemId: pay.itemId }, orderBy: { attempt: "asc" } });
+  assert.deepEqual(tries.map((t) => [t.attempt, t.status]), [[1, "REVERSED"], [2, "SUCCESS"]]);
+  // After the month ends, paid runs lock
+  assert.equal(await lockFinishedRuns(new Date("2026-10-02T00:00:00Z")), 1);
+  r = (await runByPeriod(PERIOD))!;
+  assert.equal(r.status, "LOCKED");
+  await assert.rejects(addAdjustment({ employeeId: a, period: PERIOD, kind: "penalty", amountNaira: 100, reason: "late entry" }, bursar), /already approved/);
 });
