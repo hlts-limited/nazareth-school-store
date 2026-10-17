@@ -207,6 +207,7 @@ export const STAFF_SECTIONS: { id: string; label: string; perm: Permission; item
     items: [
       { href: "/admin/me/clock", label: "Clock in / out", icon: "qr" },
       { href: "/admin/me/attendance", label: "My attendance & leave", icon: "clock" },
+      { href: "/admin/me/payslips", label: "My payslips", icon: "receipt" },
       { href: "/admin/me", label: "My profile", icon: "users" },
     ],
   },

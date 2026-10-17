@@ -2,7 +2,8 @@ import { fmtDateTime } from "@/shared/lib/format";
 import { ActionForm, FieldError, SubmitButton } from "@/shared/ui/client";
 import { Kpi, Note, Pill } from "@/shared/ui/primitives";
 import type { StaffViewer } from "@/modules/auth";
-import { approvalSummary, approveRunAction, payPreview, payRunAction, periodLabel, refreshPaymentsAction, sendBackAction } from "@/modules/payroll";
+import { approvalSummary, approveRunAction, payPreview, payRunAction, periodLabel, refreshPaymentsAction, REMITTANCES, sendBackAction } from "@/modules/payroll";
+import { Icon } from "@/shared/ui/icon";
 import { money } from "../_ui";
 
 const PAY_TONE = { PENDING: "warn", SUCCESS: "ok", FAILED: "err", REVERSED: "err" } as const;
@@ -69,6 +70,18 @@ export async function ApproveAndPay({ runId, v }: { runId: string; v: StaffViewe
           <Code />
           <div><SubmitButton icon="wallet" confirmText={`Send ${money(preview.total)} to ${preview.count} staff now?`}>Pay</SubmitButton></div>
         </ActionForm>
+      )}
+
+      {(run.status === "APPROVED" || run.status === "PAID" || run.status === "LOCKED") && (
+        <div className="stack tight">
+          <b>Remittance files</b>
+          <div className="row tight">{REMITTANCES.map(([k, label]) => <a key={k} className="btn sm" href={`/api/admin/payroll/${run.period}/remittance?type=${k}`} download><Icon name="download" size="sm" />{label}</a>)}</div>
+          <b>Payslips</b>
+          <ul className="plain-list small">
+            {run.items.map((i) => <li key={i.id} className="row between"><span>{i.employee.user.firstName} {i.employee.user.lastName} · {money(i.netKobo)}</span><a href={`/api/payslips/${i.id}?print=1`} target="_blank" rel="noopener">Payslip</a></li>)}
+          </ul>
+          <p className="small muted">Staff download their own payslips from their staff page.</p>
+        </div>
       )}
 
       {payments.length > 0 && (

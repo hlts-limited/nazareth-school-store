@@ -73,6 +73,7 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/admissions/application/**": ["./public/logo.png"],
     "/api/admin/admissions/**": ["./public/logo.png"],
+    "/api/payslips/**": ["./public/logo.png"],
   },
   async redirects() {
     return REDIRECTS.map(([source, destination]) => ({ source, destination, permanent: true }));

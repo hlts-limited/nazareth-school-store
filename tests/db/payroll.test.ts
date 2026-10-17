@@ -154,3 +154,16 @@ test("approval: never by a preparer; a backup first; send back; pay with the ret
   assert.equal(r.status, "LOCKED");
   await assert.rejects(addAdjustment({ employeeId: a, period: PERIOD, kind: "penalty", amountNaira: 100, reason: "late entry" }, bursar), /already approved/);
 });
+
+test("payslips and remittance files come from the approved run", async () => {
+  const { payslipPdf, remittanceXlsx } = await import("../../src/modules/payroll/payslip");
+  const run = (await runByPeriod(PERIOD))!;
+  const item = run.items.find((i) => i.employeeId === a)!;
+  const slip = await payslipPdf(item.id);
+  assert.equal(slip.bytes.subarray(0, 5).toString(), "%PDF-");
+  assert.match(slip.name, /^payslip-2026-09-NS-\d{3}\.pdf$/);
+  for (const k of ["pension", "nhf", "nhis", "paye"] as const) {
+    const x = await remittanceXlsx(PERIOD, k);
+    assert.equal(x.bytes.subarray(0, 2).toString(), "PK", `${k} is an Excel file`);
+  }
+});

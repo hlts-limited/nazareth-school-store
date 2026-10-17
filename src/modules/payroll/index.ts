@@ -6,3 +6,5 @@ export {
   approveRunAction, sendBackAction, payRunAction, refreshPaymentsAction,
 } from "./actions";
 export { approvalSummary, payPreview, applyTransferResult, lockFinishedRuns } from "./pay";
+export { payslipPdf, payslipItem, remittanceXlsx, REMITTANCES } from "./payslip";
+export type { Remittance } from "./payslip";
