@@ -71,7 +71,7 @@ export async function loginPupil(_: ActionResult, form: FormData): Promise<Actio
 
 export async function loginStaff(_: ActionResult, form: FormData): Promise<ActionResult> {
   return runAction(async () => {
-    const d = parseForm(z.object({ email: zText(120, "Enter your email"), password: zText(200, "Enter your password"), code: z.string().optional() }), form);
+    const d = parseForm(z.object({ email: zText(120, "Enter your email"), password: zText(200, "Enter your password"), code: z.string().optional(), next: z.string().optional() }), form);
     const { ip } = await requestMeta();
     const key = `staff:${d.email.toLowerCase()}`;
     if ((await isLocked(key)) || (await isLocked(`ip:${ip}`))) return fail(LOCKED_MSG);
@@ -91,7 +91,7 @@ export async function loginStaff(_: ActionResult, form: FormData): Promise<Actio
     await recordAttempt(key, true);
     await createSession("STAFF", { userId: user.id }, { isAdmin: alpha || roles.includes("admin") });
     await audit({ id: user.id, name: `${user.firstName} ${user.lastName}`, role: roles.map(roleName).join(", "), ip }, "Signed in", "Session");
-    return ok(undefined, { redirect: "/admin" });
+    return ok(undefined, { redirect: d.next === "clock" ? "/admin/me/clock" : "/admin" });
   });
 }
 

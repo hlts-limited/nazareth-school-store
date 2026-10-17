@@ -20,8 +20,9 @@ function RefreshForCaptcha({ shown }: { shown: boolean }) {
   return null;
 }
 
-export function LoginForms({ initialTab, captcha, actions }: {
+export function LoginForms({ initialTab, toClock = false, captcha, actions }: {
   initialTab: "parent" | "pupil" | "staff";
+  toClock?: boolean;
   captcha: { question: string; token: string } | null;
   actions: { parent: Action; pupil: Action; staff: Action };
 }) {
@@ -69,6 +70,8 @@ export function LoginForms({ initialTab, captcha, actions }: {
       {tab === "staff" && (
         <ActionForm action={actions.staff} className="stack">
           <FormMessage />
+          <div className="note info"><span>{toClock ? "Sign in, and the clock-in scanner opens next." : <>Clocking in at the gate? Sign in here, then tap <b>Clock in / out</b>. Save <b>/clock</b> on your phone to go straight there.</>}</span></div>
+          {toClock && <input type="hidden" name="next" value="clock" />}
           <div className="field"><label htmlFor="ls-id">Staff email</label><input className="input" id="ls-id" name="email" type="email" autoComplete="username" required /><FieldError name="email" /></div>
           <div className="field"><label htmlFor="ls-pw">Password</label><input className="input" id="ls-pw" name="password" type="password" autoComplete="current-password" required /><FieldError name="password" /></div>
           <div className="field"><label htmlFor="ls-2fa">2FA code <span className="muted">(Accountant and Super Admin)</span></label><input className="input mono" id="ls-2fa" name="code" inputMode="numeric" maxLength={6} autoComplete="one-time-code" /><FieldError name="code" /></div>
