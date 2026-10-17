@@ -52,10 +52,8 @@ export default async function PublicLayout({ children }: { children: React.React
             {viewer ? (
               <Link className="btn primary sm" href={dashboardPath(viewer)}>My account</Link>
             ) : (
-              <>
-                <Link className="btn ghost sm hide-sm" href="/login">Sign in</Link>
-                <Link className="btn primary sm" href="/login"><Icon name="shop" size="sm" />School Store</Link>
-              </>
+              // One button: the sign-in page has tabs for parents, pupils and staff
+              <Link className="btn primary sm" href="/login"><Icon name="shop" size="sm" />School Store</Link>
             )}
           </div>
         </div>
