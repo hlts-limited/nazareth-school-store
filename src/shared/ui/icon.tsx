@@ -11,6 +11,8 @@ const PATHS: Record<string, string> = {
   plus: '<path d="M12 5v14M5 12h14"/>',
   x: '<path d="M6 6l12 12M18 6L6 18"/>',
   play: '<circle cx="12" cy="12" r="9.5"/><path d="M10 8.5v7l6-3.5z" fill="currentColor"/>',
+  pause: '<path d="M8.5 5v14M15.5 5v14" stroke-width="3"/>',
+  resume: '<path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/>',
   check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
   chev: '<path d="M9 6l6 6-6 6"/>',
   back: '<path d="M15 6l-6 6 6 6"/>',

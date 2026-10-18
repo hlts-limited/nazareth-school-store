@@ -6,6 +6,7 @@ import { Icon } from "@/shared/ui/icon";
 import { HowToBuyButton } from "@/shared/ui/how-to-buy";
 import { upcomingEvents } from "@/modules/website";
 import { EventCard } from "./_events";
+import { HeroVideo } from "./_hero-video";
 import { SCHOOLS } from "./_content";
 
 export const metadata: Metadata = {
@@ -24,7 +25,7 @@ export default async function HomePage() {
   return (
     <>
       <section className="hero">
-        <Image src="/images/cultural-day/01.jpg" alt="" fill priority sizes="100vw" className="hero-img" />
+        <HeroVideo />
         <div className="hero-in">
           <span className="hero-motto">{SCHOOL.motto}</span>
           <h1>Welcome to {SCHOOL.name}</h1>
