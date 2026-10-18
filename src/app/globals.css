@@ -637,6 +637,8 @@ a.chip{text-decoration:none}
 .pub-actions{display:flex;align-items:center;gap:6px;margin-left:auto}
 .pub-menu-btn{display:none;order:3}
 .pub-nav{margin-left:18px}
+/* Large screens: the logo stays left, the menu and sign-in sit together on the right */
+@media (min-width:1280px){.pub-top .pub-nav{margin-left:auto}.pub-top .pub-actions{margin-left:12px}}
 .pub-dd>summary::-webkit-details-marker{display:none}
 .mb-l svg{transform:rotate(90deg);transition:transform .15s}
 .pub-dd[open] .mb-l svg{transform:rotate(-90deg)}
