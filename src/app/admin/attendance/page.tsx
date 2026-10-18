@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { db } from "@/shared/lib/db";
 import { ActionForm, FieldError, SubmitButton } from "@/shared/ui/client";
-import { Kpi, Note, PageHeader, Pill } from "@/shared/ui/primitives";
+import { Note, PageHeader, Pill } from "@/shared/ui/primitives";
+import { Ruler, ScanChart, StatTile } from "@/shared/ui/charts";
+import { morningCurve } from "@/modules/reports";
 import { auditActor, requireStaff } from "@/modules/auth";
 import { audit } from "@/modules/audit";
 import { sectionName } from "@/modules/hr";
@@ -31,6 +33,9 @@ export default async function AttendanceTodayPage({ searchParams }: { searchPara
   }
   const schoolDay = s.workDays.includes(weekday(day));
   const t = board.totals;
+  const curve = morningCurve(board.rows.map(({ e, rec }) => ({ section: e.section, sectionName: sectionName(e.section), name: `${e.user.firstName} ${e.user.lastName}`, clockInAt: rec?.clockInAt ?? null })), s.lateCutoff);
+  const expected = t.staff - t.leave;
+  const rate = expected > 0 ? Math.round(((t.present + t.late) / expected) * 100) : null;
   const prev = new Date(`${day}T12:00:00Z`); prev.setUTCDate(prev.getUTCDate() - 1);
   const next = new Date(`${day}T12:00:00Z`); next.setUTCDate(next.getUTCDate() + 1);
   return (
@@ -43,13 +48,26 @@ export default async function AttendanceTodayPage({ searchParams }: { searchPara
           {day !== today && <Link className="btn sm" href="/admin/attendance">Today</Link>}
         </div>} />
       <div className="stack">
-        <div className="grid g4">
-          <Kpi label="Staff" value={t.staff} />
-          <Kpi label="On time" value={t.present} />
-          <Kpi label="Late" value={t.late} tone={t.late ? "warn" : undefined} />
-          <Kpi label={day === today ? "Not in yet" : "No record"} value={t.notIn} />
-          <Kpi label="On leave / absent" value={`${t.leave} / ${t.absent}`} />
+        <div className="ov-tiles">
+          <StatTile label="Staff" value={t.staff} />
+          <StatTile label="On time" value={t.present} />
+          <StatTile label="Late" value={t.late} warn={t.late > 0} sub={`After ${s.lateCutoff}`} />
+          <StatTile label={day === today ? "Not in yet" : "No record"} value={t.notIn} />
+          <StatTile label="On leave" value={t.leave} sub={`${t.absent} absent`} />
         </div>
+        {schoolDay && !board.holiday && (
+          <div className="ov-side att-ov">
+            <ScanChart
+              title={day === today ? "Clock-ins this morning" : "Clock-ins that morning"}
+              labels={curve.labels} series={curve.series} markers={curve.markers} warn={curve.warn}
+              empty={day === today ? "Nobody has clocked in yet." : "Nobody clocked in that day."}
+              summary={`${t.present + t.late} of ${expected} expected staff clocked in: ${t.present} on time and ${t.late} late (after ${s.lateCutoff}).`}
+              height={230}
+            />
+            <Ruler label={day === today ? "Attendance so far" : "Attendance"} value={rate} target={95}
+              sub={expected > 0 ? `${t.present + t.late} of ${expected} expected staff (staff on leave are left out)` : undefined} empty="No staff expected" />
+          </div>
+        )}
 
         {stats && stats.overdue > 0 && <Note tone="warn" icon="alert">{stats.overdue} clock-in photo record{stats.overdue === 1 ? " is" : "s are"} older than 31 days and still waiting to be deleted. The nightly job retries them.</Note>}
 

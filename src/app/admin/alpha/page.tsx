@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { fmtDateTime } from "@/shared/lib/format";
-import { Card, CardHeader, Kpi, Note, PageHeader, Pill } from "@/shared/ui/primitives";
+import { Card, CardHeader, Note, PageHeader, Pill } from "@/shared/ui/primitives";
+import { ScanChart, StatTile, TimerTile } from "@/shared/ui/charts";
+import { activityTrend } from "@/modules/reports";
 import { requireStaff } from "@/modules/auth";
 import { systemOverview } from "@/modules/alpha";
 
@@ -8,18 +10,27 @@ export const metadata = { title: "System overview" };
 
 export default async function AlphaOverview() {
   await requireStaff("system.alpha");
-  const o = await systemOverview();
+  const [o, trend] = await Promise.all([systemOverview(), activityTrend(30)]);
+  const failed = (trend.bars ?? []).reduce((a, b) => a + b, 0);
+  const daily = trend.labels.map((_, i) => trend.series.reduce((a, s) => a + s.values[i], 0));
   const rows = o.counts.reduce((n, t) => n + t.count, 0);
   return (
     <>
       <PageHeader title="System overview" sub="Alpha Admin: everything in the system. Every change you make here is recorded in the audit log." />
       <div className="stack loose">
-        <div className="grid g4">
-          <Kpi label="Database size" value={o.size} sub={`${o.counts.length} tables · ${rows.toLocaleString()} rows`} />
-          <Kpi label="Signed-in sessions" value={o.sessions} sub={<Link href="/admin/sessions">Manage sessions</Link>} />
-          <Kpi label="Last backup" value={<span style={{ fontSize: 18 }}>{o.lastBackup ? fmtDateTime(o.lastBackup.createdAt) : "None yet"}</span>} sub={<Link href="/admin/alpha/backups">{o.backups} kept · Backups &amp; restores</Link>} tone={o.lastBackup ? undefined : "warn"} />
-          <Kpi label="Audit log" value={o.auditCount.toLocaleString()} sub={<Link href="/admin/alpha/audit">Open the full log</Link>} />
+        <div className="ov-tiles">
+          <div className="glass stat-tile"><span className="stat-l">Database size</span><span className="stat-v">{o.size}</span><span className="stat-s">{o.counts.length} tables · {rows.toLocaleString()} rows</span></div>
+          <StatTile label="Signed-in sessions" value={o.sessions} sub={<Link href="/admin/sessions">Manage sessions</Link>} />
+          <StatTile label="Audit log" value={o.auditCount} sub={<Link href="/admin/alpha/audit">Open the full log</Link>} spark={daily.slice(-14)} />
+          <TimerTile icon="download" label={`Since the last backup · ${o.backups} kept`} since={o.lastBackup?.createdAt.toISOString() ?? null} warnAfterHours={36} empty="No backup yet" />
         </div>
+        <ScanChart
+          title="System activity · last 30 days"
+          labels={trend.labels} series={trend.series} markers={trend.markers} warn={trend.warn} bars={trend.bars} barsLabel="Failed sign-ins"
+          empty="No activity in the last 30 days."
+          summary={`Changes logged, sign-ins and orders per day over the last 30 days. ${failed} failed sign-in attempts.`}
+          right={<Link className="btn sm" href="/admin/alpha/backups">Backups</Link>}
+        />
         <Note icon="shield">The audit log stays append-only and the SQL console is read-only, even for the Alpha Admin. Change data through the Data explorer, where each change is logged with its old and new values.</Note>
         <div className="grid g2" style={{ alignItems: "start" }}>
           <Card pad={false}>
