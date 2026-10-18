@@ -11,7 +11,7 @@ export default async function NotificationsPage() {
   if (!readOnly) await markAllRead(parent.id);
   return (
     <>
-      <PageHeader title="Notifications" sub="Messages we've sent you by SMS, WhatsApp and email." />
+      <PageHeader title="Notifications" sub="Messages we've sent you by WhatsApp and email." />
       <Card pad={false}>
         {list.length === 0 ? <Empty title="No messages yet" /> : list.map((n) => (
           <div key={n.id} className="order-row" style={{ cursor: "default" }}>

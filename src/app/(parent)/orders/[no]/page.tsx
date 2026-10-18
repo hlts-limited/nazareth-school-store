@@ -93,7 +93,7 @@ export default async function OrderPage({ params }: { params: Promise<{ no: stri
           {unpaid && walletTotal >= due && due > 0 && (
             <ActionForm action={payFromWalletAction} className="row"><input type="hidden" name="orderId" value={o.id} /><SubmitButton variant="default" icon="wallet" disabled={readOnly}>Pay {naira(due)} from wallets ({naira(walletTotal)} available)</SubmitButton></ActionForm>
           )}
-          {o.status === "AWAITING_VERIFICATION" && <Note icon="clock"><b>Your receipt is with the accounts office.</b> You&apos;ll get an SMS as soon as it&apos;s confirmed, usually within one working day.</Note>}
+          {o.status === "AWAITING_VERIFICATION" && <Note icon="clock"><b>Your receipt is with the accounts office.</b> You&apos;ll get a WhatsApp message as soon as it&apos;s confirmed, usually within one working day.</Note>}
           {qr && (
             <div className="pickup-code">
               {/* eslint-disable-next-line @next/next/no-img-element */}

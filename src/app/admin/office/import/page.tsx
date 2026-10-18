@@ -18,7 +18,7 @@ export default async function ImportPage() {
   const classes = (await listClasses()).map((c) => c.name);
   return (
     <>
-      <PageHeader title="Bulk import" sub="Download the CSV template, fill it in Excel, then upload it (or paste rows). Rows are checked before anything is saved; new parents get an SMS invite." />
+      <PageHeader title="Bulk import" sub="Download the CSV template, fill it in Excel, then upload it (or paste rows). Rows are checked before anything is saved; new parents get a WhatsApp invite." />
       <ImportTool preview={previewImportAction} commit={commitImportAction} sample={SAMPLE} header={HEADER} classes={classes} />
     </>
   );

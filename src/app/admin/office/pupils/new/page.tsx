@@ -11,7 +11,7 @@ export default async function NewPupilPage() {
   const [classes, reg] = await Promise.all([listClasses(), suggestRegNumber()]);
   return (
     <div style={{ maxWidth: 820 }}>
-      <PageHeader title="Add pupil" sub="The parent gets an SMS invite. If the phone number already exists, the pupil is linked to that parent automatically." />
+      <PageHeader title="Add pupil" sub="The parent gets a WhatsApp invite. If the phone number already exists, the pupil is linked to that parent automatically." />
       <ActionForm action={addPupilAction} className="card stack">
         <h3>Pupil</h3>
         <div className="grid g3">

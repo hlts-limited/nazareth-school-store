@@ -51,7 +51,7 @@ export function ApproveForm({ approve, reject, paymentId, due, claimed, firstChi
         <div className="field"><label htmlFor="recv">Amount actually received (check the bank statement)</label>
           <input className="input tnum" id="recv" name="received" inputMode="numeric" value={received} onChange={(e) => setReceived(e.target.value)} /><FieldError name="received" /></div>
         {diff > 0 ? <div className="note ok"><Icon name="wallet" /><span>Approving will credit <b>{n(diff)}</b> to {firstChild}&apos;s wallet{multiChild ? " (the parent can move it to another child)" : ""}.</span></div>
-          : diff < 0 ? <div className="note warn"><Icon name="alert" /><span>Short by <b>{n(-diff)}</b>. Confirming marks the order <b>Part paid</b> and tells {parentFirst} the balance by SMS, WhatsApp and email.</span></div>
+          : diff < 0 ? <div className="note warn"><Icon name="alert" /><span>Short by <b>{n(-diff)}</b>. Confirming marks the order <b>Part paid</b> and tells {parentFirst} the balance by WhatsApp and email.</span></div>
           : <div className="note ok"><Icon name="check" /><span>Amounts match.</span></div>}
         <div className="row">
           <SubmitButton variant="success" icon="check">{diff < 0 ? "Confirm part payment" : "Approve payment"}</SubmitButton>

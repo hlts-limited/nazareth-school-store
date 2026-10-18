@@ -47,7 +47,7 @@ export default async function AdmittedPage({ searchParams }: { searchParams: Pro
               </table></div>
               {canMove ? (
                 <>
-                  <Note icon="info">Each ticked child becomes a pupil in their class with the next reg number. Their parent is linked by phone number; a new parent is invited to the School Store by SMS/email.</Note>
+                  <Note icon="info">Each ticked child becomes a pupil in their class with the next reg number. Their parent is linked by phone number; a new parent is invited to the School Store by WhatsApp/email.</Note>
                   <div><SubmitButton icon="check" variant="success" confirmText="Move the ticked children into their classes?">Move ticked children into their classes</SubmitButton></div>
                 </>
               ) : <p className="small muted">The Secretary moves admitted children into their classes.</p>}

@@ -45,7 +45,7 @@ export function LoginForms({ initialTab, captcha, actions }: {
           <label className="check small"><input type="checkbox" name="remember" /> Remember this device for 30 days</label>
           <SubmitButton size="lg" block>Sign in</SubmitButton>
           <HowToBuyButton className="btn block htb-btn" label="New to the School Store? Watch how to buy" />
-          <p className="small muted">New parent? Use the link in the invite SMS from the school office to set your password. Forgot it? Ask the office to send you a new link.</p>
+          <p className="small muted">New parent? Use the link in the WhatsApp invite from the school office to set your password. Forgot it? Ask the office to send you a new link.</p>
         </ActionForm>
       )}
 
