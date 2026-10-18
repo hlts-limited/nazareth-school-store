@@ -266,7 +266,26 @@ table.t tbody tr.sel:hover td{background:var(--red-soft)}
 @media (max-width:1180px) and (min-width:861px){.sstage{scale:.78;transform-origin:100% 100%;right:24px}}
 @media (max-width:860px){.sstage{scale:.48;transform-origin:100% 100%;right:20px;bottom:20px}}
 .pub-staff{background:transparent}
-@media (max-width:560px),(min-width:1280px) and (max-width:1380px){.pub-staff .long{display:none}}
+@media (max-width:560px){.pub-staff .long{display:none}}
+/* Website sign-in: two buttons on phones, one menu button on laptops and tablets */
+.signin-btns{display:contents}
+.signin-menu{position:relative;display:none}
+@media (min-width:768px){
+  .signin-btns{display:none}
+  .signin-menu{display:block}
+  .signin-btn{width:42px;height:42px;border-radius:12px;background:linear-gradient(180deg,#2B2829,#1C1A1B);color:#fff;border:0;box-shadow:0 6px 14px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.08)}
+  .signin-btn:hover,.signin-btn.is-open{background:linear-gradient(180deg,#EF4B51,#C21E25);color:#fff}
+  .signin-btn svg{transition:transform .3s var(--ease-spring)}
+  .signin-btn.is-open svg{transform:rotate(90deg)}
+  .signin-panel{position:absolute;right:0;top:calc(100% + 10px);z-index:50;width:290px;padding:10px;border-radius:18px;background:linear-gradient(180deg,#2B2829,#1C1A1B);color:#D9D3D4;box-shadow:0 24px 60px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.06);transform-origin:top right;animation:dd-in .2s var(--ease)}
+  .signin-panel .pub-drawer-sec{display:block;font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#8E8789;padding:6px 10px 8px}
+  .signin-opt{display:flex;align-items:center;gap:12px;padding:10px;border-radius:12px;border:1px solid transparent;color:#D9D3D4;text-decoration:none}
+  .signin-opt:hover,.signin-opt:focus-visible{background:#100E0F;border-color:rgba(255,255,255,.07);color:#fff;outline:none}
+  .signin-opt b{display:block;font-size:14px;color:#fff}
+  .signin-opt small{display:block;font-size:12px;color:#9C9496}
+  .signin-ic{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.08);color:#FF6B70}
+  .signin-opt:hover .signin-ic{background:#D7353C;color:#fff}
+}
 .login-form{padding:40px 24px;display:flex;align-items:center;justify-content:center}
 .login-box{width:100%;max-width:420px;display:flex;flex-direction:column;gap:18px}
 .brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink)}

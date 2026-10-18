@@ -82,3 +82,39 @@ export function PublicNav({ items }: { items: NavItem[] }) {
     </>
   );
 }
+
+/** Laptops and tablets: the sign-in buttons live behind one menu button at the right of the header. */
+export function SignInMenu() {
+  const path = usePathname();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => { setOpen(false); }, [path]);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") { setOpen(false); ref.current?.querySelector<HTMLElement>("button")?.focus(); } };
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("pointerdown", onDown); document.removeEventListener("keydown", onKey); };
+  }, [open]);
+  return (
+    <div className="signin-menu" ref={ref}>
+      <button type="button" className={`icon-btn signin-btn ${open ? "is-open" : ""}`} aria-label={open ? "Close sign-in menu" : "Sign in"} aria-expanded={open} aria-controls="signin-panel" title="Sign in" onClick={() => setOpen(!open)}>
+        <Icon name={open ? "x" : "menu"} />
+      </button>
+      {open && (
+        <div className="signin-panel" id="signin-panel">
+          <div className="pub-drawer-sec">Sign in</div>
+          <Link href="/login" className="signin-opt">
+            <span className="signin-ic"><Icon name="users" size="sm" /></span>
+            <span><b>Parents and pupils</b><small>School Store, booklists and orders</small></span>
+          </Link>
+          <Link href="/staff/login" className="signin-opt">
+            <span className="signin-ic"><Icon name="shield" size="sm" /></span>
+            <span><b>Staff</b><small>Back office, clock-in and payslips</small></span>
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+}
