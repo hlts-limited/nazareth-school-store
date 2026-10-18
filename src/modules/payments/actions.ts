@@ -20,7 +20,7 @@ export async function uploadReceiptAction(_: ActionResult, form: FormData): Prom
     const up = await readUpload(file, { allowPdf: true });
     if ("error" in up) return fail(up.error!, { receipt: up.error! });
     await submitReceipt(parent.id, d.orderId, { buf: up.buf, mime: up.mime, ext: up.ext, name: file?.name ?? "receipt" }, { bankName: d.bankName, amount: d.amount, transferDate: new Date(`${d.transferDate}T12:00:00+01:00`) }, `${parent.firstName} ${parent.lastName}`);
-    return ok("Receipt sent to the accounts office. We'll text you when it's checked.");
+    return ok("Receipt sent to the accounts office. We'll message you on WhatsApp when it's checked.");
   });
 }
 

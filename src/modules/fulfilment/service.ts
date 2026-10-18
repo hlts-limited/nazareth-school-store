@@ -66,7 +66,7 @@ export async function markReady(orderId: string, actorName: string) {
   });
   await notify(o.parentId, `${orderNo(o.number)} is ready for pick-up`,
     `Order ${orderNo(o.number)} is ready for pick-up at ${SCHOOL.pickupPlace}. Pick-up code: ${code}.${o.waiting ? ` ${o.waiting} item${o.waiting > 1 ? "s are" : " is"} awaiting stock; we'll tell you when ${o.waiting > 1 ? "they arrive" : "it arrives"}.` : ""}`,
-    ["sms", "whatsapp", "email"]);
+    ["whatsapp", "email"]);
   return o;
 }
 
@@ -82,7 +82,7 @@ export async function lineNowReady(lineId: string, actorName: string) {
     if (l.order.status === "PARTIALLY_HANDED_OUT" || l.order.status === "READY") await tx.order.update({ where: { id: l.orderId }, data: { status: l.order.status } });
     await addEvent(tx, l.orderId, `${l.itemName} arrived and is ready`, actorName);
   });
-  await notify(l.order.parentId, `More items ready on ${orderNo(l.order.number)}`, `${l.itemName} for order ${orderNo(l.order.number)} is now ready. Use pick-up code ${l.order.pickupCode}.`, ["sms", "whatsapp"]);
+  await notify(l.order.parentId, `More items ready on ${orderNo(l.order.number)}`, `${l.itemName} for order ${orderNo(l.order.number)} is now ready. Use pick-up code ${l.order.pickupCode}.`, ["whatsapp"]);
 }
 
 export async function findByPickupCode(code: string) {
@@ -109,6 +109,6 @@ export async function handOut(orderId: string, lineIds: string[], collectedByNam
     const updated = await tx.order.update({ where: { id: orderId }, data: { status: left ? "PARTIALLY_HANDED_OUT" : "HANDED_OUT" } });
     return { order: updated, count, left };
   });
-  await notify(res.order.parentId, `${orderNo(res.order.number)} collected`, `${res.count} item${res.count > 1 ? "s" : ""} from order ${orderNo(res.order.number)} ${res.count > 1 ? "were" : "was"} collected by ${collectedByName}.${res.left ? " Some items are still to come." : " Thank you!"}`, ["sms"]);
+  await notify(res.order.parentId, `${orderNo(res.order.number)} collected`, `${res.count} item${res.count > 1 ? "s" : ""} from order ${orderNo(res.order.number)} ${res.count > 1 ? "were" : "was"} collected by ${collectedByName}.${res.left ? " Some items are still to come." : " Thank you!"}`, ["whatsapp"]);
   return res;
 }

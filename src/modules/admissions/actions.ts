@@ -151,7 +151,7 @@ export async function lookupResultAction(_: ResultLookup, form: FormData): Promi
 
 const staffName = (v: { user: { firstName: string; lastName: string } }) => `${v.user.firstName} ${v.user.lastName}`;
 
-/** Book the exam and tell the parent by SMS/email. Returns whether the message failed. */
+/** Book the exam and tell the parent on WhatsApp and by email. Returns whether the message failed. */
 async function scheduleAndTell(id: string, slotId: string | null) {
   const before = await db.application.findUniqueOrThrow({ where: { id }, select: { examSlotId: true } });
   const app = await setExamSlot(id, slotId);

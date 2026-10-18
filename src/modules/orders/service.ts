@@ -87,7 +87,7 @@ export async function checkout(parentId: string, method: "PAYSTACK" | "TRANSFER"
     }
     return tx.order.update({ where: { id: o.id }, data: { walletUsed } });
   });
-  if (order.status === "PAYMENT_APPROVED") await notify(parentId, `Order ${orderNo(order.number)} paid`, `Order ${orderNo(order.number)} was paid from your children's wallets. We'll text you when it's ready for pick-up.`);
+  if (order.status === "PAYMENT_APPROVED") await notify(parentId, `Order ${orderNo(order.number)} paid`, `Order ${orderNo(order.number)} was paid from your children's wallets. We'll message you on WhatsApp when it's ready for pick-up.`);
   return order;
 }
 
@@ -141,9 +141,50 @@ export async function expireUnpaidOrders() {
   let reminded = 0;
   for (const o of partPaid) {
     if (o.events.some((e) => e.message.startsWith("Balance reminder"))) continue;
-    await notify(o.parentId, `Balance due on ${orderNo(o.number)}`, `Reminder: ${naira(amountDue(o))} is still due on order ${orderNo(o.number)}. Pay the balance to complete your order.`, ["sms", "whatsapp", "email"]);
+    await notify(o.parentId, `Balance due on ${orderNo(o.number)}`, `Reminder: ${naira(amountDue(o))} is still due on order ${orderNo(o.number)}. Pay the balance to complete your order.`, ["whatsapp", "email"]);
     await db.orderEvent.create({ data: { orderId: o.id, message: "Balance reminder sent", actorName: "System" } });
     reminded++;
   }
-  return { cancelled, reminded };
+
+  // Unpaid orders: one reminder halfway to the cancel deadline, with the date it will be cancelled
+  const half = new Date(Date.now() - (s.autoCancelHours / 2) * 3600_000);
+  const unpaid = await db.order.findMany({
+    where: { status: { in: ["PENDING_PAYMENT", "PAYMENT_REJECTED"] as OrderStatus[] }, updatedAt: { lt: half, gte: cutoff } },
+    include: { events: { select: { message: true } } },
+  });
+  let paymentReminders = 0;
+  for (const o of unpaid) {
+    if (o.events.some((e) => e.message.startsWith("Payment reminder"))) continue;
+    const by = new Date(o.updatedAt.getTime() + s.autoCancelHours * 3600_000)
+      .toLocaleString("en-GB", { weekday: "long", day: "numeric", month: "long", hour: "numeric", minute: "2-digit", hour12: true, timeZone: "Africa/Lagos" });
+    await notify(o.parentId, `Order ${orderNo(o.number)} is waiting for payment`,
+      `Reminder: order ${orderNo(o.number)} (${naira(amountDue(o))}) is not paid yet. Please pay${o.method === "TRANSFER" ? " and upload your transfer receipt" : ""} by ${by}, or the order will be cancelled.`,
+      ["whatsapp", "email"]);
+    await db.orderEvent.create({ data: { orderId: o.id, message: "Payment reminder sent", actorName: "System" } });
+    paymentReminders++;
+  }
+
+  // Receipts nobody has checked for 2 days: one nudge to the accounts staff, listing them
+  const slow = await db.order.findMany({
+    where: { status: "AWAITING_VERIFICATION", updatedAt: { lt: new Date(Date.now() - 48 * 3600_000) } },
+    include: { events: { select: { message: true } } }, orderBy: { updatedAt: "asc" },
+  });
+  const fresh = slow.filter((o) => !o.events.some((e) => e.message.startsWith("Review reminder")));
+  let reviewReminders = 0;
+  if (fresh.length) {
+    const accounts = await db.user.findMany({
+      where: { type: "STAFF", status: "ACTIVE", roles: { some: { role: { permissions: { has: "payments.review" } } } } }, select: { id: true },
+    });
+    const list = fresh.slice(0, 8).map((o) => orderNo(o.number)).join(", ") + (fresh.length > 8 ? ` and ${fresh.length - 8} more` : "");
+    for (const a of accounts) {
+      await notify(a.id, `${fresh.length} receipt${fresh.length === 1 ? "" : "s"} waiting over 2 days`,
+        `${fresh.length} bank transfer receipt${fresh.length === 1 ? " has" : "s have"} waited more than 2 days for a check: ${list}. Parents are waiting to hear back. Open Payments to review in the back office.`,
+        ["whatsapp", "email"]);
+    }
+    if (accounts.length) {
+      await db.orderEvent.createMany({ data: fresh.map((o) => ({ orderId: o.id, message: "Review reminder sent to the accounts office", actorName: "System" })) });
+      reviewReminders = fresh.length;
+    }
+  }
+  return { cancelled, reminded, paymentReminders, reviewReminders };
 }

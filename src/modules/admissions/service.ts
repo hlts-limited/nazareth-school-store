@@ -430,7 +430,7 @@ export async function enrolMany(ids: string[]) {
   return { done, failed };
 }
 
-/** Text for the parent when an exam is booked (SMS/email; the family's page shows it too). */
+/** Text for the parent when an exam is booked (WhatsApp and email; the family's page shows it too). */
 export const examMessage = (app: { otherNames: string; number: string }, slot: { startsAt: Date; venue: string }) =>
   `${app.otherNames.split(/\s+/)[0]}'s entrance exam is on ${slot.startsAt.toLocaleString("en-GB", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit", timeZone: "Africa/Lagos" })} at ${slot.venue}. Please arrive 30 minutes early. Application ${app.number}. Check it any time at ${env().APP_URL}/admissions/results`;
 

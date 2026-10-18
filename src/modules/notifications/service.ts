@@ -32,36 +32,38 @@ async function sendSms(to: string, text: string, whatsapp = false) {
   if (!r.ok) throw new Error(`SMS failed (${r.status})`);
 }
 
+/** WhatsApp first; if it doesn't go through (e.g. the number isn't on WhatsApp), the same text goes by plain SMS. */
+async function sendWhatsApp(phone: string, text: string, errors: string[]) {
+  try { await sendSms(phone, text, true); return; } catch (e) { errors.push(`whatsapp: ${(e as Error).message}`); }
+  try { await sendSms(phone, text); } catch (e) { errors.push(`sms: ${(e as Error).message}`); }
+}
+
 /**
- * Message someone who has no account yet (e.g. an applicant's parent) by SMS and email.
+ * Message someone who has no account yet (e.g. an applicant's parent) on WhatsApp and by email.
  * Never throws; returns what failed so the caller can tell the office.
  */
 export async function notifyContact(to: { phone?: string | null; email?: string | null }, title: string, body: string): Promise<string[]> {
   const errors: string[] = [];
-  if (to.phone) { try { await sendSms(to.phone, `${SCHOOL.name}: ${body}`); } catch (e) { errors.push(`sms: ${(e as Error).message}`); } }
+  if (to.phone) await sendWhatsApp(to.phone, `${SCHOOL.name}: ${body}`, errors);
   if (to.email) { try { await sendEmail(to.email, title, body); } catch (e) { errors.push(`email: ${(e as Error).message}`); } }
   return errors;
 }
 
 /**
  * Notify a user: always stored in-app, then sent by the chosen channels.
+ * Phone messages always go on WhatsApp ("sms" is treated as WhatsApp), with a plain SMS only as the fallback.
  * Sending never throws — a failure is recorded on the notification so the office can follow up.
  */
-export async function notify(userId: string, title: string, body: string, channels: Channel[] = ["sms", "email"]) {
+export async function notify(userId: string, title: string, body: string, channels: Channel[] = ["whatsapp", "email"]) {
   const user = await db.user.findUnique({ where: { id: userId } });
   if (!user) return;
-  const n = await db.notification.create({ data: { userId, title, body, channels: channels.join(",") } });
+  const use = [...new Set(channels.map((c) => (c === "sms" ? "whatsapp" : c)))];
+  const n = await db.notification.create({ data: { userId, title, body, channels: use.join(",") } });
   const errors: string[] = [];
-  for (const ch of channels) {
-    try {
-      if (ch === "email" && user.email) await sendEmail(user.email, title, body);
-      if ((ch === "sms" || ch === "whatsapp") && user.phone) await sendSms(user.phone, `${SCHOOL.name}: ${body}`, ch === "whatsapp");
-    } catch (e) {
-      errors.push(`${ch}: ${(e as Error).message}`);
-      // WhatsApp didn't go through (e.g. number not on WhatsApp): fall back to a plain SMS
-      if (ch === "whatsapp" && !channels.includes("sms") && user.phone) {
-        try { await sendSms(user.phone, `${SCHOOL.name}: ${body}`); } catch (e2) { errors.push(`sms: ${(e2 as Error).message}`); }
-      }
+  for (const ch of use) {
+    if (ch === "whatsapp" && user.phone) await sendWhatsApp(user.phone, `${SCHOOL.name}: ${body}`, errors);
+    if (ch === "email" && user.email) {
+      try { await sendEmail(user.email, title, body); } catch (e) { errors.push(`email: ${(e as Error).message}`); }
     }
   }
   await db.notification.update({ where: { id: n.id }, data: { sentAt: new Date(), error: errors.length ? errors.join("; ") : null } });

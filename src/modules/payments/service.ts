@@ -42,9 +42,9 @@ async function notifyApplied(order: Order, a: Applied, received: number) {
       const p = await db.pupil.findUnique({ where: { id: a.creditedPupilId } });
       extra = ` You paid ${naira(a.excess)} more than was due; it's in ${p?.firstName}'s wallet${a.multiChild ? " (you can move it to another child in the app)" : ""}.`;
     }
-    await notify(order.parentId, `Payment for ${no} approved`, `Payment for order ${no} is approved. We'll text you when it's ready for pick-up.${extra}`);
+    await notify(order.parentId, `Payment for ${no} approved`, `Payment for order ${no} is approved. We'll message you on WhatsApp when it's ready for pick-up.${extra}`);
   } else {
-    await notify(order.parentId, `Balance due on ${no}`, `We received ${naira(received)} for order ${no}. Balance due: ${naira(a.balance)}. Pay the balance in the app to complete your order.`, ["sms", "whatsapp", "email"]);
+    await notify(order.parentId, `Balance due on ${no}`, `We received ${naira(received)} for order ${no}. Balance due: ${naira(a.balance)}. Pay the balance in the app to complete your order.`, ["whatsapp", "email"]);
   }
 }
 
@@ -109,7 +109,7 @@ export async function rejectTransfer(paymentId: string, reason: string, staff: {
     await addEvent(tx, p.orderId, `Receipt not accepted: ${reason}`, staff.name);
     return tx.order.update({ where: { id: p.orderId }, data: { status, rejectReason: reason } });
   });
-  await notify(order.parentId, `Receipt for ${orderNo(order.number)} not accepted`, `Your receipt for order ${orderNo(order.number)} was not accepted: ${reason}. Please upload a new one in the app.`, ["sms", "email"]);
+  await notify(order.parentId, `Receipt for ${orderNo(order.number)} not accepted`, `Your receipt for order ${orderNo(order.number)} was not accepted: ${reason}. Please upload a new one in the app.`, ["whatsapp", "email"]);
   return order;
 }
 
