@@ -54,6 +54,7 @@ Open **http://localhost:3000**.
   - Registrar: `store@example.com` / `Demo!2026`
   - Secretary: `office@example.com` / `Demo!2026`
   - Accountant: `accounts@example.com` / `Demo!2026`, plus a 2FA code (`npm run totp -- accounts@example.com`)
+  - Super Admin (your computer only, never created on Vercel): `superadmin@example.com` / `Demo!2026`, plus a 2FA code (`npm run totp -- superadmin@example.com`)
 - Without Paystack keys, the store uses a **simulated Paystack checkout** so you can test the whole flow. It works in development only and never in production.
 
 Useful commands:

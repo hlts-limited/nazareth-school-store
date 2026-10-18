@@ -62,7 +62,23 @@ async function main() {
   }
 
   if (process.env.SEED_DEMO === "true") await seedDemo(classes);
+  if (process.env.SEED_DEMO === "true" && !process.env.VERCEL && process.env.NODE_ENV !== "production") await seedDemoAdmin();
   console.log("\nDone.");
+}
+
+/**
+ * A demo Super Admin for testing on your own computer only (never on a Vercel build, where the live site's data is).
+ * It lets anyone working on the system open the Super Admin pages without the school's real admin password.
+ */
+async function seedDemoAdmin() {
+  const email = "superadmin@example.com";
+  let u = await db.user.findUnique({ where: { email } });
+  if (!u) {
+    u = await db.user.create({
+      data: { type: "STAFF", status: "ACTIVE", firstName: "Demo", lastName: "Superadmin", email, passwordHash: await bcrypt.hash("Demo!2026", 12), totpSecret: authenticator.generateSecret(), roles: { create: { roleId: "admin" } } },
+    });
+  }
+  console.log(`Demo Super Admin (this computer only): ${email} / Demo!2026 — 2FA code: npm run totp -- ${email}`);
 }
 
 async function seedDemo(classes: { id: string; name: string }[]) {
