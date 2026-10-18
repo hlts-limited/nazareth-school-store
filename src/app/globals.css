@@ -818,6 +818,9 @@ a.chip{text-decoration:none}
 .event-date span{display:block;padding:3px 0;background:var(--red-fill,var(--red));color:#fff;font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
 .event-date b{display:block;padding:6px 0 7px;font-family:var(--disp);font-size:22px;line-height:1}
 .event-card.past{opacity:.75}
+.event-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.event{scroll-margin-top:120px}
+.event-card{scroll-margin-top:110px}
 .event-card.past .event-date span{background:var(--muted)}
 /* Optional event photo across the top of the card */
 .event-card.has-photo{padding:0;overflow:hidden}

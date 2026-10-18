@@ -2,6 +2,8 @@ import type { Event } from "@prisma/client";
 import Image from "next/image";
 import type { ReactNode } from "react";
 import { Icon } from "@/shared/ui/icon";
+import { env } from "@/shared/config/env";
+import { SCHOOL } from "@/shared/config/school";
 
 const TZ = "Africa/Lagos";
 const part = (d: Date, o: Intl.DateTimeFormatOptions) => d.toLocaleString("en-GB", { ...o, timeZone: TZ });
@@ -18,9 +20,18 @@ function when(e: Event) {
   return `${day(e.startsAt)}${t}`;
 }
 
+/** A WhatsApp link that opens the parent's WhatsApp with the event ready to send to a contact or group */
+function shareLink(e: Event) {
+  const text = `${e.title} at ${SCHOOL.name}
+${when(e)}${e.venue ? `
+${e.venue}` : ""}
+${env().APP_URL}/events#event-${e.id}`;
+  return `https://wa.me/?text=${encodeURIComponent(text)}`;
+}
+
 export function EventCard({ e, past, className = "", children }: { e: Event; past?: boolean; className?: string; children?: ReactNode }) {
   return (
-    <article className={`card event-card ${e.photoKey ? "has-photo" : ""} ${past ? "past" : ""} ${className}`}>
+    <article id={`event-${e.id}`} className={`card event-card ${e.photoKey ? "has-photo" : ""} ${past ? "past" : ""} ${className}`}>
       {e.photoKey && (
         <div className="event-photo">
           <Image src={`/api/files/${e.photoKey}`} alt={e.title} fill sizes="(max-width: 860px) 100vw, 600px" unoptimized />
@@ -37,6 +48,12 @@ export function EventCard({ e, past, className = "", children }: { e: Event; pas
           {e.venue && <span className="small muted row tight"><Icon name="pin" size="sm" />{e.venue}</span>}
           {e.description && <p className="muted event-desc">{e.description}</p>}
           {children}
+          {!past && (
+            <div className="event-acts">
+              <a className="btn sm" href={`/events/${e.id}/calendar`} download><Icon name="calendar" size="sm" />Add to calendar</a>
+              <a className="btn sm wa" href={shareLink(e)} target="_blank" rel="noopener noreferrer"><Icon name="whatsapp" size="sm" />Share on WhatsApp</a>
+            </div>
+          )}
         </div>
       </div>
     </article>
