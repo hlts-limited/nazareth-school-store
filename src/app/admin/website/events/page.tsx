@@ -39,7 +39,7 @@ export default async function EventsAdminPage() {
   const now = new Date();
   return (
     <div style={{ maxWidth: 900 }}>
-      <PageHeader title="Events" sub="Upcoming events appear on the website's Events page and the next three on the homepage." />
+      <PageHeader title="Events" sub="Upcoming events appear on the website's Events page. The next two also show on the homepage, with a countdown in the last 10 days." />
       <div className="stack loose">
         <details className="card stack" open={!events.length}>
           <summary className="row between" style={{ cursor: "pointer" }}><h3>New event</h3></summary>
