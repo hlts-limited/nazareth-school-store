@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { Icon } from "@/shared/ui/icon";
 import { env } from "@/shared/config/env";
 import { SCHOOL } from "@/shared/config/school";
+import { isLite } from "@/shared/lib/lite";
 
 const TZ = "Africa/Lagos";
 const part = (d: Date, o: Intl.DateTimeFormatOptions) => d.toLocaleString("en-GB", { ...o, timeZone: TZ });
@@ -29,10 +30,11 @@ ${env().APP_URL}/events#event-${e.id}`;
   return `https://wa.me/?text=${encodeURIComponent(text)}`;
 }
 
-export function EventCard({ e, past, className = "", children }: { e: Event; past?: boolean; className?: string; children?: ReactNode }) {
+export async function EventCard({ e, past, className = "", children }: { e: Event; past?: boolean; className?: string; children?: ReactNode }) {
+  const photo = e.photoKey && !(await isLite());
   return (
-    <article id={`event-${e.id}`} className={`card event-card ${e.photoKey ? "has-photo" : ""} ${past ? "past" : ""} ${className}`}>
-      {e.photoKey && (
+    <article id={`event-${e.id}`} className={`card event-card ${photo ? "has-photo" : ""} ${past ? "past" : ""} ${className}`}>
+      {photo && (
         <div className="event-photo">
           <Image src={`/api/files/${e.photoKey}`} alt={e.title} fill sizes="(max-width: 860px) 100vw, 600px" unoptimized />
         </div>

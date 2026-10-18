@@ -13,10 +13,10 @@ const EVERY = 5000;
  * stops while the pointer or keyboard focus is on it, and never starts on its own when motion is turned down.
  * Photos load one ahead of the one showing, so the whole album isn't downloaded at once.
  */
-export function Slideshow({ photos }: { photos: (Photo & { album: string })[] }) {
+export function Slideshow({ photos, lite = false }: { photos: (Photo & { album: string })[]; lite?: boolean }) {
   const [at, setAt] = useState(0);
   const [seen, setSeen] = useState(() => new Set([0, 1]));
-  const [playing, setPlaying] = useState(true);
+  const [playing, setPlaying] = useState(!lite);
   const [held, setHeld] = useState(false);
   const touch = useRef<number | null>(null);
   const n = photos.length;
@@ -59,7 +59,7 @@ export function Slideshow({ photos }: { photos: (Photo & { album: string })[] })
       <div className="slides-stage" aria-live={run ? "off" : "polite"}>
         {photos.map((p, i) => (
           <figure key={p.src} className={`slide${i === at ? " on" : ""}`} aria-hidden={i !== at} aria-roledescription="slide" aria-label={`${i + 1} of ${n}`}>
-            {seen.has(i) && <Image src={p.src} alt={p.alt} fill sizes="(max-width: 1240px) 100vw, 1200px" unoptimized={p.uploaded} priority={false} />}
+            {seen.has(i) && <Image src={lite ? p.thumb ?? p.src : p.src} alt={p.alt} fill sizes={lite ? "(max-width: 1240px) 60vw, 640px" : "(max-width: 1240px) 100vw, 1200px"} quality={lite ? 55 : undefined} unoptimized={p.uploaded} priority={false} />}
           </figure>
         ))}
         <div className="slides-cap">

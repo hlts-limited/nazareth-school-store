@@ -11,6 +11,7 @@ import { HeroVideo } from "./_hero-video";
 import { NewsCard } from "./_news";
 import { photoAlbums } from "./_photos";
 import { Slideshow } from "./_slideshow";
+import { isLite } from "@/shared/lib/lite";
 import { SCHOOLS } from "./_content";
 
 export const metadata: Metadata = {
@@ -25,7 +26,7 @@ const REASONS: [string, string, string][] = [
 ];
 
 export default async function HomePage() {
-  const [events, albums, news] = await Promise.all([upcomingEvents(2), galleryAlbums(), latestNews(3)]);
+  const [events, albums, news, lite] = await Promise.all([upcomingEvents(2), galleryAlbums(), latestNews(3), isLite()]);
   // Newest albums first, up to 12 photos for the slideshow
   const slides = photoAlbums(albums).flatMap((a) => a.photos.map((p) => ({ ...p, album: a.name }))).slice(0, 12);
   return (
@@ -128,7 +129,7 @@ export default async function HomePage() {
             <span className="eyebrow">Gallery</span>
             <h2>Life at {SCHOOL.name}</h2>
           </div>
-          <Slideshow photos={slides} />
+          <Slideshow photos={slides} lite={lite} />
         </section>
       )}
 

@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { SCHOOL } from "@/shared/config/school";
 import { ToastProvider } from "@/shared/ui/client";
 import { ServiceWorker } from "@/shared/ui/pwa";
+import { isLite } from "@/shared/lib/lite";
 import "./globals.css";
 
 const display = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["600", "700", "800"], variable: "--font-display", display: "swap" });
@@ -31,8 +32,9 @@ export const viewport: Viewport = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const theme = (await cookies()).get("naz_theme")?.value;
+  const lite = await isLite();
   return (
-    <html lang="en-NG" className={`${display.variable} ${body.variable}`} data-theme={theme === "dark" || theme === "light" ? theme : undefined}>
+    <html lang="en-NG" className={`${display.variable} ${body.variable}`} data-theme={theme === "dark" || theme === "light" ? theme : undefined} data-lite={lite ? "1" : undefined}>
       <body>
         <ToastProvider>{children}</ToastProvider>
         <ServiceWorker />

@@ -3,7 +3,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { PUBLIC_NAV, SCHOOL } from "@/shared/config/school";
 import { Icon } from "@/shared/ui/icon";
-import { ThemeToggle } from "@/shared/ui/client";
+import { DataSaverToggle, ThemeToggle } from "@/shared/ui/client";
+import { isLite } from "@/shared/lib/lite";
 import { dashboardPath, getViewer } from "@/modules/auth";
 import { admissionNotice, admissionStatus } from "@/modules/admissions";
 import { activeNotices } from "@/modules/website";
@@ -105,7 +106,7 @@ export default async function PublicLayout({ children }: { children: React.React
             <span className="row tight nowrap"><Icon name="clock" size="sm" /><span>{SCHOOL.officeHours}</span></span>
           </div>
         </div>
-        <div className="pub-foot-base">© {new Date().getFullYear()} {SCHOOL.name}. All rights reserved.</div>
+        <div className="pub-foot-base"><span>© {new Date().getFullYear()} {SCHOOL.name}. All rights reserved.</span><DataSaverToggle on={await isLite()} /></div>
       </footer>
     </div>
   );

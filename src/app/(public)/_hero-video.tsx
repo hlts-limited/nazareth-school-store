@@ -16,7 +16,7 @@ export function HeroVideo() {
 
   useEffect(() => {
     const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData;
-    if (saveData || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (saveData || document.documentElement.dataset.lite === "1" || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     setSrc(innerWidth < 768 ? "/videos/hero-720.mp4" : "/videos/hero-1080.mp4");
   }, []);
 

@@ -229,3 +229,19 @@ export function ThemeToggle() {
     </button>
   );
 }
+
+/**
+ * Data saver switch for footers. Remembers the choice for a year and reloads so the server sends the lighter page.
+ * `on` is what the server decided (the saved choice, or the phone's own Data Saver setting).
+ */
+export function DataSaverToggle({ on }: { on: boolean }) {
+  return (
+    <button type="button" className={`lite-toggle${on ? " on" : ""}`} role="switch" aria-checked={on} onClick={() => {
+      document.cookie = `naz_lite=${on ? "0" : "1"}; path=/; max-age=31536000; samesite=lax`;
+      window.location.reload();
+    }}>
+      <span className="lite-sw" aria-hidden="true" />
+      <span>Data saver{on ? " on" : ""}<small>{on ? "No video, smaller photos" : "Use less mobile data"}</small></span>
+    </button>
+  );
+}
