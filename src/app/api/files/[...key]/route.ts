@@ -5,11 +5,11 @@ import { auditActor, getViewAs, getViewer } from "@/modules/auth";
 import { audit } from "@/modules/audit";
 import { isSensitiveDoc, staffDocLabel } from "@/modules/hr";
 
-/** Serves stored files. Product, gallery and event photos are public; receipts only for the parent who uploaded them and accounts staff;
+/** Serves stored files. Product, gallery, event and news photos are public; receipts only for the parent who uploaded them and accounts staff;
  *  admission documents only for admissions staff. */
 export async function GET(_: Request, { params }: { params: Promise<{ key: string[] }> }) {
   const key = (await params).key.join("/");
-  if (key.startsWith("items/") || key.startsWith("gallery/") || key.startsWith("events/")) return serve(key, "public, max-age=31536000, immutable");
+  if (key.startsWith("items/") || key.startsWith("gallery/") || key.startsWith("events/") || key.startsWith("news/")) return serve(key, "public, max-age=31536000, immutable");
   if (key.startsWith("admissions/")) {
     const v = await getViewer();
     if (!v) return new NextResponse("Sign in required", { status: 401 });

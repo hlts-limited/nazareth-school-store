@@ -82,6 +82,59 @@ export async function deleteEvent(id: string) {
   return e;
 }
 
+// ---------- News ----------
+
+/** Published news, newest first */
+export async function latestNews(take = 12) {
+  return db.newsPost.findMany({ where: { published: true, publishedAt: { lte: new Date() } }, orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }], take });
+}
+
+export async function newsBySlug(slug: string) {
+  return db.newsPost.findFirst({ where: { slug, published: true, publishedAt: { lte: new Date() } } });
+}
+
+export async function listNews() {
+  return db.newsPost.findMany({ orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }], take: 200 });
+}
+
+export type NewsInput = { title: string; summary?: string; body: string; publishedAt: Date; published: boolean };
+
+const slugify = (t: string) => t.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 70) || "news";
+
+/** A web address from the title; "-2", "-3"… when another post already has it. Kept when a post is edited. */
+async function freeSlug(title: string, exceptId?: string) {
+  const base = slugify(title);
+  for (let n = 1; ; n++) {
+    const slug = n === 1 ? base : `${base}-${n}`;
+    const taken = await db.newsPost.findUnique({ where: { slug }, select: { id: true } });
+    if (!taken || taken.id === exceptId) return slug;
+  }
+}
+
+/** `photo`: a new photo replaces the old one, "remove" takes it off, undefined leaves it as it is */
+export async function saveNews(id: string | undefined, input: NewsInput, photo?: Upload | "remove") {
+  const before = id ? await db.newsPost.findUnique({ where: { id }, select: { photoKey: true, slug: true } }) : null;
+  if (id && !before) throw new UserError("That news post no longer exists.");
+  let photoKey: string | null | undefined;
+  if (photo === "remove") photoKey = null;
+  else if (photo) {
+    photoKey = `news/${randomToken(12).replace(/[^a-zA-Z0-9]/g, "")}.${photo.ext}`;
+    await storage().put(photoKey, photo.buf, photo.mime);
+  }
+  const data = { ...input, summary: input.summary ?? null, ...(photoKey !== undefined && { photoKey }) };
+  const post = id
+    ? await db.newsPost.update({ where: { id }, data })
+    : await db.newsPost.create({ data: { ...data, slug: await freeSlug(input.title) } });
+  if (photoKey !== undefined && before?.photoKey) await storage().delete(before.photoKey).catch(() => {});
+  return post;
+}
+
+export async function deleteNews(id: string) {
+  const p = await db.newsPost.delete({ where: { id } });
+  if (p.photoKey) await storage().delete(p.photoKey).catch(() => {});
+  return p;
+}
+
 // ---------- Gallery ----------
 
 /** Albums, most recently added first, each with its photos in order */

@@ -51,6 +51,7 @@ export const PUBLIC_NAV: { label: string; href: string; icon: string; ready: boo
   { label: "School life", href: "/gallery", icon: "heart", ready: true, children: [
     { label: "Gallery", href: "/gallery" },
     { label: "Events", href: "/events" },
+    { label: "News", href: "/news" },
   ] },
   { label: "Contact", href: "/contact", icon: "phone", ready: true },
 ];

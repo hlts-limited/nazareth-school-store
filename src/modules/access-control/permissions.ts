@@ -182,6 +182,7 @@ export const STAFF_SECTIONS: { id: string; label: string; perm: Permission; item
       { href: "/admin/website", label: "Messages", icon: "mail", badge: "enq" },
       { href: "/admin/website/notices", label: "Notices", icon: "bell" },
       { href: "/admin/website/events", label: "Events", icon: "clock" },
+      { href: "/admin/website/news", label: "News", icon: "file" },
       { href: "/admin/website/gallery", label: "Gallery", icon: "layers" },
     ],
   },

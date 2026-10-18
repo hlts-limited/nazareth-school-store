@@ -4,10 +4,11 @@ import Link from "next/link";
 import { SCHOOL } from "@/shared/config/school";
 import { Icon } from "@/shared/ui/icon";
 import { HowToBuyButton } from "@/shared/ui/how-to-buy";
-import { galleryAlbums, upcomingEvents } from "@/modules/website";
+import { galleryAlbums, latestNews, upcomingEvents } from "@/modules/website";
 import { Countdown } from "./_countdown";
 import { EventCard } from "./_events";
 import { HeroVideo } from "./_hero-video";
+import { NewsCard } from "./_news";
 import { photoAlbums } from "./_photos";
 import { Slideshow } from "./_slideshow";
 import { SCHOOLS } from "./_content";
@@ -24,7 +25,7 @@ const REASONS: [string, string, string][] = [
 ];
 
 export default async function HomePage() {
-  const [events, albums] = await Promise.all([upcomingEvents(2), galleryAlbums()]);
+  const [events, albums, news] = await Promise.all([upcomingEvents(2), galleryAlbums(), latestNews(3)]);
   // Newest albums first, up to 12 photos for the slideshow
   const slides = photoAlbums(albums).flatMap((a) => a.photos.map((p) => ({ ...p, album: a.name }))).slice(0, 12);
   return (
@@ -110,6 +111,16 @@ export default async function HomePage() {
           ))}
         </div>
       </section>
+
+      {news.length > 0 && (
+        <section className="pub-sec">
+          <div className="pub-sec-h row between">
+            <div className="stack tight"><span className="eyebrow">News</span><h2>Latest from the school</h2></div>
+            <Link className="btn" href="/news">All news<Icon name="chev" size="sm" /></Link>
+          </div>
+          <div className="grid g3">{news.map((n) => <NewsCard key={n.id} n={n} />)}</div>
+        </section>
+      )}
 
       {slides.length > 0 && (
         <section className="pub-sec">

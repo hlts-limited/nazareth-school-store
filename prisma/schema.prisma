@@ -615,6 +615,22 @@ model Event {
   @@index([startsAt])
 }
 
+/// School news for the website: results, awards, trips. Staff write them in Website → News.
+model NewsPost {
+  id          String   @id @default(uuid())
+  slug        String   @unique // the address: /news/<slug>
+  title       String
+  summary     String? // one or two lines for the list and the homepage
+  body        String // plain text; a blank line starts a new paragraph
+  photoKey    String? // stored under news/
+  published   Boolean  @default(true)
+  publishedAt DateTime @default(now()) // the date shown; newest first
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([published, publishedAt])
+}
+
 model GalleryPhoto {
   id        String   @id @default(uuid())
   album     String // e.g. "Inter-house sports 2026"; photos are grouped by this name

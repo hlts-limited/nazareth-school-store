@@ -669,6 +669,16 @@ a.chip{text-decoration:none}
 .pub-sec-h h2,.pub-sec h2{font-size:clamp(22px,3vw,30px);font-weight:800}
 .pub-sec p{line-height:1.65}
 .school-card{overflow:hidden}
+.news-card{overflow:hidden;display:flex;flex-direction:column}
+.news-card-img{position:relative;aspect-ratio:16/9;background:var(--line-2)}
+.news-card-img img{object-fit:cover}
+.news-card-ph{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--disp);font-weight:800;font-size:28px;letter-spacing:.06em;text-transform:uppercase;color:var(--red-line);background:radial-gradient(circle at 30% 20%,var(--red-soft),var(--line-2))}
+.news-teaser{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.news-article{max-width:760px;display:flex;flex-direction:column;gap:14px}
+.news-article p{line-height:1.75;font-size:16.5px;overflow-wrap:anywhere}
+.news-lead{font-size:18.5px!important;font-weight:500;color:var(--ink)}
+.news-photo{position:relative;aspect-ratio:16/9;border-radius:var(--r);overflow:hidden;background:var(--line-2)}
+.news-photo img{object-fit:cover}
 .school-card-img{position:relative;aspect-ratio:16/9;background:var(--line-2)}
 .school-card-img img{object-fit:cover}
 .school-card-img .pill{position:absolute;left:12px;top:12px;background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}

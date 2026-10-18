@@ -8,7 +8,7 @@ import { readUpload } from "@/shared/lib/storage";
 import { auditActor, isLocked, recordAttempt, staffFor } from "@/modules/auth";
 import { audit } from "@/modules/audit";
 import {
-  addPhoto, createEnquiry, deleteEvent, deleteNotice, deletePhoto, renameAlbum, saveEvent, saveNotice, setEnquiryHandled, updatePhoto,
+  addPhoto, createEnquiry, deleteEvent, deleteNews, deleteNotice, deletePhoto, renameAlbum, saveEvent, saveNews, saveNotice, setEnquiryHandled, updatePhoto,
 } from "./service";
 
 const lagos = (local: string) => new Date(`${local.length === 10 ? `${local}T00:00` : local}:00+01:00`);
@@ -98,6 +98,37 @@ export async function deleteEventAction(_: ActionResult, form: FormData): Promis
     const e = await deleteEvent(String(form.get("id")));
     await audit(await auditActor(v), "Deleted event", "Event", e.id, { title: e.title });
     return ok("Event deleted.");
+  });
+}
+
+export async function saveNewsAction(_: ActionResult, form: FormData): Promise<ActionResult> {
+  return runAction(async () => {
+    const v = await staff();
+    const d = parseForm(z.object({
+      id: z.string().optional(), title: zText(140, "Enter a headline"), summary: zOptText(240),
+      body: z.string().trim().min(20, "Write the story (at least 20 characters)").max(8000),
+      publishedAt: zOptLocal, published: zBool, removePhoto: zBool,
+    }), form);
+    const file = form.get("photo") as File | null;
+    let photo: Awaited<ReturnType<typeof readUpload>> | "remove" | undefined = d.removePhoto ? "remove" : undefined;
+    if (file && file.size > 0) {
+      photo = await readUpload(file, { allowPdf: false });
+      if ("error" in photo) return fail(photo.error!, { photo: photo.error! });
+    }
+    const n = await saveNews(d.id || undefined, {
+      title: d.title, summary: d.summary, body: d.body, published: d.published, publishedAt: d.publishedAt ? lagos(d.publishedAt) : new Date(),
+    }, photo);
+    await audit(await auditActor(v), d.id ? "Updated news post" : "Added news post", "NewsPost", n.id, { title: n.title });
+    return ok(d.id ? "News saved." : n.published ? "News published." : "News saved as a draft.");
+  });
+}
+
+export async function deleteNewsAction(_: ActionResult, form: FormData): Promise<ActionResult> {
+  return runAction(async () => {
+    const v = await staff();
+    const n = await deleteNews(String(form.get("id")));
+    await audit(await auditActor(v), "Deleted news post", "NewsPost", n.id, { title: n.title });
+    return ok("News deleted.");
   });
 }
 
