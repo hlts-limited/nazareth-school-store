@@ -3,6 +3,7 @@ import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import { cookies } from "next/headers";
 import { SCHOOL } from "@/shared/config/school";
 import { ToastProvider } from "@/shared/ui/client";
+import { ServiceWorker } from "@/shared/ui/pwa";
 import "./globals.css";
 
 const display = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["600", "700", "800"], variable: "--font-display", display: "swap" });
@@ -17,6 +18,7 @@ export const metadata: Metadata = {
     apple: "/apple-touch-icon.png",
   },
   manifest: "/manifest.webmanifest",
+  appleWebApp: { capable: true, title: SCHOOL.shortName, statusBarStyle: "default" },
   robots: { index: false, follow: false },
 };
 
@@ -33,6 +35,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="en-NG" className={`${display.variable} ${body.variable}`} data-theme={theme === "dark" || theme === "light" ? theme : undefined}>
       <body>
         <ToastProvider>{children}</ToastProvider>
+        <ServiceWorker />
       </body>
     </html>
   );

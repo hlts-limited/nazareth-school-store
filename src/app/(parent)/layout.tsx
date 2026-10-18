@@ -10,6 +10,7 @@ import { cartCount } from "@/modules/cart";
 import { unreadCount } from "@/modules/notifications";
 import { childrenOf } from "@/modules/pupils";
 import { ViewAsBanner } from "@/app/view-as-banner";
+import { InstallBanner } from "@/shared/ui/pwa";
 
 export default async function ParentLayout({ children }: { children: React.ReactNode }) {
   const { parent, viewAs } = await requireParentActor();
@@ -37,7 +38,7 @@ export default async function ParentLayout({ children }: { children: React.React
             </Link>
           </div>
         </header>
-        <main className="main">{children}<SchoolFooter /></main>
+        <main className="main">{!viewAs && <InstallBanner />}{children}<SchoolFooter /></main>
         <ParentNav cartCount={count} variant="bottom" />
       </div>
       {!viewAs && !remembered && <IdleWatcher idleSeconds={idle.idleSeconds} keepAlive={keepAlive} logout={logout} />}
