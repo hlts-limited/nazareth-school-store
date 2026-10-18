@@ -358,23 +358,35 @@ export function ScanChart({ title, labels, series, markers = [], warn = [], bars
           )}
         </figure>
 
-        {/* Marker labels under their drop lines (a simple list on phones) */}
-        {has && markers.length > 0 && w > 0 && (
-          <div className={`scan-marks${narrow ? " list" : ""}`} style={narrow ? undefined : { height: 58 }}>
-            {markers.map((mk) => {
-              const left = x(mk.at);
-              const on = p >= (left - L) / pw - 0.001;
-              const align = left > w - 130 ? "end" : left < 130 ? "start" : "mid";
-              return (
-                <div key={mk.title + mk.at} className={`scan-ml ${align}${on ? " on" : ""}`} style={narrow ? undefined : { left }}>
-                  <span className="dot" />
-                  <b>{mk.title}</b>
-                  <small>{mk.sub}{mk.note && <em> {mk.note}</em>}</small>
-                </div>
-              );
-            })}
-          </div>
-        )}
+        {/* Marker labels under their drop lines (a simple list on phones); labels that would overlap drop to a lower row */}
+        {has && markers.length > 0 && w > 0 && (() => {
+          const LW = 160, ROW = 54;
+          const rowEnds: number[] = [];
+          const placed = [...markers].sort((a, z) => a.at - z.at).map((mk) => {
+            const left = x(mk.at);
+            const align = left > w - 130 ? "end" : left < 130 ? "start" : "mid";
+            const from = align === "end" ? left - LW : align === "start" ? left : left - LW / 2;
+            let row = rowEnds.findIndex((end) => end <= from - 8);
+            if (row < 0) { row = rowEnds.length; rowEnds.push(0); }
+            rowEnds[row] = from + LW;
+            return { mk, left, align, row };
+          });
+          return (
+            <div className={`scan-marks${narrow ? " list" : ""}`} style={narrow ? undefined : { height: rowEnds.length * ROW + 4 }}>
+              {placed.map(({ mk, left, align, row }) => {
+                const on = p >= (left - L) / pw - 0.001;
+                return (
+                  <div key={mk.title + mk.at} className={`scan-ml ${align}${on ? " on" : ""}`} style={narrow ? undefined : { left, top: row * ROW }}>
+                    {row > 0 && !narrow && <span className="scan-ml-stem" style={{ height: row * ROW }} />}
+                    <span className="dot" />
+                    <b>{mk.title}</b>
+                    <small>{mk.sub}{mk.note && <em> {mk.note}</em>}</small>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
 
         {has && series.length > 1 && (
           <div className="scan-legend">

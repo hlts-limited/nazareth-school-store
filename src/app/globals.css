@@ -1124,7 +1124,10 @@ a.chip{text-decoration:none}
 .scan-ml.mid.on{transform:translateX(-50%)}
 .scan-ml.end{transform:translate(-100%,4px);align-items:flex-end;text-align:right}
 .scan-ml.end.on{transform:translateX(-100%)}
-.scan-ml .dot{width:7px;height:7px;border-radius:50%;background:#F2FFFE;box-shadow:0 0 8px #5EF2E6;margin-bottom:3px}
+.scan-ml-stem{position:absolute;bottom:100%;width:1px;background:rgba(230,247,246,.35);left:3px}
+.scan-ml.mid .scan-ml-stem{left:50%}
+.scan-ml.end .scan-ml-stem{left:auto;right:3px}
+.scan-ml .dot{width:7px;height:7px;border-radius:50%;background:#F2FFFE;box-shadow:0 0 8px #5EF2E6;margin-bottom:3px;flex:none}
 .scan-ml.mid .dot{align-self:center}
 .scan-ml b{font-size:14px;font-weight:500;color:#F2FFFE}
 .scan-ml small{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#93C9C5}
