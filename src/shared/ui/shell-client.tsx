@@ -6,20 +6,28 @@ import { useEffect, useRef, useState } from "react";
 import { Icon } from "./icon";
 import { Dialog } from "./client";
 
-/** Parent top navigation + phone bottom bar, with the active tab highlighted */
+/** Parent menu bar (laptops and tablets) + phone bottom bar, with the active tab highlighted */
 export function ParentNav({ cartCount, variant }: { cartCount: number; variant: "top" | "bottom" }) {
   const path = usePathname();
   const tabs: [string, string, string][] = [["/home", "Home", "home"], ["/shop", "Shop", "shop"], ["/cart", "Cart", "cart"], ["/orders", "Orders", "box"], ["/wallet", "Wallet", "wallet"]];
   const active = (href: string) => path === href || path.startsWith(href + "/");
   return (
-    <nav className={variant === "top" ? "topnav" : "bottomnav"} aria-label="Main">
-      {tabs.map(([href, label, icon]) => (
-        <Link key={href} href={href} className={active(href) ? "on" : ""} aria-current={active(href) ? "page" : undefined}>
-          <Icon name={icon} size={variant === "top" ? "sm" : "md"} />
-          {label}
-          {href === "/cart" && cartCount > 0 && <span className="badge">{cartCount}</span>}
-        </Link>
-      ))}
+    <nav className={variant === "top" ? "topnav mbar" : "bottomnav"} aria-label="Main">
+      {tabs.map(([href, label, icon]) => {
+        const badge = href === "/cart" && cartCount > 0 && <span className="badge">{cartCount}</span>;
+        return variant === "top" ? (
+          <Link key={href} href={href} className={`mb-i ${active(href) ? "on" : ""}`} aria-current={active(href) ? "page" : undefined}>
+            <span className="mb-l">{label}</span>
+            <span className="mb-ic"><Icon name={icon} size="sm" />{badge}</span>
+          </Link>
+        ) : (
+          <Link key={href} href={href} className={active(href) ? "on" : ""} aria-current={active(href) ? "page" : undefined}>
+            <Icon name={icon} size="md" />
+            {label}
+            {badge}
+          </Link>
+        );
+      })}
     </nav>
   );
 }

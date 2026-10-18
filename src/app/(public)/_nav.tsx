@@ -5,10 +5,10 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/shared/ui/icon";
 
-type NavItem = { label: string; href: string; children?: { label: string; href: string }[] };
+type NavItem = { label: string; href: string; icon: string; children?: { label: string; href: string }[] };
 
 /**
- * Public website menu: inline on desktop, a slide-down panel on phones.
+ * Public website menu: a menu bar on laptops and tablets (label above a round icon), a slide-down panel on phones.
  * Only one dropdown is open at a time; it closes on a click elsewhere, on Escape, and when the page changes.
  */
 export function PublicNav({ items }: { items: NavItem[] }) {
@@ -47,13 +47,14 @@ export function PublicNav({ items }: { items: NavItem[] }) {
       <button type="button" className={`icon-btn pub-menu-btn ${open ? "is-open" : ""}`} aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} aria-controls="pub-nav" onClick={() => { setOpen(!open); setDropdown(null); }}>
         <Icon name={open ? "x" : "menu"} />
       </button>
-      <nav ref={ref} id="pub-nav" className={`pub-nav ${open ? "open" : ""}`} aria-label="Website">
+      <nav ref={ref} id="pub-nav" className={`pub-nav mbar ${open ? "open" : ""}`} aria-label="Website">
         {items.map((item) =>
           item.children ? (
             <details key={item.href} data-dd={item.href} className={`pub-dd ${active(item) ? "on" : ""}`} open={dropdown === item.href}>
               {/* The menu decides which dropdown is open, so opening one closes the others */}
-              <summary onClick={(e) => { e.preventDefault(); setDropdown(dropdown === item.href ? null : item.href); }}>
-                {item.label}<Icon name="chev" size="sm" />
+              <summary className="mb-i" onClick={(e) => { e.preventDefault(); setDropdown(dropdown === item.href ? null : item.href); }}>
+                <span className="mb-l">{item.label}<Icon name="chev" size="sm" /></span>
+                <span className="mb-ic"><Icon name={item.icon} size="sm" /></span>
               </summary>
               <div className="pub-dd-menu">
                 {item.children.map((c) => (
@@ -62,7 +63,10 @@ export function PublicNav({ items }: { items: NavItem[] }) {
               </div>
             </details>
           ) : (
-            <Link key={item.href} href={item.href} className={active(item) ? "on" : ""} aria-current={active(item) ? "page" : undefined}>{item.label}</Link>
+            <Link key={item.href} href={item.href} className={`mb-i ${active(item) ? "on" : ""}`} aria-current={active(item) ? "page" : undefined}>
+              <span className="mb-l">{item.label}</span>
+              <span className="mb-ic"><Icon name={item.icon} size="sm" /></span>
+            </Link>
           ),
         )}
       </nav>

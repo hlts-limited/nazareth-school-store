@@ -24,35 +24,35 @@ export const SCHOOL = {
  * Public website menu. `ready: false` hides an entry until its page exists,
  * so the menu never links to a page that isn't built yet.
  */
-export const PUBLIC_NAV: { label: string; href: string; ready: boolean; children?: { label: string; href: string }[] }[] = [
-  { label: "Home", href: "/", ready: true },
-  { label: "About", href: "/about/welcome", ready: true, children: [
+export const PUBLIC_NAV: { label: string; href: string; icon: string; ready: boolean; children?: { label: string; href: string }[] }[] = [
+  { label: "Home", href: "/", icon: "home", ready: true },
+  { label: "About", href: "/about/welcome", icon: "info", ready: true, children: [
     { label: "Welcome address", href: "/about/welcome" },
     { label: "Our history", href: "/about/history" },
     { label: "Vision & mission", href: "/about/vision" },
     { label: "Management", href: "/about/management" },
   ] },
-  { label: "Our schools", href: "/schools/pre-school", ready: true, children: [
+  { label: "Our schools", href: "/schools/pre-school", icon: "layers", ready: true, children: [
     { label: "Pre-School", href: "/schools/pre-school" },
     { label: "School A", href: "/schools/school-a" },
     { label: "School B", href: "/schools/school-b" },
   ] },
-  { label: "Academics", href: "/academics/curriculum", ready: true, children: [
+  { label: "Academics", href: "/academics/curriculum", icon: "file", ready: true, children: [
     { label: "Curriculum", href: "/academics/curriculum" },
     { label: "Co-curricular", href: "/academics/co-curricular" },
   ] },
-  { label: "Admissions", href: "/admissions/process", ready: true, children: [
+  { label: "Admissions", href: "/admissions/process", icon: "list", ready: true, children: [
     { label: "Why Nazareth?", href: "/admissions/why-nazareth" },
     { label: "Admission process", href: "/admissions/process" },
     { label: "FAQs", href: "/admissions/faqs" },
     { label: "Apply online", href: "/admissions/apply" },
     { label: "Admission results", href: "/admissions/results" },
   ] },
-  { label: "School life", href: "/gallery", ready: true, children: [
+  { label: "School life", href: "/gallery", icon: "heart", ready: true, children: [
     { label: "Gallery", href: "/gallery" },
     { label: "Events", href: "/events" },
   ] },
-  { label: "Contact", href: "/contact", ready: true },
+  { label: "Contact", href: "/contact", icon: "phone", ready: true },
 ];
 
 /** Classes in promotion order. Seeded into the database; Super Admin can reorder them. */
