@@ -1,14 +1,16 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { SCHOOL } from "@/shared/config/school";
 import { Icon } from "@/shared/ui/icon";
 
 type NavItem = { label: string; href: string; icon: string; children?: { label: string; href: string }[] };
 
 /**
- * Public website menu: a menu bar on laptops and tablets (label above a round icon), a slide-down panel on phones.
+ * Public website menu: a menu bar on laptops and tablets (label above a round icon), a dark slide-out menu on phones.
  * Only one dropdown is open at a time; it closes on a click elsewhere, on Escape, and when the page changes.
  */
 export function PublicNav({ items }: { items: NavItem[] }) {
@@ -22,7 +24,7 @@ export function PublicNav({ items }: { items: NavItem[] }) {
   useEffect(() => {
     if (!dropdown && !open) return;
     const onDown = (e: PointerEvent) => {
-      if (ref.current?.contains(e.target as Node) || (e.target as Element).closest?.(".pub-menu-btn")) return;
+      if (ref.current?.contains(e.target as Node) || (e.target as Element).closest?.(".pub-menu-btn,.pub-scrim")) return;
       setDropdown(null);
       setOpen(false);
     };
@@ -47,7 +49,14 @@ export function PublicNav({ items }: { items: NavItem[] }) {
       <button type="button" className={`icon-btn pub-menu-btn ${open ? "is-open" : ""}`} aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} aria-controls="pub-nav" onClick={() => { setOpen(!open); setDropdown(null); }}>
         <Icon name={open ? "x" : "menu"} />
       </button>
+      {open && <div className="pub-scrim" onClick={() => setOpen(false)} aria-hidden="true" />}
       <nav ref={ref} id="pub-nav" className={`pub-nav mbar ${open ? "open" : ""}`} aria-label="Website">
+        <div className="pub-drawer-head">
+          <span className="side-logo"><Image src="/logo.png" alt="" width={30} height={30} /></span>
+          <b>{SCHOOL.name}</b>
+          <button type="button" className="pub-drawer-x" aria-label="Close menu" onClick={() => setOpen(false)}><Icon name="x" size="sm" /></button>
+        </div>
+        <div className="pub-drawer-sec">Menu</div>
         {items.map((item) =>
           item.children ? (
             <details key={item.href} data-dd={item.href} className={`pub-dd ${active(item) ? "on" : ""}`} open={dropdown === item.href}>

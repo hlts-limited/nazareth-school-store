@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -43,38 +44,67 @@ function currentSection<S extends { items: { href: string }[] }>(sections: S[], 
   return best ?? sections[0];
 }
 
-/** Back-office side menu and phone tab strip */
-export function StaffNav({ sections, counts, variant }: {
+/** Back-office side menu: the current workspace's links. Labels hide when the menu is folded to icons. */
+export function StaffNav({ sections, counts }: {
   sections: { id: string; label: string; items: { href: string; label: string; icon: string; badge?: string }[] }[];
   counts: Record<string, number>;
-  variant: "side" | "tabs";
 }) {
   const path = usePathname();
   const current = currentSection(sections, path);
   const items = current?.items ?? [];
   // The active item is the one whose link is the longest match for the current page
   const best = items.filter((i) => path === i.href || path.startsWith(i.href + "/")).sort((a, b) => b.href.length - a.href.length)[0]?.href;
-  const isOn = (href: string) => href === best;
-  if (variant === "tabs") {
-    return (
-      <nav className="staff-tabs" aria-label="Section">
-        {items.map((i) => (
-          <Link key={i.href} href={i.href} className={isOn(i.href) ? "on" : ""}>
-            {i.label}{i.badge && counts[i.badge] ? <span className="cnt">{counts[i.badge]}</span> : null}
-          </Link>
-        ))}
-      </nav>
-    );
-  }
   return (
     <>
-      <div className="side-sec">{current?.label}</div>
-      {items.map((i) => (
-        <Link key={i.href} href={i.href} className={`nav ${isOn(i.href) ? "on" : ""}`}>
-          <Icon name={i.icon} size="sm" />{i.label}
-          {i.badge && counts[i.badge] ? <span className="cnt">{counts[i.badge]}</span> : null}
-        </Link>
-      ))}
+      <div className="side-sec">Menu{sections.length > 1 && <span className="side-l"> · {current?.label}</span>}</div>
+      {items.map((i) => {
+        const n = i.badge ? counts[i.badge] : 0;
+        return (
+          <Link key={i.href} href={i.href} className={`nav ${i.href === best ? "on" : ""}`} aria-current={i.href === best ? "page" : undefined} title={i.label}>
+            <Icon name={i.icon} size="sm" /><span className="side-l">{i.label}</span>
+            {n ? <span className="cnt">{n}</span> : null}
+          </Link>
+        );
+      })}
+    </>
+  );
+}
+
+/**
+ * The staff side menu. On laptops it is full width and folds to an icon rail (remembered on this device);
+ * on phones it is always the rail, and the logo button opens it out over the page.
+ */
+export function StaffSide({ name, children }: { name: string; children: React.ReactNode }) {
+  const path = usePathname();
+  const [folded, setFolded] = useState(false);
+  const [open, setOpen] = useState(false);
+  useEffect(() => { try { setFolded(localStorage.getItem("nz-side") === "folded"); } catch {} }, []);
+  useEffect(() => { setOpen(false); }, [path]);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open]);
+  const toggle = () => {
+    if (window.matchMedia("(max-width:980px)").matches) { setOpen(!open); return; }
+    const next = !folded;
+    setFolded(next);
+    try { localStorage.setItem("nz-side", next ? "folded" : "open"); } catch {}
+  };
+  const wide = open || !folded;
+  return (
+    <>
+      <aside className={`side ${folded ? "folded" : ""} ${open ? "open" : ""}`} aria-label="Staff menu">
+        <div className="side-head">
+          <button type="button" className="side-logo" onClick={toggle} aria-expanded={wide} aria-label={wide ? "Fold the menu" : "Open the menu"} title={wide ? "Fold the menu" : "Open the menu"}>
+            <Image src="/logo.png" alt="" width={30} height={30} />
+          </button>
+          <b className="side-l side-name">{name}</b>
+        </div>
+        {children}
+      </aside>
+      {open && <div className="side-scrim" onClick={() => setOpen(false)} aria-hidden="true" />}
     </>
   );
 }
