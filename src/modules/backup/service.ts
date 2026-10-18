@@ -17,12 +17,12 @@ const TABLES = [
   ["wallet", "Wallet"], ["walletTransaction", "WalletTransaction"], ["stockMovement", "StockMovement"], ["cartItem", "CartItem"], ["wishlistItem", "WishlistItem"],
   ["notification", "Notification"], ["auditLog", "AuditLog"],
   ["admissionWindow", "AdmissionWindow"], ["examSlot", "ExamSlot"], ["application", "Application"], ["applicationDocument", "ApplicationDocument"],
-  ["notice", "Notice"], ["event", "Event"], ["galleryPhoto", "GalleryPhoto"], ["enquiry", "Enquiry"],
+  ["notice", "Notice"], ["event", "Event"], ["galleryPhoto", "GalleryPhoto"], ["newsPost", "NewsPost"], ["enquiry", "Enquiry"],
   ["employee", "Employee"], ["employeeDocument", "EmployeeDocument"], ["attendance", "Attendance"], ["holiday", "Holiday"], ["leaveRequest", "LeaveRequest"],
   ["payrollRun", "PayrollRun"], ["payrollItem", "PayrollItem"], ["payrollAdjustment", "PayrollAdjustment"], ["salaryPayment", "SalaryPayment"],
 ] as const;
 // Attendance photos ("attendance/") are deliberately left out: they must not outlive their 31 days in a backup.
-const FILE_PREFIXES = ["receipts/", "items/", "admissions/", "gallery/", "staff/"];
+const FILE_PREFIXES = ["receipts/", "items/", "admissions/", "gallery/", "events/", "news/", "staff/"];
 
 type Delegate = { findMany: (a?: unknown) => Promise<Record<string, unknown>[]>; createMany: (a: { data: unknown[] }) => Promise<unknown> };
 const delegate = (client: unknown, name: string) => (client as Record<string, Delegate>)[name];
