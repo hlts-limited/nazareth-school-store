@@ -58,14 +58,28 @@ export async function listEvents() {
 
 export type EventInput = { title: string; startsAt: Date; endsAt?: Date; venue?: string; description?: string; published: boolean };
 
-export async function saveEvent(id: string | undefined, input: EventInput) {
+type Upload = { buf: Buffer; mime: string; ext: string };
+
+/** `photo`: a new photo replaces the old one, "remove" takes it off, undefined leaves it as it is */
+export async function saveEvent(id: string | undefined, input: EventInput, photo?: Upload | "remove") {
   if (input.endsAt && input.endsAt <= input.startsAt) throw new UserError("The end must be after the start.", { endsAt: "Must be after the start" });
-  const data = { ...input, endsAt: input.endsAt ?? null, venue: input.venue ?? null, description: input.description ?? null };
-  return id ? db.event.update({ where: { id }, data }) : db.event.create({ data });
+  const before = id ? await db.event.findUnique({ where: { id }, select: { photoKey: true } }) : null;
+  let photoKey: string | null | undefined;
+  if (photo === "remove") photoKey = null;
+  else if (photo) {
+    photoKey = `events/${randomToken(12).replace(/[^a-zA-Z0-9]/g, "")}.${photo.ext}`;
+    await storage().put(photoKey, photo.buf, photo.mime);
+  }
+  const data = { ...input, endsAt: input.endsAt ?? null, venue: input.venue ?? null, description: input.description ?? null, ...(photoKey !== undefined && { photoKey }) };
+  const e = id ? await db.event.update({ where: { id }, data }) : await db.event.create({ data });
+  if (photoKey !== undefined && before?.photoKey) await storage().delete(before.photoKey).catch(() => {});
+  return e;
 }
 
 export async function deleteEvent(id: string) {
-  return db.event.delete({ where: { id } });
+  const e = await db.event.delete({ where: { id } });
+  if (e.photoKey) await storage().delete(e.photoKey).catch(() => {});
+  return e;
 }
 
 // ---------- Gallery ----------

@@ -608,6 +608,7 @@ model Event {
   endsAt      DateTime?
   venue       String?
   description String?
+  photoKey    String? // optional photo shown on the event card (stored under events/)
   published   Boolean   @default(true)
   createdAt   DateTime  @default(now())
 

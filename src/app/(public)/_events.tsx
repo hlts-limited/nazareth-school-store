@@ -1,4 +1,5 @@
 import type { Event } from "@prisma/client";
+import Image from "next/image";
 import type { ReactNode } from "react";
 import { Icon } from "@/shared/ui/icon";
 
@@ -19,17 +20,24 @@ function when(e: Event) {
 
 export function EventCard({ e, past, className = "", children }: { e: Event; past?: boolean; className?: string; children?: ReactNode }) {
   return (
-    <article className={`card event ${past ? "past" : ""} ${className}`}>
-      <div className="event-date" aria-hidden="true">
-        <span>{part(e.startsAt, { month: "short" })}</span>
-        <b>{part(e.startsAt, { day: "numeric" })}</b>
-      </div>
-      <div className="stack tight">
-        <h3>{e.title}</h3>
-        <span className="small muted row tight"><Icon name="clock" size="sm" />{when(e)}</span>
-        {e.venue && <span className="small muted row tight"><Icon name="pin" size="sm" />{e.venue}</span>}
-        {e.description && <p className="muted event-desc">{e.description}</p>}
-        {children}
+    <article className={`card event-card ${e.photoKey ? "has-photo" : ""} ${past ? "past" : ""} ${className}`}>
+      {e.photoKey && (
+        <div className="event-photo">
+          <Image src={`/api/files/${e.photoKey}`} alt={e.title} fill sizes="(max-width: 860px) 100vw, 600px" unoptimized />
+        </div>
+      )}
+      <div className="event">
+        <div className="event-date" aria-hidden="true">
+          <span>{part(e.startsAt, { month: "short" })}</span>
+          <b>{part(e.startsAt, { day: "numeric" })}</b>
+        </div>
+        <div className="stack tight">
+          <h3>{e.title}</h3>
+          <span className="small muted row tight"><Icon name="clock" size="sm" />{when(e)}</span>
+          {e.venue && <span className="small muted row tight"><Icon name="pin" size="sm" />{e.venue}</span>}
+          {e.description && <p className="muted event-desc">{e.description}</p>}
+          {children}
+        </div>
       </div>
     </article>
   );

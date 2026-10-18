@@ -75,11 +75,18 @@ export async function saveEventAction(_: ActionResult, form: FormData): Promise<
     const d = parseForm(z.object({
       id: z.string().optional(), title: zText(140, "Enter the event name"),
       startsAt: zLocal("Choose the date"), endsAt: zOptLocal,
-      venue: zOptText(120), description: zOptText(1500), published: zBool,
+      venue: zOptText(120), description: zOptText(1500), published: zBool, removePhoto: zBool,
     }), form);
+    // The browser shrinks the photo before sending; an empty file input means "keep the current photo"
+    const file = form.get("photo") as File | null;
+    let photo: Awaited<ReturnType<typeof readUpload>> | "remove" | undefined = d.removePhoto ? "remove" : undefined;
+    if (file && file.size > 0) {
+      photo = await readUpload(file, { allowPdf: false });
+      if ("error" in photo) return fail(photo.error!, { photo: photo.error! });
+    }
     const e = await saveEvent(d.id || undefined, {
       title: d.title, startsAt: lagos(d.startsAt), endsAt: d.endsAt ? lagos(d.endsAt) : undefined, venue: d.venue, description: d.description, published: d.published,
-    });
+    }, photo);
     await audit(await auditActor(v), d.id ? "Updated event" : "Added event", "Event", e.id, { title: e.title, startsAt: d.startsAt });
     return ok(d.id ? "Event saved." : "Event added.");
   });

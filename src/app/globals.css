@@ -817,8 +817,20 @@ a.chip{text-decoration:none}
 .event-date{flex:none;width:58px;border-radius:12px;overflow:hidden;text-align:center;border:1px solid var(--line);background:var(--surface)}
 .event-date span{display:block;padding:3px 0;background:var(--red-fill,var(--red));color:#fff;font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
 .event-date b{display:block;padding:6px 0 7px;font-family:var(--disp);font-size:22px;line-height:1}
-.event.past{opacity:.75}
-.event.past .event-date span{background:var(--muted)}
+.event-card.past{opacity:.75}
+.event-card.past .event-date span{background:var(--muted)}
+/* Optional event photo across the top of the card */
+.event-card.has-photo{padding:0;overflow:hidden}
+.event-card.has-photo>.event{padding:18px 20px 20px}
+.event-photo{position:relative;aspect-ratio:16/9;background:var(--line-2)}
+.event-photo img{object-fit:cover}
+.event-card.past .event-photo img{filter:grayscale(.35)}
+/* Back office: event photo picker and list thumbnail */
+.ev-photo-field{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
+.ev-photo-prev{width:160px;aspect-ratio:16/9;object-fit:cover;border-radius:10px;border:1px solid var(--line);background:var(--line-2);flex:none}
+.ev-photo-prev.empty{display:grid;place-items:center;font-size:12.5px;color:var(--muted)}
+.ev-photo-field>.stack{flex:1;min-width:220px}
+.ev-thumb{width:72px;height:48px;object-fit:cover;border-radius:8px;flex:none;border:1px solid var(--line)}
 .event-desc{white-space:pre-line;line-height:1.6}
 .event .row.tight svg{flex:none}
 

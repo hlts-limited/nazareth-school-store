@@ -3,6 +3,7 @@ import { ActionForm, FieldError, SubmitButton } from "@/shared/ui/client";
 import { Empty, PageHeader } from "@/shared/ui/primitives";
 import { requireStaff } from "@/modules/auth";
 import { deleteEventAction, listEvents, saveEventAction } from "@/modules/website";
+import { EventForm, EventPhotoField } from "./_form";
 
 export const metadata = { title: "Events" };
 
@@ -28,6 +29,7 @@ function EventFields({ e }: { e?: E }) {
         <div className="field"><label htmlFor={`ee-${id}`}>Ends (optional)</label><input className="input" type="datetime-local" id={`ee-${id}`} name="endsAt" defaultValue={localInput(e?.endsAt)} /><FieldError name="endsAt" /></div>
       </div>
       <div className="field"><label htmlFor={`ed-${id}`}>Details for parents (optional)</label><textarea className="input" id={`ed-${id}`} name="description" rows={3} defaultValue={e?.description ?? ""} /></div>
+      <EventPhotoField id={id} current={e?.photoKey ? `/api/files/${e.photoKey}` : null} />
       <label className="check"><input type="checkbox" name="published" defaultChecked={e ? e.published : true} /> Show on the website</label>
     </>
   );
@@ -43,17 +45,21 @@ export default async function EventsAdminPage() {
       <div className="stack loose">
         <details className="card stack" open={!events.length}>
           <summary className="row between" style={{ cursor: "pointer" }}><h3>New event</h3></summary>
-          <ActionForm action={saveEventAction} className="stack" resetOnSuccess>
+          <EventForm action={saveEventAction} resetOnSuccess>
             <EventFields />
             <div><SubmitButton icon="plus">Add event</SubmitButton></div>
-          </ActionForm>
+          </EventForm>
         </details>
         {events.length === 0 ? <div className="card"><Empty title="No events yet">Add resumption dates, sports days, open days and more.</Empty></div> : events.map((e) => (
           <section key={e.id} className="card stack">
             <div className="row between">
+              <div className="row nowrap" style={{ gap: 12 }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {e.photoKey && <img src={`/api/files/${e.photoKey}`} alt="" className="ev-thumb" loading="lazy" />}
               <div className="stack tight">
                 <h3>{e.title}</h3>
                 <span className="small muted">{fmtDateTime(e.startsAt)}{e.endsAt ? ` – ${fmtDateTime(e.endsAt)}` : ""}{e.venue ? ` · ${e.venue}` : ""}</span>
+              </div>
               </div>
               <div className="row tight">
                 {!e.published ? <span className="pill plain">Hidden</span> : (e.endsAt ?? e.startsAt) < now ? <span className="pill plain">Past</span> : <span className="pill ok">Upcoming</span>}
@@ -65,10 +71,10 @@ export default async function EventsAdminPage() {
             </div>
             <details>
               <summary className="small" style={{ cursor: "pointer" }}>Edit</summary>
-              <ActionForm action={saveEventAction} className="stack">
+              <EventForm action={saveEventAction}>
                 <EventFields e={e} />
                 <div><SubmitButton variant="default">Save event</SubmitButton></div>
-              </ActionForm>
+              </EventForm>
             </details>
           </section>
         ))}
