@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { SCHOOL } from "@/shared/config/school";
 import { Icon } from "@/shared/ui/icon";
+import { HowToBuyButton } from "@/shared/ui/how-to-buy";
 import { upcomingEvents } from "@/modules/website";
 import { EventCard } from "./_events";
 import { SCHOOLS } from "./_content";
@@ -104,7 +105,10 @@ export default async function HomePage() {
             <h2>Books and uniforms, in one checkout</h2>
             <p>Shop your children&apos;s booklists online, pay by card or bank transfer, and collect from the school store.</p>
           </div>
-          <Link className="btn primary lg" href="/login">Go to the School Store<Icon name="chev" size="sm" /></Link>
+          <div className="row">
+            <HowToBuyButton className="btn lg hero-ghost" label="How to buy (video)" />
+            <Link className="btn primary lg" href="/login">Go to the School Store<Icon name="chev" size="sm" /></Link>
+          </div>
         </div>
       </section>
     </>

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ActionResult } from "@/shared/lib/action";
 import { ActionForm, FieldError, SubmitButton, useFormResult } from "@/shared/ui/client";
+import { HowToBuyButton } from "@/shared/ui/how-to-buy";
 
 type Action = (prev: ActionResult, form: FormData) => Promise<ActionResult>;
 
@@ -43,6 +44,7 @@ export function LoginForms({ initialTab, captcha, actions }: {
           <div className="field"><label htmlFor="lp-pw">Password</label><input className="input" id="lp-pw" name="password" type="password" autoComplete="current-password" required /><FieldError name="password" /></div>
           <label className="check small"><input type="checkbox" name="remember" /> Remember this device for 30 days</label>
           <SubmitButton size="lg" block>Sign in</SubmitButton>
+          <HowToBuyButton className="btn block htb-btn" label="New to the School Store? Watch how to buy" />
           <p className="small muted">New parent? Use the link in the invite SMS from the school office to set your password. Forgot it? Ask the office to send you a new link.</p>
         </ActionForm>
       )}

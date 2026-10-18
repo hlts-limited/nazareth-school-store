@@ -332,6 +332,18 @@ summary.mb-i{list-style:none}
   .pub-top .pub-nav{order:5;flex-basis:100%;margin:0}
 }
 
+/* "How to buy" video (shared/ui/how-to-buy.tsx) */
+.htb-video{display:block;width:min(100%,380px,calc(72vh * 9 / 16));aspect-ratio:9/16;margin:0 auto;border-radius:18px;background:#141213;box-shadow:var(--shadow-lg)}
+.htb-btn{border-style:dashed}
+.htb{display:grid;grid-template-columns:minmax(0,400px) minmax(0,1fr);gap:40px;align-items:start}
+.htb-player{position:sticky;top:96px;display:flex;flex-direction:column;gap:10px}
+.htb-steps{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.htb-steps li{display:flex;gap:14px;align-items:flex-start;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.htb-steps b{display:block;font-family:var(--disp);font-size:16px}
+.htb-steps small{display:block;color:var(--muted);font-size:14px;margin-top:2px}
+.htb-n{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--red);color:#fff;font-weight:800;font-family:var(--disp)}
+@media (max-width:860px){.htb{grid-template-columns:minmax(0,1fr)}.htb-player{position:static}}
+
 /* App shell */
 .shell{min-height:100%;display:flex;flex-direction:column}
 .topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
