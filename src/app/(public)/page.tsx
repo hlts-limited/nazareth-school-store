@@ -4,9 +4,12 @@ import Link from "next/link";
 import { SCHOOL } from "@/shared/config/school";
 import { Icon } from "@/shared/ui/icon";
 import { HowToBuyButton } from "@/shared/ui/how-to-buy";
-import { upcomingEvents } from "@/modules/website";
+import { galleryAlbums, upcomingEvents } from "@/modules/website";
+import { Countdown } from "./_countdown";
 import { EventCard } from "./_events";
 import { HeroVideo } from "./_hero-video";
+import { photoAlbums } from "./_photos";
+import { Slideshow } from "./_slideshow";
 import { SCHOOLS } from "./_content";
 
 export const metadata: Metadata = {
@@ -21,7 +24,9 @@ const REASONS: [string, string, string][] = [
 ];
 
 export default async function HomePage() {
-  const events = await upcomingEvents(3);
+  const [events, albums] = await Promise.all([upcomingEvents(2), galleryAlbums()]);
+  // Newest albums first, up to 12 photos for the slideshow
+  const slides = photoAlbums(albums).flatMap((a) => a.photos.map((p) => ({ ...p, album: a.name }))).slice(0, 12);
   return (
     <>
       <section className="hero">
@@ -36,6 +41,22 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {events.length > 0 && (
+        <section className="pub-sec">
+          <div className="pub-sec-h row between">
+            <div className="stack tight"><span className="eyebrow">What&apos;s on</span><h2>Coming up</h2></div>
+            <Link className="btn" href="/events">All events<Icon name="chev" size="sm" /></Link>
+          </div>
+          <div className="grid g2">
+            {events.map((e) => (
+              <EventCard key={e.id} e={e} className="event-next">
+                <Countdown startsAt={e.startsAt.toISOString()} endsAt={e.endsAt?.toISOString() ?? null} />
+              </EventCard>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="pub-sec">
         <div className="pub-sec-h">
@@ -90,13 +111,13 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {events.length > 0 && (
+      {slides.length > 0 && (
         <section className="pub-sec">
-          <div className="pub-sec-h row between">
-            <div className="stack tight"><span className="eyebrow">What&apos;s on</span><h2>Upcoming events</h2></div>
-            <Link className="btn" href="/events">All events<Icon name="chev" size="sm" /></Link>
+          <div className="pub-sec-h">
+            <span className="eyebrow">Gallery</span>
+            <h2>Life at {SCHOOL.name}</h2>
           </div>
-          <div className="grid g3">{events.map((e) => <EventCard key={e.id} e={e} />)}</div>
+          <Slideshow photos={slides} />
         </section>
       )}
 

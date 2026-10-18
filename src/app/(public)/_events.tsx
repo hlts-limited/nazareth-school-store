@@ -1,4 +1,5 @@
 import type { Event } from "@prisma/client";
+import type { ReactNode } from "react";
 import { Icon } from "@/shared/ui/icon";
 
 const TZ = "Africa/Lagos";
@@ -16,9 +17,9 @@ function when(e: Event) {
   return `${day(e.startsAt)}${t}`;
 }
 
-export function EventCard({ e, past }: { e: Event; past?: boolean }) {
+export function EventCard({ e, past, className = "", children }: { e: Event; past?: boolean; className?: string; children?: ReactNode }) {
   return (
-    <article className={`card event ${past ? "past" : ""}`}>
+    <article className={`card event ${past ? "past" : ""} ${className}`}>
       <div className="event-date" aria-hidden="true">
         <span>{part(e.startsAt, { month: "short" })}</span>
         <b>{part(e.startsAt, { day: "numeric" })}</b>
@@ -28,6 +29,7 @@ export function EventCard({ e, past }: { e: Event; past?: boolean }) {
         <span className="small muted row tight"><Icon name="clock" size="sm" />{when(e)}</span>
         {e.venue && <span className="small muted row tight"><Icon name="pin" size="sm" />{e.venue}</span>}
         {e.description && <p className="muted event-desc">{e.description}</p>}
+        {children}
       </div>
     </article>
   );

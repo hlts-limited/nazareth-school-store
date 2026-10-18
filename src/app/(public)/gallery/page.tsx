@@ -3,15 +3,10 @@ import { SCHOOL } from "@/shared/config/school";
 import { Icon } from "@/shared/ui/icon";
 import { galleryAlbums } from "@/modules/website";
 import { AdmissionCta, PageHero, Section } from "../_parts";
+import { photoAlbums } from "../_photos";
 import { Gallery } from "./_lightbox";
 
 export const metadata: Metadata = { title: "Gallery", description: `Photos and videos of school life at ${SCHOOL.name}.` };
-
-// Photos from the old website, shown after the albums staff upload in the back office (Website → Gallery).
-const CULTURAL_DAY = ["01", "02", "03", "04", "05", "07", "08", "09", "10", "11", "12", "13", "14", "15"].map((n) => ({
-  src: `/images/cultural-day/${n}.jpg`,
-  alt: "Cultural Day",
-}));
 
 // The channel's uploads playlist ("UU" + the channel id without its "UC" prefix).
 const UPLOADS = "UUtaIN1rhzuUJ-rQLaxNCdaQ";
@@ -20,10 +15,7 @@ const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(
 
 export default async function GalleryPage() {
   const albums = await galleryAlbums();
-  const all = [
-    ...albums.map((a) => ({ name: a.name, photos: a.photos.map((p) => ({ src: `/api/files/${p.fileKey}`, alt: p.caption || a.name, uploaded: true })) })),
-    ...(albums.some((a) => a.name === "Cultural Day") ? [] : [{ name: "Cultural Day", photos: CULTURAL_DAY }]),
-  ];
+  const all = photoAlbums(albums);
   return (
     <>
       <PageHero crumb={[["School life"], ["Gallery"]]} title="Our gallery" lead={`Memorable moments and activities that show life at ${SCHOOL.name}.`} />
