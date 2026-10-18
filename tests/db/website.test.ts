@@ -70,3 +70,15 @@ test("contact messages can be marked handled and reopened", async () => {
   await setEnquiryHandled(e.id, false, staffId);
   assert.equal((await listEnquiries("open"))[0].handledById, null);
 });
+
+test("gallery: the small grid copy is saved next to the photo and deleted with it", async () => {
+  const jpeg = { buf: Buffer.from([0xff, 0xd8, 0xff, 0xe0, 9, 9]), mime: "image/jpeg", ext: "jpg" };
+  const p = await addPhoto("Thumbs", undefined, jpeg, jpeg);
+  assert.ok(p.thumbKey && p.thumbKey.startsWith("gallery/") && p.thumbKey.endsWith("-sm.jpg"));
+  assert.ok(await storage().get(p.thumbKey));
+  const plain = await addPhoto("Thumbs", undefined, jpeg);
+  assert.equal(plain.thumbKey, null, "older-style uploads without a small copy still work");
+  await deletePhoto(p.id);
+  assert.equal(await storage().get(p.thumbKey), null);
+  assert.equal(await storage().get(p.fileKey), null);
+});

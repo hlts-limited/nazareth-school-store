@@ -620,6 +620,7 @@ model GalleryPhoto {
   album     String // e.g. "Inter-house sports 2026"; photos are grouped by this name
   caption   String?
   fileKey   String
+  thumbKey  String? // a small copy (600 px) for the photo grid; older photos have none
   sortOrder Int      @default(0)
   createdAt DateTime @default(now())
 

@@ -109,7 +109,10 @@ export async function uploadPhotoAction(_: ActionResult, form: FormData): Promis
     const file = form.get("file") as File | null;
     const up = await readUpload(file, { allowPdf: false });
     if ("error" in up) return fail(up.error!, { file: up.error! });
-    const p = await addPhoto(d.album, d.caption, up);
+    // The small grid copy is optional: a photo still saves if the browser couldn't make one
+    const t = form.get("thumb") as File | null;
+    const small = t && t.size > 0 ? await readUpload(t, { allowPdf: false }) : null;
+    const p = await addPhoto(d.album, d.caption, up, small && !("error" in small) ? small : undefined);
     await audit(await auditActor(v), "Added gallery photo", "GalleryPhoto", p.id, { album: p.album });
     return ok("Photo added.");
   });

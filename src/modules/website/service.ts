@@ -97,11 +97,15 @@ export async function galleryAlbums() {
   return [...albums.values()].sort((a, b) => b.latest.getTime() - a.latest.getTime());
 }
 
-export async function addPhoto(album: string, caption: string | undefined, file: { buf: Buffer; mime: string; ext: string }) {
-  const key = `gallery/${randomToken(12).replace(/[^a-zA-Z0-9]/g, "")}.${file.ext}`;
+/** Saves the photo, and its small grid copy when the browser sent one (stored next to it as "<name>-sm.<ext>") */
+export async function addPhoto(album: string, caption: string | undefined, file: { buf: Buffer; mime: string; ext: string }, thumb?: { buf: Buffer; mime: string; ext: string }) {
+  const name = `gallery/${randomToken(12).replace(/[^a-zA-Z0-9]/g, "")}`;
+  const key = `${name}.${file.ext}`;
   await storage().put(key, file.buf, file.mime);
+  const thumbKey = thumb ? `${name}-sm.${thumb.ext}` : null;
+  if (thumb && thumbKey) await storage().put(thumbKey, thumb.buf, thumb.mime);
   const last = await db.galleryPhoto.findFirst({ where: { album }, orderBy: { sortOrder: "desc" } });
-  return db.galleryPhoto.create({ data: { album, caption: caption ?? null, fileKey: key, sortOrder: (last?.sortOrder ?? 0) + 1 } });
+  return db.galleryPhoto.create({ data: { album, caption: caption ?? null, fileKey: key, thumbKey, sortOrder: (last?.sortOrder ?? 0) + 1 } });
 }
 
 export async function updatePhoto(id: string, data: { album: string; caption?: string }) {
@@ -111,6 +115,7 @@ export async function updatePhoto(id: string, data: { album: string; caption?: s
 export async function deletePhoto(id: string) {
   const p = await db.galleryPhoto.delete({ where: { id } });
   await storage().delete(p.fileKey);
+  if (p.thumbKey) await storage().delete(p.thumbKey).catch(() => {});
   return p;
 }
 

@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Icon } from "@/shared/ui/icon";
 
 // `uploaded` photos come from /api/files and are already resized in the browser, so skip Next's optimiser
-type Photo = { src: string; alt: string; uploaded?: boolean };
+type Photo = { src: string; thumb?: string; alt: string; uploaded?: boolean };
 
 /** Photo grid; a photo opens full-size in a dialog with previous/next and arrow-key support */
 export function Gallery({ photos }: { photos: Photo[] }) {
@@ -32,7 +32,7 @@ export function Gallery({ photos }: { photos: Photo[] }) {
       <div className="gallery">
         {photos.map((p, i) => (
           <button key={p.src} type="button" className="gallery-item" onClick={() => show(i)} aria-label={`Open photo: ${p.alt}`}>
-            <Image src={p.src} alt={p.alt} fill sizes="(max-width: 600px) 50vw, (max-width: 1060px) 33vw, 300px" unoptimized={p.uploaded} />
+            <Image src={p.thumb ?? p.src} alt={p.alt} fill sizes="(max-width: 600px) 50vw, (max-width: 1060px) 33vw, 300px" unoptimized={p.uploaded} />
           </button>
         ))}
       </div>

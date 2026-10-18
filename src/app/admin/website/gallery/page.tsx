@@ -34,7 +34,7 @@ export default async function GalleryAdminPage() {
               {a.photos.map((p) => (
                 <figure key={p.id} className="photo-tile">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={`/api/files/${p.fileKey}`} alt={p.caption ?? a.name} loading="lazy" />
+                  <img src={`/api/files/${p.thumbKey ?? p.fileKey}`} alt={p.caption ?? a.name} loading="lazy" />
                   <ActionForm action={updatePhotoAction} className="stack tight">
                     <input type="hidden" name="id" value={p.id} />
                     <input type="hidden" name="album" value={a.name} />

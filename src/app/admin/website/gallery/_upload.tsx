@@ -29,6 +29,7 @@ export function PhotoUploader({ action, albums }: { action: Action; albums: stri
         const fd = new FormData();
         fd.set("album", album.trim());
         fd.set("file", await shrinkImage(f));
+        fd.set("thumb", await shrinkImage(f, 600, 0.8).catch(() => new Blob()), "thumb.jpg");
         const r = await action({ ok: false }, fd);
         if (r.ok) done++; else { failed++; if (r.message) toast(`${f.name}: ${r.message}`, false); }
       } catch {
