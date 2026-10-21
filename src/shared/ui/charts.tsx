@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Overview charts in the "operations console" style: dark teal glass panels, glowing lines that a scanning band
+ * Overview charts in the "operations console" style: dark charcoal glass panels in the school red, glowing lines that a scanning band
  * draws in from left to right, markers that drop a line to a label underneath, numbers that roll up, a ruler
  * gauge with a red target, and live timers. Everything animates once, when it scrolls into view, and appears
  * already finished for anyone who has turned motion down. Plain SVG and CSS, no chart library.
@@ -12,7 +12,8 @@ import { Icon, type IconName } from "./icon";
 export type Fmt = "naira" | "int" | "pct";
 export type ChartMarker = { at: number; title: string; sub?: string; note?: string };
 
-const LINE = ["#5EF2E6", "#38BDF8", "#A7F3D0", "#22D3EE", "#99F6E4", "#7DD3FC", "#2DD4BF", "#CFFAFE", "#67E8F9", "#5EEAD4", "#BAE6FD", "#14B8A6"];
+// Warm reds, roses and creams of the school colours; amber is kept for "needs attention"
+const LINE = ["#FF6B70", "#FFFFFF", "#F3C4C6", "#E3262E", "#FFB199", "#C9C1C3", "#FF8A8F", "#FDE2E3", "#D7262D", "#F59E9E", "#E6DFE0", "#FF9F7A"];
 const AMBER = "#FBBF24";
 
 const useIso = typeof window === "undefined" ? useEffect : useLayoutEffect;
@@ -271,16 +272,16 @@ export function ScanChart({ title, labels, series, markers = [], warn = [], bars
                   <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
                 </filter>
                 <linearGradient id={`${uid}-beam`} x1="0" x2="1">
-                  <stop offset="0" stopColor="#5EF2E6" stopOpacity="0" />
-                  <stop offset="1" stopColor="#5EF2E6" stopOpacity=".35" />
+                  <stop offset="0" stopColor="#FF6B70" stopOpacity="0" />
+                  <stop offset="1" stopColor="#FF6B70" stopOpacity=".35" />
                 </linearGradient>
                 <linearGradient id={`${uid}-bar`} x1="0" x2="0" y1="0" y2="1">
                   <stop offset="0" stopColor="#E3262E" stopOpacity=".75" />
                   <stop offset="1" stopColor="#E3262E" stopOpacity=".05" />
                 </linearGradient>
                 <linearGradient id={`${uid}-area`} x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="0" stopColor="#5EF2E6" stopOpacity=".22" />
-                  <stop offset="1" stopColor="#5EF2E6" stopOpacity="0" />
+                  <stop offset="0" stopColor="#FF6B70" stopOpacity=".22" />
+                  <stop offset="1" stopColor="#FF6B70" stopOpacity="0" />
                 </linearGradient>
                 <clipPath id={`${uid}-scan`}><rect x="0" y="0" width={scanX} height={H} /></clipPath>
                 <clipPath id={`${uid}-warn`}>{ranges.map(([a, b], k) => <rect key={k} x={a} y={0} width={b - a} height={H} />)}</clipPath>
