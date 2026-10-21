@@ -8,7 +8,7 @@ import { Icon } from "./icon";
 import { Dialog } from "./client";
 
 /** Pages that need their own page load (camera and location are only allowed on them) */
-const FULL_LOAD = new Set(["/admin/me/clock"]);
+const FULL_LOAD = new Set(["/admin/me/clock", "/admin/attendance/settings"]);
 
 /** Parent menu bar (laptops and tablets) + phone bottom bar, with the active tab highlighted */
 export function ParentNav({ cartCount, variant }: { cartCount: number; variant: "top" | "bottom" }) {
@@ -64,8 +64,8 @@ export function StaffNav({ sections, counts }: {
         const n = i.badge ? counts[i.badge] : 0;
         const inner = <><Icon name={i.icon} size="sm" /><span className="side-l">{i.label}</span>{n ? <span className="cnt">{n}</span> : null}</>;
         const props = { className: `nav ${i.href === best ? "on" : ""}`, "aria-current": i.href === best ? ("page" as const) : undefined, title: i.label };
-        // Clock-in is the only page allowed the camera and location (see next.config.ts). Browsers decide that per page
-        // load, so this link loads the page fresh instead of switching to it in place.
+        // Clock-in and attendance settings are the only pages allowed location (see next.config.ts). Browsers decide
+        // that per page load, so these links load the page fresh instead of switching to it in place.
         return FULL_LOAD.has(i.href) ? <a key={i.href} href={i.href} {...props}>{inner}</a> : <Link key={i.href} href={i.href} {...props}>{inner}</Link>;
       })}
     </>

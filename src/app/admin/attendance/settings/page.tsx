@@ -7,7 +7,7 @@ import { Note, PageHeader } from "@/shared/ui/primitives";
 import { requireStaff } from "@/modules/auth";
 import {
   addHolidayAction, attendanceSettings, BRANCHES, currentGateCode, KioskLink, lagosDate, newKioskLinkAction, PrintButton, removeHolidayAction, retirePrintedCodeAction,
-  saveAttendanceSettingsAction, UseMyLocation,
+  PreciseLocation, saveAttendanceSettingsAction,
 } from "@/modules/attendance";
 
 export const metadata = { title: "Attendance settings" };
@@ -56,10 +56,11 @@ export default async function AttendanceSettingsPage() {
                   <div className="field"><label htmlFor={`lng-${b.id}`}>Longitude</label><input className="input mono" id={`lng-${b.id}`} name={`lng-${b.id}`} defaultValue={cur?.lng ?? ""} placeholder="3.2830" /></div>
                   <div className="field"><label htmlFor={`radius-${b.id}`}>Allowed distance (metres)</label><input className="input" id={`radius-${b.id}`} name={`radius-${b.id}`} inputMode="numeric" defaultValue={cur?.radiusM ?? 150} /></div>
                 </div>
+                <PreciseLocation branch={b.id} />
               </div>
             );
           })}
-          <UseMyLocation />
+          <p className="small muted">Stand at the branch&apos;s gate with a phone, tap Get precise location, then Save settings. Or type the two numbers from Google Maps (press and hold the gate on the map).</p>
           <div><SubmitButton icon="check">Save settings</SubmitButton></div>
         </ActionForm>
 

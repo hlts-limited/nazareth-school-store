@@ -9,4 +9,4 @@ export {
 } from "./actions";
 export { ClockIn } from "./clock";
 export { GateScreen } from "./gate-screen";
-export { UseMyLocation, KioskLink, PrintButton } from "./settings-client";
+export { PreciseLocation, KioskLink, PrintButton } from "./settings-client";
