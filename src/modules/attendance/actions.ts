@@ -8,8 +8,7 @@ import { auditActor, staffFor, type StaffViewer } from "@/modules/auth";
 import { audit } from "@/modules/audit";
 import {
   acceptNotice, addHoliday, attendanceSettings, cancelLeave, closeDay, completeCapture, decideLeave, lagosDate, manualClock, newKioskLink, removeHoliday, requestLeave,
-  saveAttendanceSettings, startCapture,
-} from "./service";
+  saveAttendanceSettings, startCapture, BRANCHES, type Branch } from "./service";
 
 const zDay = (msg: string) => z.string().regex(/^\d{4}-\d{2}-\d{2}$/, msg);
 const name = (v: StaffViewer) => `${v.user.firstName} ${v.user.lastName}`;
@@ -57,7 +56,7 @@ export async function completeClockAction(_: ActionResult, form: FormData): Prom
     const lat = Number(form.get("lat")), lng = Number(form.get("lng"));
     const pos = form.get("lat") && Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
     const r = await completeCapture(e.id, String(form.get("token") ?? ""), photo, pos);
-    await audit(await auditActor(v), r.kind === "in" ? "Clocked in" : "Clocked out", "Attendance", r.record.id, { staffCode: e.staffCode, late: r.late, gps: !!pos });
+    await audit(await auditActor(v), r.kind === "in" ? "Clocked in" : "Clocked out", "Attendance", r.record.id, { staffCode: e.staffCode, late: r.late, gps: !!pos, branch: r.at });
     const t = new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Africa/Lagos" });
     return ok(r.kind === "in" ? `Clocked in at ${t}${r.late ? " (late)" : ""}.` : `Clocked out at ${t}. Have a good evening.`, { data: { kind: r.kind, late: r.late, at: t } });
   });
@@ -126,15 +125,27 @@ export async function saveAttendanceSettingsAction(_: ActionResult, form: FormDa
     const d = parseForm(z.object({
       lateCutoff: z.string().regex(/^\d{2}:\d{2}$/, "Enter a time like 07:45"),
       qrMode: z.enum(["rotating", "static"]), photoRequired: z.string().optional(), photoSpot: zText(120, "Say what must be in the photo"),
-      lat: z.string().optional(), lng: z.string().optional(), radiusM: z.string().optional(),
       workDays: z.union([z.string(), z.array(z.string())]).optional(),
     }), form);
-    const lat = Number(d.lat), lng = Number(d.lng), radius = Number(d.radiusM) || 150;
-    const gps = d.lat && d.lng && Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180 ? { lat, lng, radiusM: Math.max(30, Math.min(2000, radius)) } : null;
+    // One location per branch (lat-<id>, lng-<id>, radius-<id>); a branch left empty isn't used for clock-ins
+    const branches: Branch[] = [];
+    const errors: Record<string, string> = {};
+    for (const b of BRANCHES) {
+      const rawLat = String(form.get(`lat-${b.id}`) ?? "").trim(), rawLng = String(form.get(`lng-${b.id}`) ?? "").trim();
+      if (!rawLat && !rawLng) continue;
+      const lat = Number(rawLat), lng = Number(rawLng), radius = Number(form.get(`radius-${b.id}`)) || 150;
+      if (!rawLat || !rawLng || !Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+        errors[`lat-${b.id}`] = "Enter both numbers, e.g. 6.4659 and 3.2847";
+        continue;
+      }
+      branches.push({ id: b.id, name: b.name, lat, lng, radiusM: Math.max(30, Math.min(2000, radius)) });
+    }
+    if (Object.keys(errors).length) return fail("Please check the branch locations.", errors);
     const workDays = (Array.isArray(d.workDays) ? d.workDays : d.workDays ? [d.workDays] : []).map(Number).filter((n) => n >= 1 && n <= 7);
     if (!workDays.length) return fail("Choose the school days.", { workDays: "Choose at least one" });
-    const s = await saveAttendanceSettings({ lateCutoff: d.lateCutoff, qrMode: d.qrMode, photoRequired: d.photoRequired === "on", photoSpot: d.photoSpot, gps, workDays });
-    await audit(await auditActor(v), "Changed attendance settings", "Setting", "attendance", { lateCutoff: s.lateCutoff, qrMode: s.qrMode, photoRequired: s.photoRequired, gps: !!s.gps, radiusM: s.gps?.radiusM, workDays: s.workDays });
+    // Once branches are set, the older single location is no longer needed
+    const s = await saveAttendanceSettings({ lateCutoff: d.lateCutoff, qrMode: d.qrMode, photoRequired: d.photoRequired === "on", photoSpot: d.photoSpot, branches, ...(branches.length && { gps: null }), workDays });
+    await audit(await auditActor(v), "Changed attendance settings", "Setting", "attendance", { lateCutoff: s.lateCutoff, qrMode: s.qrMode, photoRequired: s.photoRequired, branches: s.branches.map((b) => `${b.name} (${b.radiusM} m)`), workDays: s.workDays });
     return ok("Attendance settings saved.");
   });
 }

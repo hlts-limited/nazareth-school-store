@@ -1203,3 +1203,6 @@ html[data-lite="1"] .hero-img{animation:none}
   /* Same 16:9 shape as the video player, so the two line up */
   .media-pair .slides-stage{aspect-ratio:16/9}
 }
+
+.branch-loc{display:flex;flex-direction:column;gap:6px;padding:10px 0;border-top:1px dashed var(--line)}
+.branch-loc:first-of-type{border-top:0}

@@ -29,7 +29,7 @@ export const staffInviteText = (firstName: string, token: string) =>
 
 export type EmployeeInput = {
   firstName: string; lastName: string; email: string; phone?: string; gender?: string; dateOfBirth?: Date;
-  section: string; position: string; isTeacher: boolean; hireDate: Date; employmentType: EmploymentType;
+  section: string; branch: string; position: string; isTeacher: boolean; hireDate: Date; employmentType: EmploymentType;
   monthlyGrossKobo: number; tin?: string; pfaName?: string; rsaPin?: string; nhfNumber?: string; nhisNumber?: string; annualRentNaira: number;
 };
 
@@ -54,7 +54,7 @@ export async function registerStaff(input: EmployeeInput, extraRoles: string[] =
   if (existing?.employee) throw new UserError(`${existing.firstName} ${existing.lastName} already has a staff record (${existing.employee.staffCode}).`, { email: "Already registered" });
   const record = {
     phone: input.phone ?? null,
-    gender: input.gender ?? null, dateOfBirth: input.dateOfBirth ?? null, section: input.section, position: input.position, isTeacher: input.isTeacher,
+    gender: input.gender ?? null, dateOfBirth: input.dateOfBirth ?? null, section: input.section, branch: input.branch, position: input.position, isTeacher: input.isTeacher,
     hireDate: input.hireDate, employmentType: input.employmentType, monthlyGrossKobo: input.monthlyGrossKobo,
     tin: input.tin ?? null, pfaName: input.pfaName ?? null, rsaPin: input.rsaPin ?? null, nhfNumber: input.nhfNumber ?? null, nhisNumber: input.nhisNumber ?? null,
     annualRentNaira: input.annualRentNaira,
@@ -96,7 +96,7 @@ export async function updateEmployee(id: string, input: Omit<EmployeeInput, "ema
     where: { id },
     data: {
       phone: input.phone ?? null,
-      gender: input.gender ?? null, dateOfBirth: input.dateOfBirth ?? null, section: input.section, position: input.position, isTeacher: input.isTeacher,
+      gender: input.gender ?? null, dateOfBirth: input.dateOfBirth ?? null, section: input.section, branch: input.branch, position: input.position, isTeacher: input.isTeacher,
       hireDate: input.hireDate, employmentType: input.employmentType,
       tin: input.tin ?? null, pfaName: input.pfaName ?? null, rsaPin: input.rsaPin ?? null, nhfNumber: input.nhfNumber ?? null, nhisNumber: input.nhisNumber ?? null,
       annualRentNaira: input.annualRentNaira,

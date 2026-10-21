@@ -85,3 +85,7 @@ export type DivisionId = (typeof SCHOOL_DIVISIONS)[number]["id"];
 export const divisionOf = (className: string) => SCHOOL_DIVISIONS.find((d) => (d.classes as readonly string[]).includes(className)) ?? null;
 
 export const ORDER_NUMBER_OFFSET = 24800;
+
+/** The school's branches (same ids as the divisions). Each member of staff is deployed to one and clocks in there. */
+export const BRANCHES = SCHOOL_DIVISIONS.map((d) => ({ id: d.id, name: d.name }));
+export const branchName = (id: string | null | undefined) => BRANCHES.find((b) => b.id === id)?.name ?? null;

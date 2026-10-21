@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { branchName } from "@/shared/config/school";
 import { notFound } from "next/navigation";
 import { db } from "@/shared/lib/db";
 import { env } from "@/shared/config/env";
@@ -34,7 +35,7 @@ export default async function StaffRecordPage({ params }: { params: Promise<{ id
     <div style={{ maxWidth: 1080 }}>
       <PageHeader
         title={<span className="row tight">{u.firstName} {u.lastName} {e.status === "INACTIVE" ? <Pill tone="err">Left</Pill> : e.onboarding.complete ? <Pill tone="ok">Complete</Pill> : <Pill tone="warn">Incomplete</Pill>}</span>}
-        sub={<><span className="mono">{e.staffCode}</span> · {e.position} · {sectionName(e.section)}</>}
+        sub={<><span className="mono">{e.staffCode}</span> · {e.position} · {sectionName(e.section)}{e.section !== e.branch && <> · {branchName(e.branch) ?? "Branch not set"}</>}</>}
         actions={<Link className="btn" href="/admin/hr"><Icon name="back" size="sm" />All staff</Link>}
       />
       <div className="detail-grid">
@@ -55,7 +56,7 @@ export default async function StaffRecordPage({ params }: { params: Promise<{ id
             <ActionForm action={updateEmployeeAction} className="stack">
               <input type="hidden" name="id" value={e.id} />
               <RecordFields salary={salary} email={false} v={{
-                firstName: u.firstName, lastName: u.lastName, phone: e.phone, gender: e.gender, dateOfBirth: day(e.dateOfBirth), section: e.section, position: e.position,
+                firstName: u.firstName, lastName: u.lastName, phone: e.phone, gender: e.gender, dateOfBirth: day(e.dateOfBirth), section: e.section, branch: e.branch, position: e.position,
                 isTeacher: e.isTeacher, hireDate: day(e.hireDate), employmentType: e.employmentType, monthlyGross: e.monthlyGrossKobo / 100,
                 tin: e.tin, pfaName: e.pfaName, rsaPin: e.rsaPin, nhfNumber: e.nhfNumber, nhisNumber: e.nhisNumber, annualRent: e.annualRentNaira,
               }} />

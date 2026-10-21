@@ -6,7 +6,7 @@ import { ActionForm, FieldError, SubmitButton } from "@/shared/ui/client";
 import { Note, PageHeader } from "@/shared/ui/primitives";
 import { requireStaff } from "@/modules/auth";
 import {
-  addHolidayAction, attendanceSettings, currentGateCode, KioskLink, lagosDate, newKioskLinkAction, PrintButton, removeHolidayAction, retirePrintedCodeAction,
+  addHolidayAction, attendanceSettings, BRANCHES, currentGateCode, KioskLink, lagosDate, newKioskLinkAction, PrintButton, removeHolidayAction, retirePrintedCodeAction,
   saveAttendanceSettingsAction, UseMyLocation,
 } from "@/modules/attendance";
 
@@ -43,13 +43,22 @@ export default async function AttendanceSettingsPage() {
             <FieldError name="workDays" />
           </div>
           <div className="divider" />
-          <h3>School location</h3>
-          <p className="small muted">If set, a phone must be within this distance of the school to clock in. Stand at the gate and use this device&apos;s location, or leave empty to not check location.</p>
-          <div className="grid g3">
-            <div className="field"><label htmlFor="as-lat">Latitude</label><input className="input mono" id="as-lat" name="lat" defaultValue={s.gps?.lat ?? ""} placeholder="6.4650" /></div>
-            <div className="field"><label htmlFor="as-lng">Longitude</label><input className="input mono" id="as-lng" name="lng" defaultValue={s.gps?.lng ?? ""} placeholder="3.2830" /></div>
-            <div className="field"><label htmlFor="as-rad">Allowed distance (metres)</label><input className="input" id="as-rad" name="radiusM" inputMode="numeric" defaultValue={s.gps?.radiusM ?? 150} /></div>
-          </div>
+          <h3>Branch locations</h3>
+          <p className="small muted">Each member of staff clocks in at the branch they&apos;re deployed to (set on their staff record), within the allowed distance of its gate. Leave all three empty to not check location.</p>
+          {!s.branches.length && s.gps && <p className="small">Until the branches are filled in, the one location saved earlier is used ({s.gps.lat}, {s.gps.lng}).</p>}
+          {BRANCHES.map((b) => {
+            const cur = s.branches.find((x) => x.id === b.id);
+            return (
+              <div key={b.id} className="branch-loc">
+                <b>{b.name}</b>
+                <div className="grid g3">
+                  <div className="field"><label htmlFor={`lat-${b.id}`}>Latitude</label><input className="input mono" id={`lat-${b.id}`} name={`lat-${b.id}`} defaultValue={cur?.lat ?? ""} placeholder="6.4650" /><FieldError name={`lat-${b.id}`} /></div>
+                  <div className="field"><label htmlFor={`lng-${b.id}`}>Longitude</label><input className="input mono" id={`lng-${b.id}`} name={`lng-${b.id}`} defaultValue={cur?.lng ?? ""} placeholder="3.2830" /></div>
+                  <div className="field"><label htmlFor={`radius-${b.id}`}>Allowed distance (metres)</label><input className="input" id={`radius-${b.id}`} name={`radius-${b.id}`} inputMode="numeric" defaultValue={cur?.radiusM ?? 150} /></div>
+                </div>
+              </div>
+            );
+          })}
           <UseMyLocation />
           <div><SubmitButton icon="check">Save settings</SubmitButton></div>
         </ActionForm>

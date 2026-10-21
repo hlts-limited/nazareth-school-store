@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { branchName } from "@/shared/config/school";
 import { db } from "@/shared/lib/db";
 import { LinkButton, PageHeader, Pill } from "@/shared/ui/primitives";
 import { SearchParamInput, SearchParamSelect } from "@/shared/ui/client";
@@ -31,7 +32,7 @@ export default async function StaffListPage({ searchParams }: { searchParams: Pr
         </div></section>
         <section className="card pad-0">
           <div className="tbl-wrap"><table className="t rt">
-            <thead><tr><th>Staff</th><th>Position</th><th>Section</th><th>Onboarding</th><th>Bank</th></tr></thead>
+            <thead><tr><th>Staff</th><th>Position</th><th>Section · branch</th><th>Onboarding</th><th>Bank</th></tr></thead>
             <tbody>
               {!rows.length && <tr><td colSpan={5} className="empty">No staff here yet.{canManage ? " Use Register staff to add the first one." : ""}</td></tr>}
               {rows.map((e) => {
@@ -40,7 +41,7 @@ export default async function StaffListPage({ searchParams }: { searchParams: Pr
                   <tr key={e.id}>
                     <td data-label="Staff"><Link href={`/admin/hr/${e.id}`}><b>{e.user.firstName} {e.user.lastName}</b></Link><div className="small muted mono">{e.staffCode}{e.status === "INACTIVE" ? " · left" : ""}</div></td>
                     <td data-label="Position">{e.position}{e.isTeacher ? <span className="small muted"> · teacher</span> : null}</td>
-                    <td data-label="Section">{sectionName(e.section)}</td>
+                    <td data-label="Section">{sectionName(e.section)}{e.branch !== e.section && <div className="small muted">{e.branch ? branchName(e.branch) : <Pill tone="warn">Branch not set</Pill>}</div>}</td>
                     <td data-label="Onboarding">{e.onboarding.complete ? <Pill tone="ok">Complete</Pill> : <Pill tone="warn">{done} of {e.onboarding.steps.length} done</Pill>}</td>
                     <td data-label="Bank"><Pill tone={BANK[e.bankStatus][1]}>{BANK[e.bankStatus][0]}</Pill></td>
                   </tr>

@@ -1,9 +1,12 @@
 import { FieldError } from "@/shared/ui/client";
+import { BRANCHES } from "@/shared/config/school";
+
+const BRANCH_IDS: string[] = BRANCHES.map((b) => b.id);
 import { POSITIONS, STAFF_SECTIONS_LIST } from "@/modules/hr";
 
 type Values = {
   firstName?: string; lastName?: string; email?: string | null; phone?: string | null; gender?: string | null; dateOfBirth?: string;
-  section?: string; position?: string; isTeacher?: boolean; hireDate?: string; employmentType?: string; monthlyGross?: number;
+  section?: string; branch?: string | null; position?: string; isTeacher?: boolean; hireDate?: string; employmentType?: string; monthlyGross?: number;
   tin?: string | null; pfaName?: string | null; rsaPin?: string | null; nhfNumber?: string | null; nhisNumber?: string | null; annualRent?: number;
 };
 
@@ -36,6 +39,12 @@ export function RecordFields({ v = {}, salary, email }: { v?: Values; salary: bo
             <select className="input" id="sr-section" name="section" defaultValue={v.section ?? ""}>
               <option value="" disabled>Choose…</option>
               {STAFF_SECTIONS_LIST.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </F>
+          <F id="branch" label="Branch (where they work and clock in)">
+            <select className="input" id="sr-branch" name="branch" defaultValue={v.branch ?? (BRANCH_IDS.includes(v.section ?? "") ? v.section : "")}>
+              <option value="" disabled>Choose…</option>
+              {BRANCHES.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
           </F>
           <F id="position" label="Position">

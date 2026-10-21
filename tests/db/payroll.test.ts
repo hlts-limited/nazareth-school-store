@@ -23,7 +23,7 @@ before(async () => {
   await savePayrollRates({ ...DEFAULT_RATES, nhfPct: 0, nhisPct: 0, latePenaltyNaira: 1_000 }); // the plan's worked example: pension only
   hrId = (await db.user.findFirstOrThrow({ where: { email: "office@example.com" } })).id;
   const mk = async (n: number, gross: number) => (await registerStaff({
-    firstName: "Pay", lastName: `Roll${n}`, email: `pay${n}.${RUN}@example.com`, section: "school-a", position: "Teacher", isTeacher: true,
+    firstName: "Pay", lastName: `Roll${n}`, email: `pay${n}.${RUN}@example.com`, section: "school-a", branch: "school-a", position: "Teacher", isTeacher: true,
     hireDate: new Date("2026-01-05T00:00:00Z"), employmentType: "FULL_TIME", monthlyGrossKobo: gross * 100, annualRentNaira: 0,
   })).employee;
   const ea = await mk(1, 100_000), eb = await mk(2, 500_000);

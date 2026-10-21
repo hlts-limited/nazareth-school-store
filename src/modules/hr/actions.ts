@@ -1,6 +1,7 @@
 "use server";
 
 import { z } from "zod";
+import { BRANCHES, branchName } from "@/shared/config/school";
 import { fail, ok, parseForm, runAction, zOptText, zText, type ActionResult } from "@/shared/lib/action";
 import { db } from "@/shared/lib/db";
 import { normalizePhone } from "@/shared/lib/format";
@@ -30,6 +31,7 @@ const zPhone = z.string().trim().optional().transform((v, ctx) => {
 });
 const rolesField = z.union([z.string(), z.array(z.string())]).optional().transform((v) => (v ? (Array.isArray(v) ? v : [v]) : []));
 const sections = STAFF_SECTIONS_LIST.map((s) => s.id) as [string, ...string[]];
+const branches = BRANCHES.map((b) => b.id) as [string, ...string[]];
 
 const statutory = {
   tin: zOptText(30), pfaName: zOptText(80), rsaPin: zOptText(30), nhfNumber: zOptText(30), nhisNumber: zOptText(30),
@@ -39,13 +41,14 @@ const statutory = {
 const recordFields = z.object({
   firstName: zText(60, "Enter a first name"), lastName: zText(60, "Enter a surname"), phone: zPhone,
   gender: z.enum(["Female", "Male"]).optional().or(z.literal("").transform(() => undefined)), dateOfBirth: zOptDay,
-  section: z.enum(sections, { errorMap: () => ({ message: "Choose a section" }) }), position: zText(60, "Enter the position"), isTeacher: z.string().optional(),
+  section: z.enum(sections, { errorMap: () => ({ message: "Choose a section" }) }),
+  branch: z.enum(branches, { errorMap: () => ({ message: "Choose the branch they work at" }) }), position: zText(60, "Enter the position"), isTeacher: z.string().optional(),
   hireDate: zDay("Enter the hire date"), employmentType: z.enum(["FULL_TIME", "PART_TIME"]), monthlyGross: zNaira("Enter the monthly gross salary").optional(),
   ...statutory,
 });
 
 const toInput = (d: z.infer<typeof recordFields>): Omit<EmployeeInput, "email"> => ({
-  firstName: d.firstName, lastName: d.lastName, phone: d.phone, gender: d.gender, dateOfBirth: d.dateOfBirth, section: d.section, position: d.position,
+  firstName: d.firstName, lastName: d.lastName, phone: d.phone, gender: d.gender, dateOfBirth: d.dateOfBirth, section: d.section, branch: d.branch, position: d.position,
   isTeacher: d.isTeacher === "on", hireDate: day(d.hireDate), employmentType: d.employmentType, monthlyGrossKobo: Math.round((d.monthlyGross ?? 0) * 100),
   tin: d.tin, pfaName: d.pfaName, rsaPin: d.rsaPin, nhfNumber: d.nhfNumber, nhisNumber: d.nhisNumber, annualRentNaira: Math.round(d.annualRent),
 });
@@ -67,7 +70,7 @@ export async function registerStaffAction(_: ActionResult, form: FormData): Prom
     const input = { ...toInput(d), email: d.email };
     if (!v.permissions.has("hr.salary")) input.monthlyGrossKobo = 0;
     const { employee, invited } = await registerStaff(input, roles);
-    await audit(await auditActor(v), "Registered staff", "Employee", employee.id, { staffCode: employee.staffCode, email: d.email, section: d.section, position: d.position, roles: ["staff", ...roles] });
+    await audit(await auditActor(v), "Registered staff", "Employee", employee.id, { staffCode: employee.staffCode, email: d.email, section: d.section, branch: d.branch, position: d.position, roles: ["staff", ...roles] });
     const sent = invited ? (env().RESEND_API_KEY ? ` An invite was emailed to ${d.email}.` : ` Email isn't set up yet, so copy the invite link from their record and send it to them.`) : " They already had a staff account, so it was linked.";
     return ok(`${d.firstName} ${d.lastName} registered as ${employee.staffCode}.${sent}`, { redirect: `/admin/hr/${employee.id}` });
   });
@@ -82,6 +85,10 @@ export async function updateEmployeeAction(_: ActionResult, form: FormData): Pro
     const e = await updateEmployee(d.id, toInput(d), { salary });
     const changed = salary && before.monthlyGrossKobo !== e.monthlyGrossKobo ? { salaryFrom: before.monthlyGrossKobo / 100, salaryTo: e.monthlyGrossKobo / 100 } : {};
     await audit(await auditActor(v), salary && "salaryFrom" in changed ? "Changed salary" : "Updated staff record", "Employee", e.id, { staffCode: e.staffCode, ...changed });
+    // A transfer is recorded on its own, so the staff record's history shows when and where they moved
+    if (before.branch !== e.branch) {
+      await audit(await auditActor(v), "Transferred staff", "Employee", e.id, { staffCode: e.staffCode, from: branchName(before.branch) ?? "not set", to: branchName(e.branch) });
+    }
     // A salary or rent change makes open payroll runs out of date
     if ("salaryFrom" in changed || before.annualRentNaira !== e.annualRentNaira) await resetOpenRuns("DRAFT");
     return ok("Staff record saved.");

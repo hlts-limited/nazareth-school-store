@@ -1,4 +1,5 @@
 import type { AttendanceStatus, Prisma } from "@prisma/client";
+import { BRANCHES, branchName } from "@/shared/config/school";
 import { db } from "@/shared/lib/db";
 import { UserError } from "@/shared/lib/action";
 import { hmac, randomToken, safeEqual, sha256 } from "@/shared/lib/crypto";
@@ -11,8 +12,10 @@ import { notify } from "@/modules/notifications";
 export type AttendanceSettings = {
   /** Clock-ins after this time (Lagos, HH:MM) are late */
   lateCutoff: string;
-  /** The school's location; a clock-in must be within `radiusM` metres of it. null = location not checked */
+  /** Older single school location (before branches). Read only: it stands in for the branches until HR sets them. */
   gps: { lat: number; lng: number; radiusM: number } | null;
+  /** Each branch's location. Staff may clock in at any branch, within its `radiusM` metres. Empty = location not checked */
+  branches: Branch[];
   /** rotating: a gate device shows a code that changes every 30 s; static: one printed code */
   qrMode: "rotating" | "static";
   photoRequired: boolean;
@@ -27,15 +30,30 @@ export type AttendanceSettings = {
 };
 
 export const DEFAULT_ATTENDANCE: AttendanceSettings = {
-  lateCutoff: "07:45", gps: null, qrMode: "rotating", photoRequired: true, photoSpot: "the school sign at the main gate",
+  lateCutoff: "07:45", gps: null, branches: [], qrMode: "rotating", photoRequired: true, photoSpot: "the school sign at the main gate",
   workDays: [1, 2, 3, 4, 5], qrVersion: 1, kioskTokenHash: null,
 };
 
 const KEY = "attendance";
 
+/** The school's branches, each with its own gate */
+export { BRANCHES, branchName };
+export type Branch = { id: string; name: string; lat: number; lng: number; radiusM: number };
+
 export async function attendanceSettings(): Promise<AttendanceSettings> {
   const row = await db.setting.findUnique({ where: { key: KEY } });
   return { ...DEFAULT_ATTENDANCE, ...((row?.value ?? {}) as Partial<AttendanceSettings>) };
+}
+
+/** Where clock-ins are allowed: the branches, or the older single school location if no branch is set yet */
+export function clockInPlaces(s: AttendanceSettings): Branch[] {
+  if (s.branches?.length) return s.branches;
+  return s.gps ? [{ id: "school", name: "the school", ...s.gps }] : [];
+}
+
+/** The nearest allowed place to a phone, and how far away it is */
+export function nearestPlace(places: Branch[], pos: { lat: number; lng: number }) {
+  return places.map((p) => ({ place: p, metres: metresBetween(p, pos) })).sort((a, z) => a.metres - z.metres)[0];
 }
 
 export async function saveAttendanceSettings(patch: Partial<AttendanceSettings>) {
@@ -142,10 +160,22 @@ export async function completeCapture(employeeId: string, tokenId: string, photo
   if (!t || t.employeeId !== employeeId || t.usedAt || t.expiresAt < now) throw new UserError("That took too long or the scan was already used. Scan the gate code again.");
   if (s.photoRequired && !photo) throw new UserError("Take the photo to finish clocking in.");
   if (photo && !photo.mime.startsWith("image/")) throw new UserError("That wasn't a photo from the camera. Please try again.");
-  if (s.gps) {
+  // Location: at the branch this person is deployed to. If HR hasn't set their branch, or that branch has no
+  // location yet, any branch the school has set up is accepted.
+  const all = clockInPlaces(s);
+  const emp = await db.employee.findUnique({ where: { id: employeeId }, select: { branch: true } });
+  const own = all.filter((p) => p.id === emp?.branch);
+  const places = own.length ? own : all;
+  let at: string | null = null;
+  if (places.length) {
     if (!pos) throw new UserError("Turn on location for this site, then try again.");
-    const d = metresBetween(s.gps, pos);
-    if (d > s.gps.radiusM) throw new UserError(`You seem to be about ${Math.round(d)} m from the school. Clock in at the school.`);
+    const near = nearestPlace(places, pos);
+    if (near.metres > near.place.radiusM) {
+      throw new UserError(own.length
+        ? `You're deployed to ${near.place.name}, and you seem to be about ${Math.round(near.metres)} m from it. Clock in at ${near.place.name}. If you've been moved to another branch, ask HR to update your record.`
+        : `You seem to be about ${Math.round(near.metres)} m from ${near.place.name}, the nearest branch. Clock in at one of the school's branches.`);
+    }
+    at = near.place.name;
   }
   // Use the token once, even if two requests race
   const used = await db.captureToken.updateMany({ where: { id: t.id, usedAt: null }, data: { usedAt: now } });
@@ -165,10 +195,10 @@ export async function completeCapture(employeeId: string, tokenId: string, photo
       create: { employeeId, date: dayValue(day), status: late ? "LATE" : "PRESENT", clockInAt: now, inPhotoKey: key, inLat: pos?.lat, inLng: pos?.lng, qrVerified: true },
       update: { status: late ? "LATE" : "PRESENT", clockInAt: now, inPhotoKey: key, inLat: pos?.lat, inLng: pos?.lng, qrVerified: true },
     });
-    return { kind: "in" as const, record: rec, late };
+    return { kind: "in" as const, record: rec, late, at };
   }
   const rec = await db.attendance.update({ where, data: { clockOutAt: now, outPhotoKey: key, outLat: pos?.lat, outLng: pos?.lng } });
-  return { kind: "out" as const, record: rec, late: false };
+  return { kind: "out" as const, record: rec, late: false, at };
 }
 
 export async function acceptNotice(employeeId: string) {

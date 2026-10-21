@@ -1,6 +1,6 @@
 export {
   attendanceSettings, DEFAULT_ATTENDANCE, currentGateCode, kioskTokenValid, nextClock, dayBoard, monthFor, monthTotals, photoStats, purgeOldPhotos,
-  lagosDate, lagosTime, LEAVE_TYPES, dayValue, weekday,
+  lagosDate, lagosTime, LEAVE_TYPES, dayValue, weekday, BRANCHES, branchName, clockInPlaces,
 } from "./service";
 export type { AttendanceSettings } from "./service";
 export {

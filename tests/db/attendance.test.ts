@@ -18,7 +18,7 @@ let hr = { userId: "", name: "Joy Nnamdi" };
 async function newStaff(consent = true) {
   n++;
   const { employee } = await registerStaff({
-    firstName: "Ada", lastName: `Clock${n}`, email: `clock${n}.${RUN}@example.com`, section: "school-b", position: "Teacher", isTeacher: true,
+    firstName: "Ada", lastName: `Clock${n}`, email: `clock${n}.${RUN}@example.com`, section: "school-b", branch: "school-b", position: "Teacher", isTeacher: true,
     hireDate: new Date("2026-01-05T00:00:00Z"), employmentType: "FULL_TIME", monthlyGrossKobo: 100_000_00, annualRentNaira: 0,
   });
   if (consent) await acceptNotice(employee.id);
@@ -99,6 +99,25 @@ test("with a school location set, a phone outside the radius is refused", async 
   const r = await completeCapture(e.id, c.token, null, { lat: 6.4655, lng: 3.2837 }, at);
   assert.equal(r.record.status, "PRESENT");
   await saveAttendanceSettings({ gps: null, photoRequired: true });
+});
+
+test("branches: staff clock in at the branch they're deployed to; no branch set means any branch", async () => {
+  const A = { id: "school-a", name: "School A", lat: 6.4654, lng: 3.2836, radiusM: 150 };
+  const B = { id: "school-b", name: "School B", lat: 6.4760, lng: 3.2950, radiusM: 150 };
+  await saveAttendanceSettings({ branches: [A, B], gps: null, photoRequired: false });
+  const at = new Date(`${lagosDate()}T07:30:00+01:00`);
+  const scan = async (id: string) => (await startCapture(id, (await currentGateCode(at.getTime())).code, at)).token;
+
+  const e = await newStaff(); // deployed to School B
+  await assert.rejects(completeCapture(e.id, await scan(e.id), null, { lat: A.lat, lng: A.lng }, at), /deployed to School B/, "at another branch's gate is refused");
+  const ok = await completeCapture(e.id, await scan(e.id), null, { lat: B.lat + 0.0003, lng: B.lng }, at);
+  assert.equal(ok.at, "School B");
+
+  const unset = await newStaff();
+  await db.employee.update({ where: { id: unset.id }, data: { branch: null } });
+  const anyOk = await completeCapture(unset.id, await scan(unset.id), null, { lat: A.lat, lng: A.lng }, at);
+  assert.equal(anyOk.at, "School A", "until HR sets a branch, any branch is accepted");
+  await saveAttendanceSettings({ branches: [], photoRequired: true });
 });
 
 test("manual clock needs a reason and a past time", async () => {
