@@ -114,6 +114,7 @@ export const STAFF_SECTIONS: { id: string; label: string; perm: Permission; item
       { href: "/admin/alpha/data", label: "Data explorer", icon: "db" },
       { href: "/admin/alpha/sql", label: "SQL console", icon: "file" },
       { href: "/admin/alpha/backups", label: "Backups & restores", icon: "layers" },
+      { href: "/admin/alpha/start-fresh", label: "Start fresh", icon: "refresh" },
       { href: "/admin/alpha/audit", label: "Full audit log", icon: "list" },
     ],
   },

@@ -5,6 +5,7 @@ import { fail, ok, runAction, type ActionResult } from "@/shared/lib/action";
 import { auditActor, hashPassword, passwordProblem, revokeAllForUser, staffFor, verifyTotp } from "@/modules/auth";
 import { audit } from "@/modules/audit";
 import { createRow, deleteRow, editableFields, modelInfo, rowKey, runReadOnlySql, updateRow } from "./service";
+import { startFresh } from "./reset";
 
 const alpha = () => staffFor("system.alpha");
 
@@ -90,5 +91,18 @@ export async function signOutEverywhereAction(_: ActionResult, form: FormData): 
     await revokeAllForUser(u.id, "Signed out by Alpha Admin");
     await audit(await auditActor(v), "Alpha: signed user out everywhere", "User", u.id, { email: u.email, phone: u.phone });
     return ok(`${u.firstName} ${u.lastName} has been signed out everywhere.`);
+  });
+}
+
+/** Start fresh: Alpha Admin only, typed confirmation and a current 2FA code; a full backup is taken first */
+export async function startFreshAction(_: ActionResult, form: FormData): Promise<ActionResult> {
+  return runAction(async () => {
+    const v = await alpha();
+    if (form.get("confirm") !== "START FRESH") return fail("Type START FRESH to confirm.", { confirm: "Type START FRESH" });
+    if (!verifyTotp(String(form.get("code") ?? ""), v.user.totpSecret)) return fail("That 2FA code is not correct.", { code: "Code not correct" });
+    const actor = await auditActor(v);
+    const r = await startFresh({ id: v.user.id, name: `${v.user.firstName} ${v.user.lastName}` });
+    await audit(actor, "Started fresh: cleared store, pupil and admissions data", "System", null, r);
+    return ok(`Done. The system is like new. A backup of everything before the reset was saved (${r.backup}).`, { redirect: "/admin/alpha" });
   });
 }

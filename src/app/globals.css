@@ -1191,3 +1191,5 @@ a.chip{text-decoration:none}
 .pub-foot-base{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px}
 /* In data-saver mode the homepage photo stays still */
 html[data-lite="1"] .hero-img{animation:none}
+
+.fresh-list{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:1.5}
