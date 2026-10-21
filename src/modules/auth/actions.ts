@@ -14,7 +14,7 @@ import { getSettings } from "@/modules/settings";
 import { notify } from "@/modules/notifications";
 import { SCHOOL } from "@/shared/config/school";
 import { hashPassword, passwordProblem, verifyPassword, verifyTotp } from "./password";
-import { CAPTCHA_AFTER, checkCaptcha, isLocked, recentFailures, recordAttempt } from "./rate-limit";
+import { CAPTCHA_AFTER, PUPIL_IP_LOCK_AFTER, checkCaptcha, isLocked, recentFailures, recordAttempt } from "./rate-limit";
 import { createSession, destroyCurrentSession, revokeAllForUser, revokeSessionById, VIEWAS_COOKIE } from "./session";
 import { auditActor, getViewAs, getViewer, staffFor } from "./current";
 
@@ -51,16 +51,19 @@ export async function loginPupil(_: ActionResult, form: FormData): Promise<Actio
     const reg = d.reg.trim().toUpperCase();
     const key = `pupil:${reg}`;
     const ipKey = `pupil-ip:${ip}`;
-    if (await isLocked(key)) return fail(LOCKED_MSG);
-    if ((await recentFailures(ipKey)) >= CAPTCHA_AFTER) {
-      if (!d.captcha || !d.captchaToken || !checkCaptcha(d.captcha, d.captchaToken)) return fail("Please answer the check question.", { captcha: "Answer the sum" });
+    const ipFailures = await recentFailures(ipKey);
+    // One registration number, or one connection trying many, is paused for a few minutes
+    if ((await isLocked(key)) || ipFailures >= PUPIL_IP_LOCK_AFTER) return fail(LOCKED_MSG);
+    if (ipFailures >= CAPTCHA_AFTER) {
+      if (!d.captcha || !d.captchaToken || !(await checkCaptcha(d.captcha, d.captchaToken))) return fail("Please answer the check question.", { captcha: "Answer the sum" });
     }
     const pupil = await db.pupil.findFirst({ where: { regNumber: reg, lastName: { equals: d.surname.trim(), mode: "insensitive" }, status: "ACTIVE", deletedAt: null } });
     const pinOk = !pupil?.pinHash || (d.pin ? await verifyPassword(d.pin, pupil.pinHash) : false);
     if (!pupil || !pinOk) {
       await recordAttempt(key, false); await recordAttempt(ipKey, false);
       const left = Math.max(0, 5 - (await recentFailures(key)));
-      return fail(pupil && !pinOk ? "Enter the PIN your parent set." : `Surname or reg number is not correct. ${left} attempt${left === 1 ? "" : "s"} left.`);
+      // The same message whether or not the pupil exists, so it can't be used to find real registration numbers
+      return fail(`Surname, reg number or PIN is not correct. ${left} attempt${left === 1 ? "" : "s"} left.`);
     }
     await recordAttempt(key, true); await recordAttempt(ipKey, true);
     await createSession("PUPIL", { pupilId: pupil.id });

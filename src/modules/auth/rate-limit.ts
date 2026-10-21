@@ -5,6 +5,8 @@ import { hmac, safeEqual } from "@/shared/lib/crypto";
 const WINDOW_MS = 5 * 60 * 1000; // failures older than this no longer count, so a lock lasts 5 minutes
 export const LOCK_AFTER = 5;
 export const CAPTCHA_AFTER = 3;
+/** Pupil sign-in from one connection: generous, because a whole class may share the school's Wi-Fi */
+export const PUPIL_IP_LOCK_AFTER = 20;
 
 export async function recentFailures(key: string) {
   const since = new Date(Date.now() - WINDOW_MS);
@@ -28,9 +30,16 @@ export function makeCaptcha() {
   return { question: `What is ${a} + ${b}?`, token: `${exp}.${hmac(env().SESSION_SECRET, `${a + b}.${exp}`)}` };
 }
 
-export function checkCaptcha(answer: string, token: string) {
+/**
+ * Checks the answer, and uses the question up: each question can be tried once, right or wrong, so an answer
+ * can't be replayed and a script can't try every number on the same question.
+ */
+export async function checkCaptcha(answer: string, token: string) {
   const [expStr, sig] = token.split(".");
   const exp = Number(expStr);
-  if (!exp || exp < Date.now() || !sig) return false;
+  if (!exp || exp < Date.now() || !sig || !/^[\w-]+$/.test(sig)) return false;
+  const key = `captcha:${sig}`;
+  if (await db.loginAttempt.findFirst({ where: { key } })) return false;
+  await db.loginAttempt.create({ data: { key, success: true } });
   return safeEqual(sig, hmac(env().SESSION_SECRET, `${answer.trim()}.${exp}`));
 }

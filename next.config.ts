@@ -84,9 +84,9 @@ const nextConfig: NextConfig = {
     return [
       { source: "/((?!api/files).*)", headers: headersWith(csp) },
       ...PUBLIC_PATHS.map((source) => ({ source, headers: headersWith(publicCsp) })),
-      // Staff clock in with the camera and location, and HR sets the school's location. The back office moves between
-      // pages without reloading, so the whole staff area (our own site only) may ask; the public website may not.
-      { source: "/admin/:path*", headers: [{ key: "Permissions-Policy", value: "camera=(self), microphone=(), geolocation=(self), payment=()" }] },
+      // Only the staff clock-in page may use the camera (clock-in photo) and location (on school grounds). Everywhere
+      // else, including the rest of the back office, both stay off. The menu loads that page fresh so the rule applies.
+      { source: "/admin/me/clock", headers: [{ key: "Permissions-Policy", value: "camera=(self), microphone=(), geolocation=(self), payment=()" }] },
       // The installed app's service worker: always check for a new version
       { source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }, { key: "Content-Type", value: "application/javascript; charset=utf-8" }] },
     ];

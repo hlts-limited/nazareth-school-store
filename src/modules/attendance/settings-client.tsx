@@ -5,20 +5,16 @@ import type { ActionResult } from "@/shared/lib/action";
 import { ActionForm, CopyButton, SubmitButton } from "@/shared/ui/client";
 import { Icon } from "@/shared/ui/icon";
 
-/** Fill the school location from this device (stand at the gate and press it). */
+/**
+ * How to find the school's coordinates. Location access is only allowed on the staff clock-in page, so HR types
+ * the two numbers in, taken from Google Maps.
+ */
 export function UseMyLocation() {
-  const [msg, setMsg] = useState("");
   return (
-    <span className="row tight">
-      <button type="button" className="btn sm" onClick={() => {
-        setMsg("Finding your location…");
-        navigator.geolocation.getCurrentPosition((p) => {
-          (document.getElementById("as-lat") as HTMLInputElement).value = p.coords.latitude.toFixed(6);
-          (document.getElementById("as-lng") as HTMLInputElement).value = p.coords.longitude.toFixed(6);
-          setMsg(`Done (accurate to about ${Math.round(p.coords.accuracy)} m). Save to keep it.`);
-        }, () => setMsg("Location isn't available. Allow location for this site, or type the numbers."), { enableHighAccuracy: true, timeout: 15_000 });
-      }}><Icon name="pin" size="sm" />Use this device&apos;s location</button>
-      {msg && <span className="small muted">{msg}</span>}
+    <span className="small muted row tight">
+      <Icon name="pin" size="sm" />
+      In Google Maps, press and hold the school gate, then copy the two numbers shown (for example 6.4659, 3.2847)
+      into Latitude and Longitude.
     </span>
   );
 }
@@ -33,7 +29,7 @@ export function KioskLink({ action }: { action: () => Promise<ActionResult> }) {
       </ActionForm>
       {link && (
         <div className="note ok"><Icon name="check" /><div className="stack tight grow">
-          <span className="small">Open this on the gate tablet or phone and leave it on screen:</span>
+          <span className="small">Open this on the gate tablet or phone at each branch (the same link works on all three) and leave it on screen:</span>
           <code className="small" style={{ wordBreak: "break-all" }}>{link}</code>
           <div><CopyButton text={link} label="Copy link" done="Gate link copied." /></div>
         </div></div>
