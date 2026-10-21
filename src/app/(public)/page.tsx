@@ -124,22 +124,26 @@ export default async function HomePage() {
         </section>
       )}
 
-      {slides.length > 0 && (
-        <section className="pub-sec">
-          <div className="pub-sec-h">
-            <span className="eyebrow">Gallery</span>
-            <h2>Life at {SCHOOL.name}</h2>
+      {/* Gallery slideshow and the YouTube player side by side on laptops; one above the other on phones and tablets */}
+      <section className="pub-sec">
+        <div className={`media-pair${slides.length ? "" : " solo"}`}>
+          {slides.length > 0 && (
+            <div className="media-col">
+              <div className="pub-sec-h">
+                <span className="eyebrow">Gallery</span>
+                <h2>Life at {SCHOOL.name}</h2>
+              </div>
+              <Slideshow photos={slides} lite={lite} />
+            </div>
+          )}
+          <div className="media-col" id="videos">
+            <div className="pub-sec-h">
+              <span className="eyebrow">Nazareth School Festac TV</span>
+              <h2>Latest videos</h2>
+            </div>
+            <YouTubeVideos />
           </div>
-          <Slideshow photos={slides} lite={lite} />
-        </section>
-      )}
-
-      <section className="pub-sec" id="videos">
-        <div className="pub-sec-h">
-          <span className="eyebrow">Nazareth School Festac TV</span>
-          <h2>Latest videos</h2>
         </div>
-        <YouTubeVideos />
       </section>
 
       <section className="pub-sec">
