@@ -11,6 +11,7 @@ import { HeroVideo } from "./_hero-video";
 import { NewsCard } from "./_news";
 import { photoAlbums } from "./_photos";
 import { Slideshow } from "./_slideshow";
+import { YouTubeVideos } from "./_youtube";
 import { isLite } from "@/shared/lib/lite";
 import { SCHOOLS } from "./_content";
 
@@ -132,6 +133,14 @@ export default async function HomePage() {
           <Slideshow photos={slides} lite={lite} />
         </section>
       )}
+
+      <section className="pub-sec" id="videos">
+        <div className="pub-sec-h">
+          <span className="eyebrow">Nazareth School Festac TV</span>
+          <h2>Latest videos</h2>
+        </div>
+        <YouTubeVideos />
+      </section>
 
       <section className="pub-sec">
         <div className="store-cta">

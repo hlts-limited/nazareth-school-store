@@ -16,6 +16,8 @@ export const SCHOOL = {
     instagram: "https://www.instagram.com/nazarethschoolfestac",
     tiktok: "https://vm.tiktok.com/ZS9LNG4T6pFdM-cPe44/",
     youtube: "https://www.youtube.com/@nsfestactv",
+    // The channel's uploads playlist ("UU" + the channel id without its "UC" prefix), for the embedded player
+    youtubeUploads: "UUtaIN1rhzuUJ-rQLaxNCdaQ",
     whatsapp: "https://wa.me/2349116409689",
   },
 } as const;
