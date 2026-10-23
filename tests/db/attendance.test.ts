@@ -101,10 +101,10 @@ test("with a school location set, a phone outside the radius is refused", async 
   await saveAttendanceSettings({ gps: null, photoRequired: true });
 });
 
-test("branches: staff clock in at the branch they're deployed to; no branch set means any branch", async () => {
+test("branches: staff clock in at their own branch; no branch set is refused (no any-branch gap)", async () => {
   const A = { id: "school-a", name: "School A", lat: 6.4654, lng: 3.2836, radiusM: 150 };
   const B = { id: "school-b", name: "School B", lat: 6.4760, lng: 3.2950, radiusM: 150 };
-  await saveAttendanceSettings({ branches: [A, B], gps: null, photoRequired: false });
+  await saveAttendanceSettings({ branches: [A, B], gps: null, photoRequired: false, gpsRequired: true, qrRequired: true });
   const at = new Date(`${lagosDate()}T07:30:00+01:00`);
   const scan = async (id: string) => (await startCapture(id, (await currentGateCode(at.getTime())).code, at)).token;
 
@@ -115,9 +115,54 @@ test("branches: staff clock in at the branch they're deployed to; no branch set 
 
   const unset = await newStaff();
   await db.employee.update({ where: { id: unset.id }, data: { branch: null } });
-  const anyOk = await completeCapture(unset.id, await scan(unset.id), null, { lat: A.lat, lng: A.lng }, at);
-  assert.equal(anyOk.at, "School A", "until HR sets a branch, any branch is accepted");
+  await assert.rejects(completeCapture(unset.id, await scan(unset.id), null, { lat: A.lat, lng: A.lng }, at), /branch isn't set/, "no branch: refused, ask HR");
   await saveAttendanceSettings({ branches: [], photoRequired: true });
+});
+
+test("blocked clock-in: the attempted location is saved and the Alpha and Super Admins are told, even when refused at the start", async () => {
+  const B = { id: "school-b", name: "School B", lat: 6.4760, lng: 3.2950, radiusM: 150 };
+  await saveAttendanceSettings({ branches: [B], gps: null, photoRequired: false, gpsRequired: true, qrRequired: true });
+  const e = await newStaff();
+  const at = new Date(`${lagosDate()}T07:31:00+01:00`);
+  const home = { lat: 6.5012, lng: 3.3101, accuracy: 12 };
+  const before = await db.notification.count({ where: { title: { startsWith: "Blocked clock-in" } } });
+  await assert.rejects(startCapture(e.id, (await currentGateCode(at.getTime())).code, at, home), /deployed to School B/, "refused at the start, before any scan or photo");
+  const a = await db.clockAttempt.findFirstOrThrow({ where: { employeeId: e.id }, orderBy: { createdAt: "desc" } });
+  assert.equal(a.lat, home.lat);
+  assert.equal(a.lng, home.lng);
+  assert.equal(a.accuracyM, 12);
+  assert.ok(a.distanceM! > 1000);
+  const admins = await db.user.count({ where: { type: "STAFF", status: "ACTIVE", roles: { some: { roleId: "admin" } } } });
+  const told = await db.notification.findMany({ where: { title: { startsWith: "Blocked clock-in" } }, orderBy: { createdAt: "desc" }, take: 1 });
+  assert.ok(admins === 0 || (await db.notification.count({ where: { title: { startsWith: "Blocked clock-in" } } })) > before, "admins notified");
+  if (told[0]) assert.match(told[0].body, /google\.com\/maps\?q=6\.501200,3\.310100/);
+
+  // Pattern flags: the same spot again, then a third try in 14 days, then an exact repeat reading
+  const t2 = new Date(at.getTime() + 60_000), t3 = new Date(at.getTime() + 120_000);
+  await assert.rejects(startCapture(e.id, (await currentGateCode(t2.getTime())).code, t2, { lat: 6.5013, lng: 3.3102, accuracy: 15 }), /deployed to/);
+  await assert.rejects(startCapture(e.id, (await currentGateCode(t3.getTime())).code, t3, { ...home }), /deployed to/);
+  const flags = (await db.clockAttempt.findFirstOrThrow({ where: { employeeId: e.id }, orderBy: { createdAt: "desc" } })).flags;
+  assert.ok(flags.includes("same-spot"));
+  assert.ok(flags.includes("repeated"));
+  assert.ok(flags.includes("possible-fake-gps"), "an exact repeat of an earlier reading");
+  await saveAttendanceSettings({ branches: [], photoRequired: true });
+});
+
+test("switches: with QR off staff start without a code; with location off the place isn't checked", async () => {
+  const B = { id: "school-b", name: "School B", lat: 6.4760, lng: 3.2950, radiusM: 150 };
+  await saveAttendanceSettings({ branches: [B], gps: null, photoRequired: false, qrRequired: false, gpsRequired: true });
+  const e = await newStaff();
+  const at = new Date(`${lagosDate()}T07:32:00+01:00`);
+  const t = await startCapture(e.id, null, at, { lat: B.lat, lng: B.lng, accuracy: 8 });
+  const r = await completeCapture(e.id, t.token, null, { lat: B.lat, lng: B.lng, accuracy: 8 }, at);
+  assert.equal(r.record.qrVerified, false, "recorded as not QR-verified");
+
+  await saveAttendanceSettings({ gpsRequired: false });
+  const e2 = await newStaff();
+  const t2 = await startCapture(e2.id, null, at, { lat: 9.0, lng: 7.4 });
+  const r2 = await completeCapture(e2.id, t2.token, null, null, at);
+  assert.equal(r2.at, null, "location off: not checked");
+  await saveAttendanceSettings({ branches: [], photoRequired: true, qrRequired: true, gpsRequired: true });
 });
 
 test("manual clock needs a reason and a past time", async () => {

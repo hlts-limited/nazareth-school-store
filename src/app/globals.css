@@ -1209,3 +1209,9 @@ html[data-lite="1"] .hero-img{animation:none}
 
 .precise-loc{flex-wrap:wrap;align-items:center;margin-top:2px}
 .warn-text{color:var(--warn)}
+
+.clock-switches{display:flex;flex-direction:column;gap:10px}
+.clock-switches .check{align-items:flex-start;gap:10px}
+.clock-switches .check span{display:flex;flex-direction:column;gap:2px}
+.clock-switches small{color:var(--muted);font-size:12.5px}
+.flag{display:inline-block;margin:2px 4px 2px 0;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:600;background:var(--warn-soft,#FEF3C7);color:var(--warn,#B45309)}

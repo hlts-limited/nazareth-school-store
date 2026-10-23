@@ -783,6 +783,7 @@ model Employee {
   adjustments        PayrollAdjustment[]
 
   @@index([section])
+  clockAttempts      ClockAttempt[]
 }
 
 enum DocStatus {
@@ -820,6 +821,25 @@ enum AttendanceStatus {
   ABSENT // no clock-in by Close day, no leave, not a holiday
   LEAVE // approved leave
   HOLIDAY
+}
+
+/// A clock-in or clock-out refused because of where the phone was. Kept 90 days; the Alpha and Super Admins are told.
+model ClockAttempt {
+  id         String   @id @default(uuid())
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  kind       String // in | out
+  lat        Float?
+  lng        Float?
+  accuracyM  Float? // how precise the phone said its reading was
+  distanceM  Int? // from the branch they should be at
+  branch     String? // the branch checked against
+  reason     String // why it was refused, in plain words
+  flags      String[] // patterns noticed, e.g. "repeated", "same-spot", "possible-fake-gps"
+  createdAt  DateTime @default(now())
+
+  @@index([employeeId, createdAt])
+  @@index([createdAt])
 }
 
 model Attendance {

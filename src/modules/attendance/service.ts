@@ -19,6 +19,10 @@ export type AttendanceSettings = {
   /** rotating: a gate device shows a code that changes every 30 s; static: one printed code */
   qrMode: "rotating" | "static";
   photoRequired: boolean;
+  /** Staff scan the gate QR code (off: they start from the app; no gate screen needed) */
+  qrRequired: boolean;
+  /** Check the phone is at the staff member's branch gate (needs branch locations set) */
+  gpsRequired: boolean;
   /** What must be in the photo, shown to staff */
   photoSpot: string;
   /** School days: 1 = Monday … 7 = Sunday */
@@ -30,7 +34,7 @@ export type AttendanceSettings = {
 };
 
 export const DEFAULT_ATTENDANCE: AttendanceSettings = {
-  lateCutoff: "07:45", gps: null, branches: [], qrMode: "rotating", photoRequired: true, photoSpot: "the school sign at the main gate",
+  lateCutoff: "07:45", gps: null, branches: [], qrMode: "rotating", photoRequired: true, qrRequired: true, gpsRequired: true, photoSpot: "the school sign at the main gate",
   workDays: [1, 2, 3, 4, 5], qrVersion: 1, kioskTokenHash: null,
 };
 
@@ -130,15 +134,20 @@ export async function nextClock(employeeId: string, now = new Date()) {
 }
 
 /** Check 1 passed → a single-use capture token for this person, valid for 60 seconds. */
-export async function startCapture(employeeId: string, code: string, now = new Date()) {
+export type Pos = { lat: number; lng: number; accuracy?: number };
+
+export async function startCapture(employeeId: string, code: string | null, now = new Date(), pos?: Pos | null) {
   const emp = await db.employee.findUniqueOrThrow({ where: { id: employeeId } });
   if (emp.status !== "ACTIVE") throw new UserError("Your staff record is not active.");
   if (!emp.attendanceConsentAt) throw new UserError("Please read and accept the notice about the photo and location first.");
-  if (!(await gateCodeValid(code, now.getTime()))) throw new UserError("That code isn't the school's current gate code. Scan the code on the gate screen again.");
+  const s = await attendanceSettings();
+  if (s.qrRequired !== false && !(code && (await gateCodeValid(code, now.getTime())))) throw new UserError("That code isn't the school's current gate code. Scan the code on the gate screen again.");
   const kind = await nextClock(employeeId, now);
   if (!kind) throw new UserError("You have already clocked in and out today.");
+  // Where the phone is, checked straight away (and again when the clock-in is completed)
+  if (pos) await checkPlace(employeeId, kind, pos, s, now);
   const t = await db.captureToken.create({ data: { employeeId, kind, expiresAt: new Date(now.getTime() + 60_000) } });
-  return { token: t.id, kind, photoRequired: (await attendanceSettings()).photoRequired };
+  return { token: t.id, kind, photoRequired: s.photoRequired };
 }
 
 const R = 6_371_000;
@@ -149,34 +158,119 @@ export function metresBetween(a: { lat: number; lng: number }, b: { lat: number;
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
+// ---------- Where the phone is: branch check, blocked attempts and pattern flags ----------
+
+/** Plain-words names for the pattern flags */
+export const FLAG_WORDS: Record<string, string> = {
+  repeated: "3 or more blocked tries in 14 days",
+  "same-spot": "tried again from the same place outside the school",
+  imprecise: "location was very imprecise (over 200 m)",
+  "possible-fake-gps": "the location looks faked (a reading repeated exactly, or impossibly precise)",
+};
+
+/** The Alpha Admin and every Super Admin: they're told about blocked clock-ins */
+async function overseers() {
+  const alpha = env().ALPHA_ADMIN_EMAIL;
+  return db.user.findMany({
+    where: { type: "STAFF", status: "ACTIVE", OR: [{ roles: { some: { roleId: "admin" } } }, ...(alpha ? [{ email: { equals: alpha, mode: "insensitive" as const } }] : [])] },
+    select: { id: true },
+  });
+}
+
+const same6 = (a: number, b: number) => Math.round(a * 1e6) === Math.round(b * 1e6);
+
+/** Patterns worth a closer look, from this attempt and the person's earlier ones */
+async function patternFlags(employeeId: string, pos: Pos, now: Date) {
+  const earlier = await db.clockAttempt.findMany({ where: { employeeId, createdAt: { gte: new Date(now.getTime() - 30 * 86_400_000) } }, select: { lat: true, lng: true, createdAt: true } });
+  const flags: string[] = [];
+  if (earlier.filter((a) => a.createdAt.getTime() >= now.getTime() - 14 * 86_400_000).length >= 2) flags.push("repeated");
+  if (earlier.some((a) => a.lat != null && a.lng != null && metresBetween({ lat: a.lat, lng: a.lng }, pos) <= 100)) flags.push("same-spot");
+  if (pos.accuracy != null && pos.accuracy > 200) flags.push("imprecise");
+  const exactRepeat = earlier.some((a) => a.lat != null && a.lng != null && same6(a.lat, pos.lat) && same6(a.lng, pos.lng));
+  if (exactRepeat || (pos.accuracy != null && pos.accuracy < 1)) flags.push("possible-fake-gps");
+  return flags;
+}
+
+/** Saves a refused clock-in with where the phone was, and tells the Alpha and Super Admins (at most every 30 min per person) */
+async function recordBlocked(employeeId: string, kind: "in" | "out", pos: Pos, info: { branch: string | null; metres: number | null; reason: string }, now: Date) {
+  const flags = await patternFlags(employeeId, pos, now);
+  const recent = await db.clockAttempt.count({ where: { employeeId, createdAt: { gte: new Date(now.getTime() - 30 * 60_000) } } });
+  await db.clockAttempt.create({
+    data: { employeeId, kind, lat: pos.lat, lng: pos.lng, accuracyM: pos.accuracy ?? null, distanceM: info.metres == null ? null : Math.round(info.metres), branch: info.branch, reason: info.reason, flags, createdAt: now },
+  });
+  if (recent > 0) return;
+  const emp = await db.employee.findUnique({ where: { id: employeeId }, select: { staffCode: true, user: { select: { firstName: true, lastName: true } } } });
+  const who = emp ? `${emp.user.firstName} ${emp.user.lastName} (${emp.staffCode})` : "A member of staff";
+  const time = now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Africa/Lagos" });
+  const where = `https://www.google.com/maps?q=${pos.lat.toFixed(6)},${pos.lng.toFixed(6)}`;
+  const body = `${who} tried to clock ${kind} at ${time} and was blocked: ${info.reason}. Where the phone was: ${where}${pos.accuracy != null ? ` (accurate to about ${Math.round(pos.accuracy)} m)` : ""}.${flags.length ? ` Flags: ${flags.map((f) => FLAG_WORDS[f] ?? f).join("; ")}.` : ""} See Super Admin > Blocked clock-ins.`;
+  for (const u of await overseers()) await notify(u.id, `Blocked clock-${kind}: ${emp?.user.firstName ?? "staff"}`, body, ["inapp", "whatsapp", "email"]);
+}
+
+/**
+ * Is the phone at the branch this person is deployed to? Returns the branch name (or null when location isn't
+ * checked). A refusal is recorded with where the phone was before the error is shown.
+ */
+async function checkPlace(employeeId: string, kind: "in" | "out", pos: Pos | null, s: AttendanceSettings, now: Date): Promise<string | null> {
+  if (s.gpsRequired === false) return null;
+  const all = clockInPlaces(s);
+  if (!all.length) return null;
+  if (!pos) throw new UserError("Turn on location for this site, then try again.");
+  const emp = await db.employee.findUnique({ where: { id: employeeId }, select: { branch: true } });
+  let places = all;
+  if (s.branches?.length) {
+    // Branches are set up: only the person's own branch counts (no "any branch" fallback)
+    const own = all.filter((p) => p.id === emp?.branch);
+    if (!own.length) {
+      const reason = emp?.branch ? `${branchName(emp.branch)} has no gate location set yet` : "no branch is set on their staff record";
+      const near = nearestPlace(all, pos);
+      await recordBlocked(employeeId, kind, pos, { branch: emp?.branch ?? null, metres: near?.metres ?? null, reason }, now);
+      throw new UserError(emp?.branch
+        ? `${branchName(emp.branch)}'s gate location hasn't been set yet, so you can't clock in from the app. Ask HR, or ask an administrator to clock you in.`
+        : "Your branch isn't set on your staff record yet. Ask HR to set it, or ask an administrator to clock you in.");
+    }
+    places = own;
+  }
+  const near = nearestPlace(places, pos);
+  if (near.metres > near.place.radiusM) {
+    await recordBlocked(employeeId, kind, pos, { branch: near.place.id, metres: near.metres, reason: `about ${Math.round(near.metres)} m from ${near.place.name}` }, now);
+    throw new UserError(s.branches?.length
+      ? `You're deployed to ${near.place.name}, and you seem to be about ${Math.round(near.metres)} m from it. Clock in at ${near.place.name}. If you've been moved to another branch, ask HR to update your record.`
+      : `You seem to be about ${Math.round(near.metres)} m from ${near.place.name}. Clock in at the school.`);
+  }
+  return near.place.name;
+}
+
+/** On a successful clock-in: the exact same GPS reading as on an earlier day suggests a location-faking app */
+async function flagRepeatedReading(employeeId: string, pos: Pos | null, day: string) {
+  if (!pos) return;
+  const same = await db.attendance.findFirst({
+    where: { employeeId, date: { not: dayValue(day) }, inLat: { gte: pos.lat - 5e-7, lte: pos.lat + 5e-7 }, inLng: { gte: pos.lng - 5e-7, lte: pos.lng + 5e-7 } },
+    select: { date: true },
+  });
+  if (!same) return;
+  const emp = await db.employee.findUnique({ where: { id: employeeId }, select: { staffCode: true, user: { select: { firstName: true, lastName: true } } } });
+  const body = `${emp?.user.firstName} ${emp?.user.lastName} (${emp?.staffCode}) clocked in today with exactly the same GPS reading as on ${same.date.toISOString().slice(0, 10)}. Real phones never repeat a reading to the last digit, so this may be a location-faking app. The clock-in was accepted; please check.`;
+  for (const u of await overseers()) await notify(u.id, `Possible fake location: ${emp?.user.firstName ?? "staff"}`, body, ["inapp", "whatsapp", "email"]);
+}
+
+/** Blocked clock-ins for the Super Admin page, newest first */
+export async function blockedAttempts(take = 200) {
+  return db.clockAttempt.findMany({ orderBy: { createdAt: "desc" }, take, include: { employee: { select: { staffCode: true, branch: true, user: { select: { firstName: true, lastName: true } } } } } });
+}
+
 /**
  * Check 2: the photo comes back with an unused token issued to this person under 60 seconds ago, it is a real
  * image, and (if the school set a location) the phone is inside the school's radius. The time recorded is the
  * server's, never the photo's.
  */
-export async function completeCapture(employeeId: string, tokenId: string, photo: { buf: Buffer; mime: string; ext: string } | null, pos: { lat: number; lng: number } | null, now = new Date()) {
+export async function completeCapture(employeeId: string, tokenId: string, photo: { buf: Buffer; mime: string; ext: string } | null, pos: Pos | null, now = new Date()) {
   const s = await attendanceSettings();
   const t = await db.captureToken.findUnique({ where: { id: tokenId } });
   if (!t || t.employeeId !== employeeId || t.usedAt || t.expiresAt < now) throw new UserError("That took too long or the scan was already used. Scan the gate code again.");
   if (s.photoRequired && !photo) throw new UserError("Take the photo to finish clocking in.");
   if (photo && !photo.mime.startsWith("image/")) throw new UserError("That wasn't a photo from the camera. Please try again.");
-  // Location: at the branch this person is deployed to. If HR hasn't set their branch, or that branch has no
-  // location yet, any branch the school has set up is accepted.
-  const all = clockInPlaces(s);
-  const emp = await db.employee.findUnique({ where: { id: employeeId }, select: { branch: true } });
-  const own = all.filter((p) => p.id === emp?.branch);
-  const places = own.length ? own : all;
-  let at: string | null = null;
-  if (places.length) {
-    if (!pos) throw new UserError("Turn on location for this site, then try again.");
-    const near = nearestPlace(places, pos);
-    if (near.metres > near.place.radiusM) {
-      throw new UserError(own.length
-        ? `You're deployed to ${near.place.name}, and you seem to be about ${Math.round(near.metres)} m from it. Clock in at ${near.place.name}. If you've been moved to another branch, ask HR to update your record.`
-        : `You seem to be about ${Math.round(near.metres)} m from ${near.place.name}, the nearest branch. Clock in at one of the school's branches.`);
-    }
-    at = near.place.name;
-  }
+  const at = await checkPlace(employeeId, t.kind as "in" | "out", pos, s, now);
   // Use the token once, even if two requests race
   const used = await db.captureToken.updateMany({ where: { id: t.id, usedAt: null }, data: { usedAt: now } });
   if (!used.count) throw new UserError("That scan was already used. Scan the gate code again.");
@@ -192,9 +286,10 @@ export async function completeCapture(employeeId: string, tokenId: string, photo
     const late = lagosTime(now) > s.lateCutoff;
     const rec = await db.attendance.upsert({
       where,
-      create: { employeeId, date: dayValue(day), status: late ? "LATE" : "PRESENT", clockInAt: now, inPhotoKey: key, inLat: pos?.lat, inLng: pos?.lng, qrVerified: true },
-      update: { status: late ? "LATE" : "PRESENT", clockInAt: now, inPhotoKey: key, inLat: pos?.lat, inLng: pos?.lng, qrVerified: true },
+      create: { employeeId, date: dayValue(day), status: late ? "LATE" : "PRESENT", clockInAt: now, inPhotoKey: key, inLat: pos?.lat, inLng: pos?.lng, qrVerified: s.qrRequired !== false },
+      update: { status: late ? "LATE" : "PRESENT", clockInAt: now, inPhotoKey: key, inLat: pos?.lat, inLng: pos?.lng, qrVerified: s.qrRequired !== false },
     });
+    if (at) await flagRepeatedReading(employeeId, pos, day);
     return { kind: "in" as const, record: rec, late, at };
   }
   const rec = await db.attendance.update({ where, data: { clockOutAt: now, outPhotoKey: key, outLat: pos?.lat, outLng: pos?.lng } });

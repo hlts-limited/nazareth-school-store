@@ -122,6 +122,7 @@ export const STAFF_SECTIONS: { id: string; label: string; perm: Permission; item
     id: "admin", label: "Super Admin", perm: P.SETTINGS_MANAGE,
     items: [
       { href: "/admin", label: "Overview", icon: "chart" },
+      { href: "/admin/attendance/blocked", label: "Blocked clock-ins", icon: "alert" },
       { href: "/admin/people", label: "View as parent / pupil", icon: "eye" },
       { href: "/admin/staff", label: "Staff & roles", icon: "shield" },
       { href: "/admin/sessions", label: "Sessions", icon: "clock" },

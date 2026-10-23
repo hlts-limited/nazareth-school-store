@@ -8,7 +8,7 @@ import { auditActor, staffFor, type StaffViewer } from "@/modules/auth";
 import { audit } from "@/modules/audit";
 import {
   acceptNotice, addHoliday, attendanceSettings, cancelLeave, closeDay, completeCapture, decideLeave, lagosDate, manualClock, newKioskLink, removeHoliday, requestLeave,
-  saveAttendanceSettings, startCapture, BRANCHES, type Branch } from "./service";
+  saveAttendanceSettings, startCapture, BRANCHES, type Branch, type Pos } from "./service";
 
 const zDay = (msg: string) => z.string().regex(/^\d{4}-\d{2}-\d{2}$/, msg);
 const name = (v: StaffViewer) => `${v.user.firstName} ${v.user.lastName}`;
@@ -32,11 +32,19 @@ export async function acceptNoticeAction(): Promise<ActionResult> {
 }
 
 /** Check 1: the scanned gate code. Returns a 60-second capture token. Called by the scanner, not a form. */
-export async function scanGateCodeAction(code: string): Promise<ActionResult> {
+const toPos = (p: unknown): Pos | null => {
+  const o = p as { lat?: unknown; lng?: unknown; accuracy?: unknown } | null;
+  const lat = Number(o?.lat), lng = Number(o?.lng), acc = Number(o?.accuracy);
+  if (!o || !Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+  return { lat, lng, ...(Number.isFinite(acc) && acc >= 0 && { accuracy: acc }) };
+};
+
+/** Check 1: the gate code (or, when the school has turned QR off, just the start), plus where the phone is. */
+export async function scanGateCodeAction(code: string | null, pos?: unknown): Promise<ActionResult> {
   return runAction(async () => {
     const v = await staffFor("self.service");
     let e; try { e = await myEmployee(v); } catch { return fail("You don't have a staff record yet. Ask HR."); }
-    const r = await startCapture(e.id, code);
+    const r = await startCapture(e.id, code, new Date(), toPos(pos));
     return { ok: true, data: r };
   });
 }
@@ -53,8 +61,7 @@ export async function completeClockAction(_: ActionResult, form: FormData): Prom
       if ("error" in up) return fail("That wasn't a photo from the camera. Please try again.");
       photo = { buf: up.buf, mime: up.mime, ext: up.ext };
     }
-    const lat = Number(form.get("lat")), lng = Number(form.get("lng"));
-    const pos = form.get("lat") && Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
+    const pos = form.get("lat") ? toPos({ lat: form.get("lat"), lng: form.get("lng"), accuracy: form.get("accuracy") ?? undefined }) : null;
     const r = await completeCapture(e.id, String(form.get("token") ?? ""), photo, pos);
     await audit(await auditActor(v), r.kind === "in" ? "Clocked in" : "Clocked out", "Attendance", r.record.id, { staffCode: e.staffCode, late: r.late, gps: !!pos, branch: r.at });
     const t = new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Africa/Lagos" });
@@ -124,7 +131,7 @@ export async function saveAttendanceSettingsAction(_: ActionResult, form: FormDa
     const v = await staffFor("attendance.manage");
     const d = parseForm(z.object({
       lateCutoff: z.string().regex(/^\d{2}:\d{2}$/, "Enter a time like 07:45"),
-      qrMode: z.enum(["rotating", "static"]), photoRequired: z.string().optional(), photoSpot: zText(120, "Say what must be in the photo"),
+      qrMode: z.enum(["rotating", "static"]), photoRequired: z.string().optional(), qrRequired: z.string().optional(), gpsRequired: z.string().optional(), photoSpot: zText(120, "Say what must be in the photo"),
       workDays: z.union([z.string(), z.array(z.string())]).optional(),
     }), form);
     // One location per branch (lat-<id>, lng-<id>, radius-<id>); a branch left empty isn't used for clock-ins
@@ -144,8 +151,8 @@ export async function saveAttendanceSettingsAction(_: ActionResult, form: FormDa
     const workDays = (Array.isArray(d.workDays) ? d.workDays : d.workDays ? [d.workDays] : []).map(Number).filter((n) => n >= 1 && n <= 7);
     if (!workDays.length) return fail("Choose the school days.", { workDays: "Choose at least one" });
     // Once branches are set, the older single location is no longer needed
-    const s = await saveAttendanceSettings({ lateCutoff: d.lateCutoff, qrMode: d.qrMode, photoRequired: d.photoRequired === "on", photoSpot: d.photoSpot, branches, ...(branches.length && { gps: null }), workDays });
-    await audit(await auditActor(v), "Changed attendance settings", "Setting", "attendance", { lateCutoff: s.lateCutoff, qrMode: s.qrMode, photoRequired: s.photoRequired, branches: s.branches.map((b) => `${b.name} (${b.radiusM} m)`), workDays: s.workDays });
+    const s = await saveAttendanceSettings({ lateCutoff: d.lateCutoff, qrMode: d.qrMode, photoRequired: d.photoRequired === "on", qrRequired: d.qrRequired === "on", gpsRequired: d.gpsRequired === "on", photoSpot: d.photoSpot, branches, ...(branches.length && { gps: null }), workDays });
+    await audit(await auditActor(v), "Changed attendance settings", "Setting", "attendance", { lateCutoff: s.lateCutoff, qrMode: s.qrMode, qrRequired: s.qrRequired, photoRequired: s.photoRequired, gpsRequired: s.gpsRequired, branches: s.branches.map((b) => `${b.name} (${b.radiusM} m)`), workDays: s.workDays });
     return ok("Attendance settings saved.");
   });
 }

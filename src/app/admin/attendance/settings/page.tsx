@@ -36,7 +36,15 @@ export default async function AttendanceSettingsPage() {
             </div>
             <div className="field"><label htmlFor="as-spot">The photo must show</label><input className="input" id="as-spot" name="photoSpot" defaultValue={s.photoSpot} /><FieldError name="photoSpot" /></div>
           </div>
-          <label className="check small"><input type="checkbox" name="photoRequired" defaultChecked={s.photoRequired} /> A live photo is required at every clock-in and clock-out</label>
+          <div className="field">
+            <span className="lbl">What staff must do to clock in or out</span>
+            <div className="clock-switches">
+              <label className="check"><input type="checkbox" name="gpsRequired" defaultChecked={s.gpsRequired !== false} /> <span><b>Location</b><small>The phone must be at the gate of their own branch (set the branch locations below)</small></span></label>
+              <label className="check"><input type="checkbox" name="photoRequired" defaultChecked={s.photoRequired} /> <span><b>Photo at the gate</b><small>A live photo of the spot above, every time</small></span></label>
+              <label className="check"><input type="checkbox" name="qrRequired" defaultChecked={s.qrRequired !== false} /> <span><b>QR code</b><small>Scan the code on the gate screen or printed sign</small></span></label>
+            </div>
+            <span className="hint">With all three off, staff just press Clock in. Administrators can always clock someone in by hand from Today, from anywhere.</span>
+          </div>
           <div className="field">
             <span className="lbl">School days</span>
             <div className="row tight">{DAYS.map(([n, l]) => <label key={n} className="check small"><input type="checkbox" name="workDays" value={n} defaultChecked={s.workDays.includes(n)} /> {l}</label>)}</div>

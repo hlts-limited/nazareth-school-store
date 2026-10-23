@@ -15,6 +15,7 @@ export default async function ClockPage() {
   const [s, next, today] = await Promise.all([
     attendanceSettings(), nextClock(e.id), db.attendance.findUnique({ where: { employeeId_date: { employeeId: e.id, date: dayValue(lagosDate()) } } }),
   ]);
+  const gps = s.gpsRequired !== false && clockInPlaces(s).length > 0;
   const done = today?.status === "LEAVE" ? "You're on leave today." : today?.status === "HOLIDAY" ? "Today is a holiday." : "You've clocked in and out today. See you tomorrow.";
   return (
     <div style={{ maxWidth: 520 }}>
@@ -23,17 +24,17 @@ export default async function ClockPage() {
         {!e.attendanceConsentAt ? (
           <section className="card stack">
             <h3>Before your first clock-in</h3>
-            <p>When you clock in or out, the app takes a photo of {s.photoSpot}{clockInPlaces(s).length ? " and checks your location" : ""} to confirm you are at the school.</p>
+            <p>When you clock in or out, the app {[s.photoRequired && `takes a photo of ${s.photoSpot}`, gps && "checks your location"].filter(Boolean).join(" and ") || "records the time"} to confirm you are at your branch.</p>
             <ul className="small">
               <li>Only HR and the Proprietor can see the photos, and every look is recorded.</li>
               <li>Photos are deleted automatically after 31 days. Your clock times stay for payroll.</li>
-              {clockInPlaces(s).length > 0 && <li>Your location is only checked at the moment you clock in or out. It is never tracked.</li>}
+              {gps && <li>Your location is only checked at the moment you clock in or out. It is never tracked.</li>}
             </ul>
             <p className="small muted">Nigeria Data Protection Act 2023.</p>
             <ActionForm action={acceptNoticeAction}><SubmitButton icon="check">I understand, continue</SubmitButton></ActionForm>
           </section>
         ) : next ? (
-          <ClockIn scan={scanGateCodeAction} complete={completeClockAction} next={next} photoSpot={s.photoSpot} needGps={clockInPlaces(s).length > 0} />
+          <ClockIn scan={scanGateCodeAction} complete={completeClockAction} next={next} photoSpot={s.photoSpot} needGps={gps} needQr={s.qrRequired !== false} needPhoto={s.photoRequired} />
         ) : (
           <Note tone="ok" icon="check">{done}</Note>
         )}

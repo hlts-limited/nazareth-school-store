@@ -18,7 +18,7 @@ const TABLES = [
   ["notification", "Notification"], ["auditLog", "AuditLog"],
   ["admissionWindow", "AdmissionWindow"], ["examSlot", "ExamSlot"], ["application", "Application"], ["applicationDocument", "ApplicationDocument"],
   ["notice", "Notice"], ["event", "Event"], ["galleryPhoto", "GalleryPhoto"], ["newsPost", "NewsPost"], ["enquiry", "Enquiry"],
-  ["employee", "Employee"], ["employeeDocument", "EmployeeDocument"], ["attendance", "Attendance"], ["holiday", "Holiday"], ["leaveRequest", "LeaveRequest"],
+  ["employee", "Employee"], ["employeeDocument", "EmployeeDocument"], ["attendance", "Attendance"], ["clockAttempt", "ClockAttempt"], ["holiday", "Holiday"], ["leaveRequest", "LeaveRequest"],
   ["payrollRun", "PayrollRun"], ["payrollItem", "PayrollItem"], ["payrollAdjustment", "PayrollAdjustment"], ["salaryPayment", "SalaryPayment"],
 ] as const;
 // Attendance photos ("attendance/") are deliberately left out: they must not outlive their 31 days in a backup.

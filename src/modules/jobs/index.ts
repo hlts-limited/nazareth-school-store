@@ -17,11 +17,13 @@ export async function runDailyJobs() {
   const attendancePhotos = await purgeOldPhotos();
   const lockedPayrolls = await lockFinishedRuns();
   const since = new Date(Date.now() - 30 * 86400_000);
-  const [attempts, sessions] = await Promise.all([
+  const [attempts, sessions, clockAttempts] = await Promise.all([
     db.loginAttempt.deleteMany({ where: { createdAt: { lt: since } } }),
     db.session.deleteMany({ where: { OR: [{ revokedAt: { lt: since } }, { expiresAt: { lt: since } }] } }),
+    // Blocked clock-ins hold where staff were: kept 90 days
+    db.clockAttempt.deleteMany({ where: { createdAt: { lt: new Date(Date.now() - 90 * 86400_000) } } }),
   ]);
-  const result = { ...orders, backup: backup.fileName, removedBackups, purgedPupils, expiryReminders, attendancePhotos, lockedPayrolls, oldLoginAttempts: attempts.count, oldSessions: sessions.count };
+  const result = { ...orders, backup: backup.fileName, removedBackups, purgedPupils, expiryReminders, attendancePhotos, lockedPayrolls, oldLoginAttempts: attempts.count, oldSessions: sessions.count, oldClockAttempts: clockAttempts.count };
   await audit({ name: "System", role: "Scheduled job" }, "Daily jobs ran", "System", null, result);
   return result;
 }
