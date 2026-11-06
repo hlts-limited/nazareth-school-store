@@ -1,7 +1,10 @@
 // Runs against the throwaway test database: npm run test:db
+import { PDFDocument } from "pdf-lib";
 import { test, before } from "node:test";
 import assert from "node:assert/strict";
 import { db } from "../../src/shared/lib/db";
+import { staffFormPdf } from "../../src/modules/hr/form-pdf";
+import { storage } from "../../src/shared/lib/storage";
 import {
   bankInClear, employeeDetail, onboarding, registerStaff, reviewBank, reviewStaffDocument, saveStaffDocument, setBankDetails, setEmployeeStatus,
   type EmployeeInput,
@@ -103,4 +106,26 @@ test("marking someone as left stops their sign-in and keeps the record", async (
   assert.equal((await db.user.findUniqueOrThrow({ where: { id: employee.userId } })).status, "DISABLED");
   await setEmployeeStatus(employee.id, "ACTIVE");
   assert.equal((await db.user.findUniqueOrThrow({ where: { id: employee.userId } })).status, "ACTIVE");
+});
+
+test("staff form: one A4 page with the passport; works with no passport; a long name doesn't break it", async () => {
+  const { employee: e } = await registerStaff({
+    firstName: "Chiamaka-Oluwaseun-Ifeoluwa", lastName: "Okonkwo-Adeyemi-Nwachukwu-Balogun", email: `form.${Date.now()}@nazareth.test`, section: "school-a", branch: "school-a",
+    position: "Class Teacher", isTeacher: true, hireDate: new Date("2021-09-06T00:00:00Z"), employmentType: "FULL_TIME", monthlyGrossKobo: 100_000_00, annualRentNaira: 0,
+  });
+  const empty = await staffFormPdf(e.id, { salary: true, bank: true });
+  assert.ok(empty);
+  assert.equal((await PDFDocument.load(empty.bytes)).getPageCount(), 1);
+
+  // A 1 x 1 PNG stands in for the passport photograph
+  const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "base64");
+  const key = `staff/form-test-${e.id}.png`;
+  await storage().put(key, png, "image/png");
+  await db.employeeDocument.create({ data: { employeeId: e.id, kind: "passport", fileKey: key, fileName: "p.png", mimeType: "image/png", size: png.length, status: "APPROVED", uploadedById: e.userId } });
+  const full = await staffFormPdf(e.id, { salary: true, bank: true });
+  assert.ok(full && full.bytes.length > empty.bytes.length, "the photo is embedded");
+  assert.equal((await PDFDocument.load(full.bytes)).getPageCount(), 1);
+  assert.match(full.name, /^Staff-record-NS-\d+-[A-Za-z0-9-]+\.pdf$/);
+  await storage().delete(key);
+  assert.equal(await staffFormPdf("no-such-id", { salary: false, bank: false }), null);
 });

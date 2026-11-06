@@ -74,6 +74,7 @@ const nextConfig: NextConfig = {
     "/admissions/application/**": ["./public/logo.png"],
     "/api/admin/admissions/**": ["./public/logo.png"],
     "/api/payslips/**": ["./public/logo.png"],
+    "/api/staff-form/**": ["./public/logo.png"],
   },
   async redirects() {
     return REDIRECTS.map(([source, destination]) => ({ source, destination, permanent: true }));

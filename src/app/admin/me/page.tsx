@@ -1,6 +1,7 @@
 import { fmtDate } from "@/shared/lib/format";
 import { ActionForm, FieldError, SubmitButton } from "@/shared/ui/client";
 import { Empty, Note, PageHeader } from "@/shared/ui/primitives";
+import { Icon } from "@/shared/ui/icon";
 import { requireStaff } from "@/modules/auth";
 import { myEmployee, sectionName, updateOwnProfileAction } from "@/modules/hr";
 import { Bank, Checklist, Documents } from "../hr/_parts";
@@ -21,7 +22,8 @@ export default async function MyProfilePage() {
   );
   return (
     <div style={{ maxWidth: 1080 }}>
-      <PageHeader title={`${v.user.firstName} ${v.user.lastName}`} sub={<><span className="mono">{e.staffCode}</span> · {e.position} · {sectionName(e.section)} · since {fmtDate(e.hireDate)}</>} />
+      <PageHeader title={`${v.user.firstName} ${v.user.lastName}`} sub={<><span className="mono">{e.staffCode}</span> · {e.position} · {sectionName(e.section)} · since {fmtDate(e.hireDate)}</>}
+        actions={<a className="btn" href={`/api/staff-form/${e.id}`}><Icon name="download" size="sm" />Download my form</a>} />
       <div className="detail-grid">
         <div className="stack">
           {!e.onboarding.complete && <Note tone="warn" icon="alert">Please finish the steps on the right: upload your documents and enter your bank details. HR and the Bursar then check them.</Note>}

@@ -150,6 +150,11 @@ export async function employeeDetail(id: string) {
   return e ? { ...e, onboarding: onboarding(e) } : null;
 }
 
+/** The sign-in account a staff record belongs to */
+export async function employeeOwner(id: string) {
+  return (await db.employee.findUnique({ where: { id }, select: { userId: true } }))?.userId ?? null;
+}
+
 export async function myEmployee(userId: string) {
   const e = await db.employee.findUnique({ where: { userId }, include: { user: { include: { roles: true } }, documents: { orderBy: [{ kind: "asc" }, { uploadedAt: "desc" }] } } });
   return e ? { ...e, onboarding: onboarding(e) } : null;

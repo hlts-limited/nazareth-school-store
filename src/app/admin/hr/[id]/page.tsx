@@ -36,7 +36,13 @@ export default async function StaffRecordPage({ params }: { params: Promise<{ id
       <PageHeader
         title={<span className="row tight">{u.firstName} {u.lastName} {e.status === "INACTIVE" ? <Pill tone="err">Left</Pill> : e.onboarding.complete ? <Pill tone="ok">Complete</Pill> : <Pill tone="warn">Incomplete</Pill>}</span>}
         sub={<><span className="mono">{e.staffCode}</span> · {e.position} · {sectionName(e.section)}{e.section !== e.branch && <> · {branchName(e.branch) ?? "Branch not set"}</>}</>}
-        actions={<Link className="btn" href="/admin/hr"><Icon name="back" size="sm" />All staff</Link>}
+        actions={<div className="row tight">
+          {v.permissions.has("hr.view") && <>
+            <a className="btn" href={`/api/staff-form/${e.id}`}><Icon name="download" size="sm" />Download form</a>
+            <a className="btn" href={`/api/staff-form/${e.id}?print=1`} target="_blank" rel="noopener noreferrer"><Icon name="print" size="sm" />Print</a>
+          </>}
+          <Link className="btn" href="/admin/hr"><Icon name="back" size="sm" />All staff</Link>
+        </div>}
       />
       <div className="detail-grid">
         <div className="stack">
