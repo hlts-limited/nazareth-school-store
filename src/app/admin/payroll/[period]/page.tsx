@@ -73,7 +73,7 @@ export default async function PayrollRunPage({ params }: { params: Promise<{ per
 
         <Stage n={1} title="Statutory deductions" done={pos >= 1} calcAt={run.statutoryCalcAt} calcBy={run.statutoryCalcBy} revAt={run.statutoryRevAt} revBy={run.statutoryRevBy}>
           <div className="tbl-wrap"><table className="t rt">
-            <thead><tr><th>Staff</th><th className="r">Monthly gross</th><th className="r">Pension</th><th className="r">NHF</th><th className="r">NHIS</th><th className="r">Rent relief (yr)</th><th className="r">Taxable (yr)</th><th>Switched off</th></tr></thead>
+            <thead><tr><th>Staff</th><th className="r">Monthly gross</th><th className="r">Pension</th><th className="r">NHF</th><th className="r">NHIS</th><th className="r">Rent relief (yr)</th><th className="r">Taxable (month)</th><th className="r">Taxable (yr)</th><th>Switched off</th></tr></thead>
             <tbody>{rows.map(({ it, l, name }) => (
               <tr key={it.id}>
                 <td data-label="Staff"><b>{name}</b>{it.held && <div><Pill tone="warn">Held</Pill></div>}</td>
@@ -82,7 +82,8 @@ export default async function PayrollRunPage({ params }: { params: Promise<{ per
                 <td data-label="NHF" className="r">{money(it.nhfKobo)}</td>
                 <td data-label="NHIS" className="r">{money(it.nhisKobo)}</td>
                 <td data-label="Rent relief" className="r">{money(l.statutory.rentRelief)}</td>
-                <td data-label="Taxable" className="r">{money(l.statutory.taxable)}</td>
+                <td data-label="Taxable (month)" className="r">{money(Math.round(l.statutory.taxable / 12))}</td>
+                <td data-label="Taxable (year)" className="r">{money(l.statutory.taxable)}</td>
                 <td data-label="Switched off">
                   {l.statutory.off.length ? <span className="small">{l.statutory.off.map((k) => `${k.toUpperCase()}: ${l.overrides[k as keyof Overrides]?.reason}`).join("; ")}</span> : <span className="small muted">—</span>}
                   {canRun && pos < 4 && (
@@ -104,11 +105,12 @@ export default async function PayrollRunPage({ params }: { params: Promise<{ per
 
         <Stage n={2} title="Tax (PAYE)" done={pos >= 2} calcAt={run.taxCalcAt} calcBy={run.taxCalcBy} revAt={run.taxRevAt} revBy={run.taxRevBy}>
           <div className="tbl-wrap"><table className="t rt">
-            <thead><tr><th>Staff</th><th className="r">Taxable (yr)</th><th className="r">Tax (yr)</th><th className="r">Tax (month)</th><th className="r">Pay after tax</th></tr></thead>
+            <thead><tr><th>Staff</th><th className="r">Taxable (month)</th><th className="r">Taxable (yr)</th><th className="r">Tax (yr)</th><th className="r">Tax (month)</th><th className="r">Pay after tax</th></tr></thead>
             <tbody>{rows.map(({ it, l, name }) => (
               <tr key={it.id}>
                 <td data-label="Staff">{name}</td>
-                <td data-label="Taxable" className="r">{money(l.statutory.taxable)}</td>
+                <td data-label="Taxable (month)" className="r">{money(Math.round(l.statutory.taxable / 12))}</td>
+                <td data-label="Taxable (year)" className="r">{money(l.statutory.taxable)}</td>
                 <td data-label="Tax (yr)" className="r">{money(l.tax?.annual ?? 0)}</td>
                 <td data-label="Tax (month)" className="r"><b>{money(it.taxKobo)}</b></td>
                 <td data-label="After tax" className="r">{money(it.grossKobo - it.pensionKobo - it.nhfKobo - it.nhisKobo - it.taxKobo)}</td>
