@@ -5,7 +5,7 @@ import { Icon } from "@/shared/ui/icon";
 import { ROLE_DEFS, roleName } from "@/modules/access-control";
 import { requireStaff } from "@/modules/auth";
 import { inviteStaffAction, listStaff, resetStaffAction, setRolesAction, setStaffStatusAction } from "@/modules/staff";
-import { InviteStaff } from "../_components";
+import { InviteStaff, RolesForm } from "../_components";
 
 export const metadata = { title: "Staff & roles" };
 
@@ -38,11 +38,7 @@ export default async function StaffPage() {
                     <td data-label="Name"><b>{s.firstName} {s.lastName}</b>{s.id === me.user.id && <span className="small muted"> (you)</span>}</td>
                     <td data-label="Email">{s.email}</td>
                     <td data-label="Roles">
-                      <ActionForm action={setRolesAction} className="row tight">
-                        <input type="hidden" name="userId" value={s.id} />
-                        {ROLE_DEFS.map((r) => <label key={r.id} className="check small"><input type="checkbox" name="roles" value={r.id} defaultChecked={roles.includes(r.id)} /> {r.name}</label>)}
-                        <SubmitButton size="sm" variant="ghost">Save</SubmitButton>
-                      </ActionForm>
+                      <RolesForm action={setRolesAction} userId={s.id} roles={ROLE_DEFS.map((r) => ({ id: r.id, name: r.name }))} current={roles} />
                     </td>
                     <td data-label="Status">{s.status === "ACTIVE" ? <Pill tone="ok">Active</Pill> : s.status === "INVITED" ? <Pill tone="info">Invited</Pill> : <Pill tone="err">Disabled</Pill>}</td>
                     <td data-label="2FA">{s.totpSecret ? <Pill tone="ok">On</Pill> : <Pill>Off</Pill>}</td>

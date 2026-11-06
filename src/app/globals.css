@@ -1215,3 +1215,9 @@ html[data-lite="1"] .hero-img{animation:none}
 .clock-switches .check span{display:flex;flex-direction:column;gap:2px}
 .clock-switches small{color:var(--muted);font-size:12.5px}
 .flag{display:inline-block;margin:2px 4px 2px 0;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:600;background:var(--warn-soft,#FEF3C7);color:var(--warn,#B45309)}
+
+/* Staff & roles: unsaved ticks are obvious */
+.roles-form{display:flex;flex-wrap:wrap;gap:6px 10px;padding:6px;border-radius:10px;border:1px solid transparent}
+.roles-form.dirty{border-color:var(--warn);background:var(--warn-soft)}
+.roles-save{flex-basis:100%;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.roles-save .small{font-weight:700;color:var(--warn)}

@@ -385,3 +385,37 @@ export function InviteStaff({ action, roles }: { action: Action; roles: { id: st
     </>
   );
 }
+
+/**
+ * The role ticks for one person. Ticks only count once saved, so as soon as they differ from what's saved a clear
+ * Save changes button and a "Not saved yet" note appear, and leaving the page asks first.
+ */
+export function RolesForm({ action, userId, roles, current }: { action: Action; userId: string; roles: { id: string; name: string }[]; current: string[] }) {
+  const [saved, setSaved] = useState(current);
+  const [ticked, setTicked] = useState(current);
+  const dirty = saved.length !== ticked.length || saved.some((r) => !ticked.includes(r));
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
+  return (
+    <ActionForm action={action} className={`roles-form${dirty ? " dirty" : ""}`} onDone={(r) => { if (r.ok) setSaved(ticked); }}>
+      <input type="hidden" name="userId" value={userId} />
+      {roles.map((r) => (
+        <label key={r.id} className="check small">
+          <input type="checkbox" name="roles" value={r.id} autoComplete="off" checked={ticked.includes(r.id)}
+            onChange={(e) => setTicked(e.target.checked ? [...ticked, r.id] : ticked.filter((x) => x !== r.id))} /> {r.name}
+        </label>
+      ))}
+      {dirty && (
+        <div className="roles-save">
+          <span className="small" role="status">Not saved yet</span>
+          <SubmitButton size="sm" variant="primary">Save changes</SubmitButton>
+          <button type="button" className="btn ghost sm" onClick={() => setTicked(saved)}>Undo</button>
+        </div>
+      )}
+    </ActionForm>
+  );
+}
