@@ -23,7 +23,6 @@ export default async function PayrollSettingsPage() {
           <legend>Statutory deductions (stage 1)</legend>
           <div className="grid g3">
             <Pct id="pensionPct" label="Pension (employee)" value={r.pensionPct} hint="% of annual gross" />
-            <Pct id="pensionEmployerPct" label="Pension (employer)" value={r.pensionEmployerPct} hint="% (on the remittance file only)" />
             <Pct id="nhfPct" label="NHF" value={r.nhfPct} hint="% of basic salary" />
             <Pct id="basicPctOfGross" label="Basic salary" value={r.basicPctOfGross} hint="% of gross (100 = gross is basic)" />
             <Pct id="nhisPct" label="NHIS / NHIA (employee)" value={r.nhisPct} hint="% of annual gross; 0 = not deducted" />

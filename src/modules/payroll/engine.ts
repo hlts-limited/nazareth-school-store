@@ -6,7 +6,7 @@ export type TaxBand = { upToNaira: number | null; ratePct: number }; // upTo = t
 export type PayrollRates = {
   /** Employee pension, % of annual gross (the brief); the Pension Reform Act base is an open question */
   pensionPct: number;
-  /** Employer pension, % (shown on remittance files; not deducted from pay) */
+  /** Employer pension, % (shown on remittance files; not deducted from pay). Fixed: not on the rates form */
   pensionEmployerPct: number;
   /** NHF, % of basic salary */
   nhfPct: number;

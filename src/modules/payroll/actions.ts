@@ -93,7 +93,7 @@ export async function saveRatesAction(_: ActionResult, form: FormData): Promise<
   return runAction(async () => {
     const v = await staffFor("payroll.run");
     const d = parseForm(z.object({
-      pensionPct: zPct, pensionEmployerPct: zPct, nhfPct: zPct, basicPctOfGross: zPct, nhisPct: zPct, rentReliefPct: zPct, rentReliefCapNaira: zMoney("Enter the cap"),
+      pensionPct: zPct, nhfPct: zPct, basicPctOfGross: zPct, nhisPct: zPct, rentReliefPct: zPct, rentReliefCapNaira: zMoney("Enter the cap"),
       latePenaltyNaira: zMoney("Enter the amount per late day"), absenceRule: z.enum(["dayPay", "fixed"]), absencePenaltyNaira: zMoney("Enter the amount per day"), maxPenaltyPct: zPct,
     }), form);
     // Tax bands come as band-top-N / band-rate-N rows; the last has no top
