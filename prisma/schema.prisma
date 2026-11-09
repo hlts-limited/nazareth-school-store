@@ -162,6 +162,7 @@ model Guardian {
   pupil        Pupil   @relation(fields: [pupilId], references: [id], onDelete: Cascade)
 
   @@id([parentId, pupilId])
+  @@index([pupilId]) // a pupil's parents
 }
 
 // ---------- Catalogue & stock ----------
@@ -228,6 +229,7 @@ model ItemClass {
   class        Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
 
   @@id([itemId, classId])
+  @@index([classId]) // the shop lists a class's items
 }
 
 // Every item has at least one variant ("Standard"); sized items have one per size.
@@ -244,6 +246,7 @@ model ItemVariant {
   movements     StockMovement[]
   lines         OrderLine[]
   cartItems     CartItem[]
+  @@index([itemId]) // an item's sizes
 }
 
 enum StockMovementType {
@@ -369,6 +372,7 @@ model OrderLine {
 
   @@index([orderId])
   @@index([pupilId])
+  @@index([variantId]) // orders holding a size (stock)
 }
 
 model OrderEvent {
@@ -424,6 +428,7 @@ model Receipt {
   uploadedAt    DateTime @default(now())
 
   @@index([sha256])
+  @@index([paymentId]) // a payment's receipts
 }
 
 enum InvoiceStatus {
@@ -451,6 +456,7 @@ model Pickup {
   itemCount       Int
   handedOutById   String
   createdAt       DateTime @default(now())
+  @@index([orderId]) // an order's pick-ups
 }
 
 // ---------- Wallet ----------

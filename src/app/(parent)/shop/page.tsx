@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { naira } from "@/shared/lib/format";
-import { Avatar, Card, Empty, Note, PageHeader } from "@/shared/ui/primitives";
+import { Avatar, Card, Empty, Note, PageHeader, Pager } from "@/shared/ui/primitives";
 import { ActionForm, SearchParamInput, SubmitButton } from "@/shared/ui/client";
 import { requireParentActor } from "@/modules/auth";
 import { addBooklistAction, addToCartAction, booklistProgress, getCart } from "@/modules/cart";
@@ -10,15 +10,16 @@ import { AddToCart } from "../_components";
 
 export const metadata = { title: "Shop" };
 
-export default async function ShopPage({ searchParams }: { searchParams: Promise<{ child?: string; cat?: string; q?: string }> }) {
+export default async function ShopPage({ searchParams }: { searchParams: Promise<{ child?: string; cat?: string; q?: string; page?: string }> }) {
   const sp = await searchParams;
   const { parent, readOnly } = await requireParentActor();
   const kids = await childrenOf(parent.id);
   if (!kids.length) return <Card><Empty title="No children linked yet">Ask the school office to link your children to your phone number.</Empty></Card>;
   const child = kids.find((k) => k.id === sp.child) ?? kids[0];
-  const [cats, items, cart, progress] = await Promise.all([
-    categoryTree(), shopItems(child.classId, { categoryId: sp.cat, q: sp.q }), getCart(parent.id), booklistProgress(child.id, child.classId),
+  const [cats, shop, cart, progress] = await Promise.all([
+    categoryTree(), shopItems(child.classId, { categoryId: sp.cat, q: sp.q, page: Number(sp.page) || 1 }), getCart(parent.id), booklistProgress(child.id, child.classId),
   ]);
+  const items = shop.items;
   const inCart = (itemId: string) => cart.lines.filter((l) => l.pupilId === child.id && l.variant.itemId === itemId).reduce((a, l) => a + l.qty, 0);
   const cartItemIds = new Set(cart.lines.filter((l) => l.pupilId === child.id).map((l) => l.variant.itemId));
   const missing = progress.required.filter((r) => !progress.bought.has(r.id) && !cartItemIds.has(r.id));
@@ -95,6 +96,7 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
                 })}
               </div>
             )}
+            <Pager page={shop.page} pages={shop.pages} href={(n) => qs({ page: String(n) })} total={shop.total} />
           </div>
           <aside className="mini-cart card stack">
             <div className="row between"><h3>Your cart</h3>{cart.count > 0 && <span className="pill plain">{cart.count} items</span>}</div>

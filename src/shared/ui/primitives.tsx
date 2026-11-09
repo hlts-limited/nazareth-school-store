@@ -106,3 +106,17 @@ export function Bars({ rows, color }: { rows: [string, number, string][]; color?
     </div>
   );
 }
+
+/** Previous / Next for a paged list. `href(n)` gives the address of page n. */
+export function Pager({ page, pages, href, total, noun }: { page: number; pages: number; href: (n: number) => string; total?: number; noun?: string }) {
+  if (pages <= 1) return null;
+  return (
+    <div className="row between">
+      <span className="small muted">Page {page} of {pages}{total !== undefined ? ` · ${total.toLocaleString()} ${noun ?? "items"}` : ""}</span>
+      <div className="pager">
+        {page > 1 ? <Link className="btn sm" href={href(page - 1)}><Icon name="back" size="sm" /> Previous</Link> : <span className="btn sm is-disabled"><Icon name="back" size="sm" /> Previous</span>}
+        {page < pages ? <Link className="btn sm" href={href(page + 1)}>Next <Icon name="chev" size="sm" /></Link> : <span className="btn sm is-disabled">Next <Icon name="chev" size="sm" /></span>}
+      </div>
+    </div>
+  );
+}

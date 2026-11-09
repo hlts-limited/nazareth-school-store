@@ -38,7 +38,9 @@ async function categoryIds(categoryId: string) {
   return [categoryId, ...kids.map((k) => k.id)];
 }
 
-export async function listItems(opts: { categoryId?: string; q?: string; classId?: string; activeOnly?: boolean; forSale?: boolean; take?: number }) {
+type ItemFilter = { categoryId?: string; q?: string; classId?: string; activeOnly?: boolean; forSale?: boolean };
+
+async function itemsWhere(opts: ItemFilter): Promise<Prisma.ItemWhereInput> {
   const where: Prisma.ItemWhereInput = {};
   if (opts.activeOnly) where.isActive = true;
   // What parents can buy: books inside a pile are only sold as that pile
@@ -46,7 +48,25 @@ export async function listItems(opts: { categoryId?: string; q?: string; classId
   if (opts.categoryId) where.categoryId = { in: await categoryIds(opts.categoryId) };
   if (opts.classId) where.classes = { some: { classId: opts.classId } };
   if (opts.q?.trim()) where.OR = [{ name: { contains: opts.q.trim(), mode: "insensitive" } }, { sku: { contains: opts.q.trim(), mode: "insensitive" } }];
-  return db.item.findMany({ where, include: itemInclude, orderBy: [{ category: { sortOrder: "asc" } }, { name: "asc" }], take: opts.take ?? 300 });
+  return where;
+}
+
+/** A short list (e.g. the pupil's page). For long lists use pageItems. */
+export async function listItems(opts: ItemFilter & { take?: number }) {
+  return db.item.findMany({ where: await itemsWhere(opts), include: itemInclude, orderBy: [{ category: { sortOrder: "asc" } }, { name: "asc" }, { id: "asc" }], take: opts.take ?? 300 });
+}
+
+export const ITEMS_PER_PAGE = 50;
+
+/** One page of items, counted in the database, so the list stays quick with thousands of items */
+export async function pageItems(opts: ItemFilter & { page?: number; perPage?: number }) {
+  const where = await itemsWhere(opts);
+  const per = opts.perPage ?? ITEMS_PER_PAGE;
+  const total = await db.item.count({ where });
+  const pages = Math.max(1, Math.ceil(total / per));
+  const page = Math.min(Math.max(1, opts.page ?? 1), pages);
+  const rows = await db.item.findMany({ where, include: itemInclude, orderBy: [{ category: { sortOrder: "asc" } }, { name: "asc" }, { id: "asc" }], take: per, skip: (page - 1) * per });
+  return { rows, total, page, pages };
 }
 
 export const getItem = (id: string) => db.item.findUnique({ where: { id }, include: itemInclude });
@@ -62,12 +82,27 @@ export const pileStock = (p: PileLike) => {
   return { inStock, total: p.pileParts.length };
 };
 
-/** Items for a pupil's class, required ones first */
-export async function shopItems(classId: string, opts: { categoryId?: string; q?: string }) {
-  const items = await listItems({ classId, activeOnly: true, forSale: true, categoryId: opts.categoryId, q: opts.q });
-  return items
-    .map((it) => ({ ...it, compulsory: it.classes.find((c) => c.classId === classId)?.isCompulsory ?? false }))
-    .sort((a, b) => Number(b.compulsory) - Number(a.compulsory) || a.name.localeCompare(b.name));
+export const SHOP_PER_PAGE = 48;
+
+/**
+ * Items for a pupil's class: the required ones (a short list) at the top of page 1, then the rest a page at a time,
+ * so the shop stays quick however many items the store has.
+ */
+export async function shopItems(classId: string, opts: { categoryId?: string; q?: string; page?: number }) {
+  const base = await itemsWhere({ classId, activeOnly: true, forSale: true, categoryId: opts.categoryId, q: opts.q });
+  const requiredWhere: Prisma.ItemWhereInput = { AND: [base, { classes: { some: { classId, isCompulsory: true } } }] };
+  const optionalWhere: Prisma.ItemWhereInput = { AND: [base, { classes: { none: { classId, isCompulsory: true } } }] };
+  const total = await db.item.count({ where: optionalWhere });
+  const pages = Math.max(1, Math.ceil(total / SHOP_PER_PAGE));
+  const page = Math.min(Math.max(1, opts.page ?? 1), pages);
+  const [required, optional] = await Promise.all([
+    page === 1 ? db.item.findMany({ where: requiredWhere, include: itemInclude, orderBy: [{ name: "asc" }, { id: "asc" }] }) : Promise.resolve([]),
+    db.item.findMany({ where: optionalWhere, include: itemInclude, orderBy: [{ name: "asc" }, { id: "asc" }], take: SHOP_PER_PAGE, skip: (page - 1) * SHOP_PER_PAGE }),
+  ]);
+  return {
+    items: [...required.map((it) => ({ ...it, compulsory: true })), ...optional.map((it) => ({ ...it, compulsory: false }))],
+    page, pages, total: total + (page === 1 ? required.length : 0),
+  };
 }
 
 export async function requiredItems(classId: string) {

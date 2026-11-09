@@ -1,18 +1,20 @@
 import Link from "next/link";
 import { naira } from "@/shared/lib/format";
-import { Card, Empty, LinkButton, PageHeader, Pill } from "@/shared/ui/primitives";
+import { Card, Empty, LinkButton, PageHeader, Pager, Pill } from "@/shared/ui/primitives";
 import { SearchParamInput } from "@/shared/ui/client";
 import { requireStaff } from "@/modules/auth";
-import { categoryTree, ItemArt, itemAvailable, itemLook, listClasses, listItems, pileStock } from "@/modules/catalogue";
+import { categoryTree, ItemArt, itemAvailable, itemLook, listClasses, pageItems, pileStock } from "@/modules/catalogue";
 import { recordStockMovement } from "@/modules/inventory";
 import { StockDialog } from "../../_components";
 
 export const metadata = { title: "Items" };
 
-export default async function ItemsPage({ searchParams }: { searchParams: Promise<{ cat?: string; q?: string }> }) {
+export default async function ItemsPage({ searchParams }: { searchParams: Promise<{ cat?: string; q?: string; page?: string }> }) {
   await requireStaff("catalogue.manage");
   const sp = await searchParams;
-  const [cats, items, classes] = await Promise.all([categoryTree(), listItems({ categoryId: sp.cat, q: sp.q }), listClasses()]);
+  const [cats, res, classes] = await Promise.all([categoryTree(), pageItems({ categoryId: sp.cat, q: sp.q, page: Number(sp.page) || 1 }), listClasses()]);
+  const items = res.rows;
+  const pageHref = (n: number) => `/admin/store/items?${new URLSearchParams({ ...(sp.cat ? { cat: sp.cat } : {}), ...(sp.q ? { q: sp.q } : {}), page: String(n) })}`;
   const total = cats.reduce((a, c) => a + c.totalItems, 0);
   return (
     <>
@@ -54,6 +56,7 @@ export default async function ItemsPage({ searchParams }: { searchParams: Promis
             </table></div>
           )}
         </Card>
+        <Pager page={res.page} pages={res.pages} href={pageHref} total={res.total} />
       </div>
     </>
   );
