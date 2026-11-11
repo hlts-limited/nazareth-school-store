@@ -4,6 +4,7 @@ import { Empty, PageHeader } from "@/shared/ui/primitives";
 import { requireStaff } from "@/modules/auth";
 import { listRuns, periodLabel, startRunAction } from "@/modules/payroll";
 import { RunStatus } from "./_ui";
+import { PaystackStatus } from "./_paystack";
 
 export const metadata = { title: "Payroll" };
 
@@ -15,7 +16,7 @@ export default async function PayrollRunsPage() {
   const canRun = v.permissions.has("payroll.run");
   return (
     <>
-      <PageHeader title="Payroll" sub="Each month: the Bursar calculates and reviews three stages (statutory, tax, penalties), then the Proprietor approves and pays." />
+      <PageHeader title="Payroll" sub="Each month: the Bursar calculates and reviews three stages (statutory, tax, penalties), then the Accountant approves and the Super Admin pays." actions={<PaystackStatus />} />
       <div className="stack">
         {canRun && !runs.some((r) => r.period === thisMonth) && (
           <ActionForm action={startRunAction} className="card row tight">

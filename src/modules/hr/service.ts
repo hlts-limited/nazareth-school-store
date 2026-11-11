@@ -34,7 +34,7 @@ export type EmployeeInput = {
 };
 
 /** Roles a staff record can be given from Staff records (the back-office roles stay on Staff & roles). */
-export const STAFF_APP_ROLES = ["staff", "head", "hr", "bursar", "proprietor"] as const;
+export const STAFF_APP_ROLES = ["staff", "head", "hr", "bursar"] as const;
 
 async function nextStaffCode() {
   const last = await db.employee.findFirst({ where: { staffCode: { startsWith: "NS-" } }, orderBy: { staffCode: "desc" }, select: { staffCode: true } });
@@ -210,7 +210,7 @@ export async function saveStaffDocument(employeeId: string, kind: StaffDocKind, 
 
 export async function reviewStaffDocument(docId: string, approve: boolean, note: string | undefined, by: string) {
   const doc = await db.employeeDocument.findUniqueOrThrow({ where: { id: docId }, include: { employee: true } });
-  if (doc.employee.userId === by) throw new UserError("You can't review your own documents. Ask another member of HR or the Proprietor.");
+  if (doc.employee.userId === by) throw new UserError("You can't review your own documents. Ask another member of HR or the Super Admin.");
   if (!approve && !note) throw new UserError("Say what's wrong so they can fix it.", { note: "Required when rejecting" });
   const updated = await db.employeeDocument.update({ where: { id: docId }, data: { status: approve ? "APPROVED" : "REJECTED", note: approve ? null : note, reviewedById: by, reviewedAt: new Date() } });
   await notify(doc.employee.userId, approve ? "Document approved" : "Document needs attention",
@@ -245,7 +245,7 @@ export async function setBankDetails(employeeId: string, input: { bankCode: stri
 /** The Bursar approves or rejects bank details. Nobody approves their own. */
 export async function reviewBank(employeeId: string, approve: boolean, note: string | undefined, by: string) {
   const emp = await db.employee.findUniqueOrThrow({ where: { id: employeeId } });
-  if (emp.userId === by) throw new UserError("You can't approve your own bank details. Another Bursar or the Proprietor must do it.");
+  if (emp.userId === by) throw new UserError("You can't approve your own bank details. Another Bursar or the Super Admin must do it.");
   if (emp.bankStatus !== "PENDING") throw new UserError("There are no bank details waiting for a decision.");
   if (!approve && !note) throw new UserError("Say what's wrong so they can fix it.", { note: "Required when rejecting" });
   const updated = await db.employee.update({ where: { id: employeeId }, data: { bankStatus: approve ? "VERIFIED" : "REJECTED", bankNote: approve ? null : note, bankReviewedById: by, bankReviewedAt: new Date() } });

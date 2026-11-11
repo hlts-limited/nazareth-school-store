@@ -13,7 +13,7 @@ export { onlinePaymentsReady as paystackReady } from "@/shared/config/env";
 export async function initializeTransaction(opts: { email: string; amountNaira: number; reference: string; callbackUrl: string; metadata: Record<string, unknown> }) {
   if (paystackMock()) return { authorizationUrl: `${opts.callbackUrl}?reference=${encodeURIComponent(opts.reference)}&mock=1` };
   const key = env().PAYSTACK_SECRET_KEY;
-  if (!key) throw new UserError("Online card payment isn't available yet. Please pay by bank transfer or at the school office.");
+  if (!key) throw new UserError("Online payment isn't available yet. Please try again later, or contact the school.");
   const r = await fetch(`${API}/transaction/initialize`, {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },

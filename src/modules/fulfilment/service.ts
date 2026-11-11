@@ -75,14 +75,16 @@ export async function lineNowReady(lineId: string, actorName: string) {
   const l = await db.orderLine.findUnique({ where: { id: lineId }, include: { variant: true, order: true } });
   if (!l || l.status !== "AWAITING_STOCK") throw new UserError("That item isn't awaiting stock.");
   if (l.variant.onHand < l.qty) throw new UserError("Restock this item first.");
+  // Parents see the pile, not the books in it
+  const shown = l.pileName ? `More of ${l.pileName}` : l.itemName;
   await db.$transaction(async (tx) => {
     // A pile book that was ordered while out of stock takes its stock now
     if (!l.reserved && !(await reserve(tx, l.variantId, l.qty))) throw new UserError("That stock is already promised to other orders. Restock more first.");
     await tx.orderLine.update({ where: { id: lineId }, data: { status: "READY", reserved: true } });
     if (l.order.status === "PARTIALLY_HANDED_OUT" || l.order.status === "READY") await tx.order.update({ where: { id: l.orderId }, data: { status: l.order.status } });
-    await addEvent(tx, l.orderId, `${l.itemName} arrived and is ready`, actorName);
+    await addEvent(tx, l.orderId, `${shown} arrived and is ready`, actorName);
   });
-  await notify(l.order.parentId, `More items ready on ${orderNo(l.order.number)}`, `${l.itemName} for order ${orderNo(l.order.number)} is now ready. Use pick-up code ${l.order.pickupCode}.`, ["whatsapp"]);
+  await notify(l.order.parentId, `More items ready on ${orderNo(l.order.number)}`, `${shown} for order ${orderNo(l.order.number)} is now ready. Use pick-up code ${l.order.pickupCode}.`, ["whatsapp"]);
 }
 
 export async function findByPickupCode(code: string) {

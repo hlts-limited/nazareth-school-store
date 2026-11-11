@@ -62,7 +62,6 @@ export function CheckoutBox({ action, subtotal, wallets, autoCancelHours, readOn
   action: Action; subtotal: number; autoCancelHours: number; readOnly: boolean; paystack?: boolean;
   wallets: { pupilId: string; name: string; balance: number; groupTotal: number }[];
 }) {
-  const [method, setMethod] = useState<"PAYSTACK" | "TRANSFER">(paystack ? "PAYSTACK" : "TRANSFER");
   const [use, setUse] = useState<Record<string, boolean>>({});
   const walletTotal = wallets.reduce((a, w) => a + (use[w.pupilId] ? Math.min(w.balance, w.groupTotal) : 0), 0);
   const toPay = subtotal - walletTotal;
@@ -76,23 +75,19 @@ export function CheckoutBox({ action, subtotal, wallets, autoCancelHours, readOn
           Use {w.name}&apos;s wallet ({n(w.balance)})
         </label>
       ))}
-      {paystack && (
-        <label className={`pay-opt ${method === "PAYSTACK" ? "on" : ""}`}>
-          <input type="radio" name="method" value="PAYSTACK" checked={method === "PAYSTACK"} onChange={() => setMethod("PAYSTACK")} />
-          <span><b>Pay online with Paystack</b><br /><span className="small muted">Card, bank app or USSD. Approved instantly.</span></span>
-        </label>
-      )}
-      <label className={`pay-opt ${method === "TRANSFER" ? "on" : ""}`}>
-        <input type="radio" name="method" value="TRANSFER" checked={method === "TRANSFER"} onChange={() => setMethod("TRANSFER")} />
-        <span><b>Direct bank transfer</b><br /><span className="small muted">Transfer to the school account, then upload your receipt.</span></span>
-      </label>
+      <input type="hidden" name="method" value="PAYSTACK" />
+      <div className="pay-opt on">
+        <Icon name="card" size="sm" />
+        <span><b>Pay online with Paystack</b><br /><span className="small muted">Card, bank app, transfer or USSD. Approved instantly.</span></span>
+      </div>
+      {!paystack && toPay > 0 && <p className="small" style={{ color: "var(--err)" }}>Online payment isn&apos;t switched on yet. Please try again later.</p>}
       <div className="stack tight">
         <div className="sum-row"><span className="muted">Items</span><span>{n(subtotal)}</span></div>
         {walletTotal > 0 && <div className="sum-row"><span className="muted">Wallet</span><span style={{ color: "var(--ok)" }}>−{n(walletTotal)}</span></div>}
         <div className="sum-row total"><span>To pay</span><span>{n(toPay)}</span></div>
       </div>
-      <SubmitButton size="lg" block disabled={readOnly}>
-        {toPay === 0 ? "Pay from wallet" : method === "PAYSTACK" ? `Pay ${n(toPay)}` : "Place order and get bank details"}
+      <SubmitButton size="lg" block disabled={readOnly || (!paystack && toPay > 0)}>
+        {toPay === 0 ? "Pay from wallet" : `Pay ${n(toPay)} with Paystack`}
       </SubmitButton>
       <p className="tiny muted">Items are reserved for {autoCancelHours} hours while you pay.</p>
     </ActionForm>

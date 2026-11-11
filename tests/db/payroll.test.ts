@@ -117,20 +117,20 @@ test("approval: never by a preparer; a backup first; send back; pay with the ret
   await calcTax(run.id, bursar); await markReviewed(run.id, 2, bursar);
   await calcDefaults(run.id, bursar); await markReviewed(run.id, 3, bursar);
 
-  const proprietor = { id: "proprietor-test", name: "Proprietor Test" };
+  const accountant = { id: "accountant-test", name: "Accountant Test" };
   await assert.rejects(approveRun(run.id, bursar), /can't approve/);
   await assert.rejects(payRun(run.id, 86_200), /Approve the run/);
   const backups = await db.backup.count();
-  const approved = await approveRun(run.id, proprietor);
+  const approved = await approveRun(run.id, accountant);
   assert.equal(approved.status, "APPROVED");
   assert.equal(await db.backup.count(), backups + 1, "an encrypted backup was taken before approving");
 
-  await sendBack(run.id, "Recheck September attendance", proprietor);
+  await sendBack(run.id, "Recheck September attendance", accountant);
   assert.equal((await runByPeriod(PERIOD))!.status, "DRAFT");
   await calcStatutory(run.id, bursar); await markReviewed(run.id, 1, bursar);
   await calcTax(run.id, bursar); await markReviewed(run.id, 2, bursar);
   await calcDefaults(run.id, bursar); await markReviewed(run.id, 3, bursar);
-  await approveRun(run.id, proprietor);
+  await approveRun(run.id, accountant);
 
   await assert.rejects(payRun(run.id, 86_000), /doesn't match/);
   const paid = await payRun(run.id, 86_200);

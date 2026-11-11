@@ -42,8 +42,8 @@ export default async function CartPage() {
                     <div key={l.id} className="cart-line">
                       <ItemArt {...itemLook(it)} size="thumb" />
                       <div className="grow">
-                        <div style={{ fontWeight: 600, fontSize: 13.5 }}>{it.name} <span className="pill violet plain">{it.pileParts.length} books</span></div>
-                        <div className="small muted">{it.pileParts.map((pt) => `${pt.qty > 1 ? `${pt.qty} × ` : ""}${pt.book.name}`).join(" · ")}</div>
+                        <div style={{ fontWeight: 600, fontSize: 13.5 }}>{it.name} <span className="pill violet plain">Pile</span></div>
+                        {it.description && <div className="small muted">{it.description}</div>}
                       </div>
                       <b className="tnum hide-sm" style={{ minWidth: 78, textAlign: "right" }}>{naira(price)}</b>
                       <QtyControl action={setQtyAction} id={l.id} qty={l.qty} readOnly={readOnly} removeOnly />

@@ -44,7 +44,7 @@ export function PileForm({ action, cats, classes, books, pile }: {
             ))}
           </select><FieldError name="categoryId" /></div>
       </div>
-      <div className="field"><label htmlFor="pl-d">Description (optional)</label><input className="input" id="pl-d" name="description" defaultValue={pile?.description ?? ""} placeholder="Shown to parents under the pile name" /></div>
+      <div className="field"><label htmlFor="pl-d">Description parents see</label><input className="input" id="pl-d" name="description" defaultValue={pile?.description ?? ""} placeholder="e.g. All core textbooks for Primary 3, first term" /><span className="tiny muted">Parents and pupils see this, not the list of books. Only the back office sees what&apos;s in the pile.</span></div>
       <div className="field">
         <span className="lbl">Classes it&apos;s for</span>
         <div className="row tight">

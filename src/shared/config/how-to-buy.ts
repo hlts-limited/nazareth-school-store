@@ -13,8 +13,8 @@ export const HOW_TO_BUY_STEPS: [string, string][] = [
   ["Or add one item", "Tap Add under only the items you want."],
   ["Open your cart", "Tap Cart at the bottom of the screen."],
   ["Check your cart", "Check each item and price. Tap × to remove one."],
-  ["Choose how to pay", "Paystack (card or bank app), or bank transfer."],
-  ["Place your order", "Bank transfer: tap Place order and get bank details. Paystack: tap Pay."],
-  ["Pay, then upload the receipt", "Transfer the exact amount, then tap Upload transfer receipt."],
+  ["Use the wallet (if any)", "Tick your child's wallet to use money already in it."],
+  ["Tap Pay with Paystack", "The red button shows the amount to pay."],
+  ["Pay on Paystack", "Pay by card, bank app, transfer or USSD. The order is approved straight away."],
   ["Follow your order", "Tap Orders to see when it is approved and ready for pick-up."],
 ];

@@ -14,7 +14,7 @@ export default async function PayPage({ params }: { params: Promise<{ no: string
   const { parent, readOnly } = await requireParentActor();
   const o = await getOrderByNo(no, parent.id);
   if (!o) notFound();
-  if (!UNPAID_STATUSES.includes(o.status) || !paystackReady()) redirect(`/orders/${orderNo(o.number)}`);  // no online payment: the order page offers bank transfer
+  if (!UNPAID_STATUSES.includes(o.status) || !paystackReady()) redirect(`/orders/${orderNo(o.number)}`);  // online payment off: the order page explains
   return (
     <div style={{ maxWidth: 520 }}>
       <PageHeader title="Pay with Paystack" sub={`Order ${orderNo(o.number)}`} />

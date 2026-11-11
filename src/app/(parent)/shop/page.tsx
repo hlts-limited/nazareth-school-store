@@ -73,19 +73,15 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
                       <span style={{ position: "relative", display: "block" }}>
                         <ItemArt {...itemLook(it)} />
                         {it.compulsory && <span className="pill ok plain" style={{ position: "absolute", top: 8, left: 8 }}>Required</span>}
-                        {ps && <span className="pill violet plain" style={{ position: "absolute", top: 8, right: 8 }}>{ps.total} books</span>}
+                        {ps && <span className="pill violet plain" style={{ position: "absolute", top: 8, right: 8 }}>Pile</span>}
                       </span>
                       <div className="pbody">
                         <div className="nm">{it.name}</div>
-                        {ps && (
-                          <details className="pile-books">
-                            <summary>What&apos;s in this pile</summary>
-                            <ul>{it.pileParts.map((pt) => <li key={pt.id}>{pt.qty > 1 ? `${pt.qty} × ` : ""}{pt.book.name}</li>)}</ul>
-                          </details>
-                        )}
+                        {/* Parents see the pile's description; only the back office sees which books are in it */}
+                        {ps && it.description && <p className="small muted pile-desc">{it.description}</p>}
                         <div className="row between">
                           <span className="pr">{naira(it.price)}</span>
-                          {ps ? (ps.inStock < ps.total && <span className="stock-low" title="Books not in stock yet are packed as soon as they arrive">{ps.inStock} of {ps.total} in stock</span>)
+                          {ps ? (ps.inStock < ps.total && <span className="stock-low" title="Anything not in stock yet is packed as soon as it arrives">Some to follow</span>)
                             : avail <= 0 ? <span className="stock-out">Out of stock</span> : avail <= 5 ? <span className="stock-low">Only {avail} left</span> : null}
                         </div>
                         <AddToCart action={addToCartAction} pupilId={child.id} childName={child.firstName} inCart={inCart(it.id)} readOnly={readOnly} pile={!!ps}

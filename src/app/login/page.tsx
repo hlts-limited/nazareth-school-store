@@ -19,8 +19,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   return (
     <LoginShell
       lines={["Books and uniforms", "for every child,", "in one checkout."]}
-      text="Shop your children's booklists, pay by card or bank transfer, and know exactly when to come for pick-up."
-      feats={[["users", "All your children on one dashboard"], ["card", "Paystack or direct bank transfer"], ["box", "Track every order to pick-up"]]}
+      text="Shop your children's booklists, pay securely online with Paystack, and know exactly when to come for pick-up."
+      feats={[["users", "All your children on one dashboard"], ["card", "Pay online with Paystack"], ["box", "Track every order to pick-up"]]}
       sub="Choose who is signing in."
       ended={await endedSessionReason()}
       footer={<>School staff? <Link href="/staff/login">Staff sign-in</Link></>}

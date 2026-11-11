@@ -5,7 +5,7 @@ import { employeeOwner, staffFormPdf } from "@/modules/hr";
 
 /**
  * A staff member's filled-in record as a PDF, with their passport photograph. For the person themselves, or anyone who
- * can see all staff records (HR, Bursar, Proprietor, Super Admin). Head teachers can't: their view leaves out tax
+ * can see all staff records (HR, Bursar, Super Admin). Head teachers can't: their view leaves out tax
  * details. Salary and bank lines follow the viewer's permissions. Every download is logged. ?print=1 opens it to print.
  */
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {

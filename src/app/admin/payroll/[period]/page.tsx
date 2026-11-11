@@ -8,6 +8,7 @@ import { requireStaff } from "@/modules/auth";
 import { calculateAction, markReviewedAction, overrideAction, periodLabel, runByPeriod, runTotals, STAGE_ORDER, type Overrides } from "@/modules/payroll";
 import { money, RunStatus } from "../_ui";
 import { ApproveAndPay } from "./_approve";
+import { PaystackStatus } from "../_paystack";
 
 export const metadata = { title: "Payroll run" };
 export const dynamic = "force-dynamic";
@@ -42,7 +43,7 @@ export default async function PayrollRunPage({ params }: { params: Promise<{ per
         {canRun && open && (
           <div className="row tight pad">
             <ActionForm action={calculateAction}><input type="hidden" name="runId" value={run.id} /><input type="hidden" name="stage" value={n} /><SubmitButton size="sm" variant="default" icon="refresh">Calculate</SubmitButton></ActionForm>
-            {calcAt && <ActionForm action={markReviewedAction}><input type="hidden" name="runId" value={run.id} /><input type="hidden" name="stage" value={n} /><SubmitButton size="sm" icon="check" confirmText={n === 3 ? "Mark stage 3 reviewed and send this payroll to the Proprietor for approval?" : undefined}>Mark reviewed</SubmitButton></ActionForm>}
+            {calcAt && <ActionForm action={markReviewedAction}><input type="hidden" name="runId" value={run.id} /><input type="hidden" name="stage" value={n} /><SubmitButton size="sm" icon="check" confirmText={n === 3 ? "Mark stage 3 reviewed and send this payroll to the Accountant for approval?" : undefined}>Mark reviewed</SubmitButton></ActionForm>}
           </div>
         )}
         {canRun && pos > n - 1 && pos < 4 && <p className="pad small muted">To change this stage, press Calculate again on it: every later stage is reset.</p>}
@@ -56,9 +57,9 @@ export default async function PayrollRunPage({ params }: { params: Promise<{ per
   return (
     <div style={{ maxWidth: 1200 }}>
       <PageHeader title={`Payroll: ${periodLabel(run.period)}`} sub={<RunStatus s={run.status} />}
-        actions={<Link className="btn" href="/admin/payroll"><Icon name="back" size="sm" />All runs</Link>} />
+        actions={<><PaystackStatus /><Link className="btn" href="/admin/payroll"><Icon name="back" size="sm" />All runs</Link></>} />
       <div className="stack">
-        {run.sentBackNote && pos < 4 && <Note tone="warn" icon="alert">Sent back by the Proprietor: {run.sentBackNote}</Note>}
+        {run.sentBackNote && pos < 4 && <Note tone="warn" icon="alert">Sent back by the Accountant: {run.sentBackNote}</Note>}
         {run.items.length > 0 && (
           <div className="grid g4">
             <Kpi label="Staff" value={`${t.staff}${t.held ? ` (${t.held} held)` : ""}`} />

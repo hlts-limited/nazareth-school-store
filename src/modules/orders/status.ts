@@ -65,3 +65,13 @@ export function settle(due: number, received: number): { outcome: "approved" | "
   if (received >= due) return { outcome: "approved", applied: due, excess: received - due, balance: 0 };
   return { outcome: "part", applied: received, excess: 0, balance: due - received };
 }
+
+/** One status for a pile, from the statuses of the books in it (parents see the pile, not the books) */
+export function pileStatus(statuses: LineStatus[]): { label: string; tone: Tone } {
+  const live = statuses.filter((s) => s !== "CANCELLED");
+  if (!live.length) return LINE_STATUS.CANCELLED;
+  if (live.every((s) => s === live[0])) return LINE_STATUS[live[0]];
+  if (live.every((s) => s === "READY" || s === "HANDED_OUT")) return { label: "Partly collected", tone: "ok" };
+  if (live.some((s) => s === "AWAITING_STOCK")) return { label: "Partly ready, rest to follow", tone: "warn" };
+  return { label: "Packing", tone: "violet" };
+}

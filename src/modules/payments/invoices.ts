@@ -166,12 +166,24 @@ export async function orderInvoicePdf(orderId: string) {
   page.drawRectangle({ x: 36, y: y - 5, width: 523, height: 18, color: RED });
   ["Pupil", "Item", "Qty", "Price", "Amount"].forEach((h, i) => draw(page, h, { x: [40, 150, 390, 430, 500][i], y, size: 9, font: bold, color: rgb(1, 1, 1) }));
   y -= 20;
+  // A pile is one row (its name and price); the books in it aren't listed
+  const rows: { pupil: string; name: string; qty: number; unit: number }[] = [];
+  const pileRow = new Map<string, (typeof rows)[number]>();
   for (const l of o.lines) {
-    draw(page, textFit(font, `${l.pupil.firstName} (${l.pupil.class.name})`, 9, 105), { x: 40, y, size: 9, font, color: INK });
-    draw(page, textFit(font, l.itemName + (l.variantLabel !== "Standard" ? ` (${l.variantLabel})` : "") + (l.pileName ? ` · ${l.pileName}` : ""), 9, 235), { x: 150, y, size: 9, font, color: INK });
+    const pupil = `${l.pupil.firstName} (${l.pupil.class.name})`;
+    if (l.pileItemId) {
+      const key = `${l.pupilId}:${l.pileItemId}`;
+      const r = pileRow.get(key);
+      if (r) r.unit += l.unitPrice * l.qty;
+      else { const nr = { pupil, name: l.pileName ?? "Pile", qty: 1, unit: l.unitPrice * l.qty }; pileRow.set(key, nr); rows.push(nr); }
+    } else rows.push({ pupil, name: l.itemName + (l.variantLabel !== "Standard" ? ` (${l.variantLabel})` : ""), qty: l.qty, unit: l.unitPrice });
+  }
+  for (const l of rows) {
+    draw(page, textFit(font, l.pupil, 9, 105), { x: 40, y, size: 9, font, color: INK });
+    draw(page, textFit(font, l.name, 9, 235), { x: 150, y, size: 9, font, color: INK });
     draw(page, String(l.qty), { x: 390, y, size: 9, font, color: INK });
-    draw(page, pdfMoney(l.unitPrice), { x: 430, y, size: 9, font, color: INK });
-    draw(page, pdfMoney(l.unitPrice * l.qty), { x: 500, y, size: 9, font, color: INK });
+    draw(page, pdfMoney(l.unit), { x: 430, y, size: 9, font, color: INK });
+    draw(page, pdfMoney(l.unit * l.qty), { x: 500, y, size: 9, font, color: INK });
     y -= 15;
     if (y < 120) break;
   }

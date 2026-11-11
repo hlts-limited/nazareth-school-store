@@ -6,8 +6,9 @@ import { Avatar, Card, CardHeader, Note, PageHeader, Pill } from "@/shared/ui/pr
 import { ActionForm, CopyButton, SubmitButton } from "@/shared/ui/client";
 import { Icon } from "@/shared/ui/icon";
 import { SCHOOL } from "@/shared/config/school";
+import { db } from "@/shared/lib/db";
 import { requireParentActor } from "@/modules/auth";
-import { amountDue, cancelOrderAction, getOrderByNo, isPaid, LINE_STATUS, ORDER_STATUS, stepIndex, UNPAID_STATUSES } from "@/modules/orders";
+import { amountDue, cancelOrderAction, getOrderByNo, isPaid, LINE_STATUS, ORDER_STATUS, pileStatus, stepIndex, UNPAID_STATUSES } from "@/modules/orders";
 import { payFromWalletAction, paystackReady, startPaystackAction, uploadReceiptAction } from "@/modules/payments";
 import { getSettings } from "@/modules/settings";
 import { balances } from "@/modules/wallet";
@@ -40,6 +41,8 @@ export default async function OrderPage({ params }: { params: Promise<{ no: stri
   for (const l of o.lines) byKid.set(l.pupilId, [...(byKid.get(l.pupilId) ?? []), l]);
   const qr = o.pickupCode && (o.status === "READY" || o.status === "PARTIALLY_HANDED_OUT") ? await QRCode.toDataURL(`NAZ-PICKUP:${o.pickupCode}`, { margin: 1, width: 192 }) : null;
   const unpaid = UNPAID_STATUSES.includes(o.status);
+  const pileIds = [...new Set(o.lines.flatMap((l) => (l.pileItemId ? [l.pileItemId] : [])))];
+  const pileDesc = new Map((pileIds.length ? await db.item.findMany({ where: { id: { in: pileIds } }, select: { id: true, description: true } }) : []).map((p) => [p.id, p.description ?? ""]));
 
   const transferBox = (
     <div className="bank-box">
@@ -79,14 +82,14 @@ export default async function OrderPage({ params }: { params: Promise<{ no: stri
           {o.status === "PENDING_PAYMENT" && o.method === "TRANSFER" && (<>{transferBox}<div className="row"><UploadReceipt action={uploadReceiptAction} orderId={o.id} due={due} readOnly={readOnly} today={isoDay()} /></div></>)}
           {o.status === "PENDING_PAYMENT" && o.method === "PAYSTACK" && (paystackReady() ? (
             <ActionForm action={startPaystackAction} className="row"><input type="hidden" name="orderId" value={o.id} /><SubmitButton size="lg" disabled={readOnly}>Pay {naira(due)} with Paystack</SubmitButton></ActionForm>
-          ) : (<><Note icon="info">Online card payment isn&apos;t available at the moment. Please pay by bank transfer and upload your receipt.</Note>{transferBox}<div className="row"><UploadReceipt action={uploadReceiptAction} orderId={o.id} due={due} readOnly={readOnly} today={isoDay()} /></div></>))}
+          ) : <Note icon="info">Online payment isn&apos;t available at the moment. Please try again later, or contact the school.</Note>)}
           {o.status === "PAYMENT_REJECTED" && (<><Note tone="err" icon="alert"><b>Receipt not accepted:</b> {o.rejectReason}</Note>{transferBox}<div className="row"><UploadReceipt action={uploadReceiptAction} orderId={o.id} due={due} readOnly={readOnly} today={isoDay()} label="Upload a new receipt" /></div></>)}
           {o.status === "PART_PAID" && (
             <>
               <Note tone="err" icon="alert"><b>Balance due: {naira(due)}.</b> We received {naira(o.amountReceived)} of {naira(o.subtotal - o.walletUsed)}. Your items stay reserved while you pay the balance; if it isn&apos;t paid within {settings.autoCancelHours} hours, the order is cancelled and the money received goes to your child&apos;s wallet.</Note>
               <div className="row">
                 {paystackReady() && <ActionForm action={startPaystackAction} className="inline-form"><input type="hidden" name="orderId" value={o.id} /><SubmitButton icon="card" disabled={readOnly}>Pay {naira(due)} with Paystack</SubmitButton></ActionForm>}
-                <UploadReceipt action={uploadReceiptAction} orderId={o.id} due={due} readOnly={readOnly} today={isoDay()} label="Upload transfer receipt" />
+                {o.method === "TRANSFER" && <UploadReceipt action={uploadReceiptAction} orderId={o.id} due={due} readOnly={readOnly} today={isoDay()} label="Upload transfer receipt" />}
               </div>
             </>
           )}
@@ -115,18 +118,17 @@ export default async function OrderPage({ params }: { params: Promise<{ no: stri
                     <Pill tone={LINE_STATUS[l.status].tone}>{LINE_STATUS[l.status].label}</Pill>
                   </div>
                 ))}
-                {/* Pile books are listed under their pile, each with its own status */}
+                {/* A pile shows as one row with its description and an overall status; the books in it stay with the back office */}
                 {[...new Set(ls.filter((l) => l.pileItemId).map((l) => l.pileItemId!))].map((pileId) => {
                   const books = ls.filter((l) => l.pileItemId === pileId);
+                  const st = pileStatus(books.map((l) => l.status));
                   return (
                     <div key={pileId} className="pile-group">
-                      <div className="row between small"><b>{books[0].pileName}</b><span className="tnum">{naira(books.reduce((a, l) => a + l.unitPrice * l.qty, 0))}</span></div>
-                      {books.map((l) => (
-                        <div key={l.id} className="row between small">
-                          <span className="grow">{l.qty} × {l.itemName}</span>
-                          <Pill tone={LINE_STATUS[l.status].tone}>{LINE_STATUS[l.status].label}</Pill>
-                        </div>
-                      ))}
+                      <div className="row between small">
+                        <span className="grow"><b>{books[0].pileName}</b>{pileDesc.get(pileId) && <span className="muted" style={{ display: "block" }}>{pileDesc.get(pileId)}</span>}</span>
+                        <span className="tnum">{naira(books.reduce((a, l) => a + l.unitPrice * l.qty, 0))}</span>
+                        <Pill tone={st.tone}>{st.label}</Pill>
+                      </div>
                     </div>
                   );
                 })}

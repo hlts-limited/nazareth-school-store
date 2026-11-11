@@ -150,7 +150,7 @@ export default async function HomePage() {
         <div className="store-cta">
           <div className="stack tight">
             <h2>Books and uniforms, in one checkout</h2>
-            <p>Shop your children&apos;s booklists online, pay by card or bank transfer, and collect from the school store.</p>
+            <p>Shop your children&apos;s booklists online, pay securely online with Paystack, and collect from the school store.</p>
           </div>
           <div className="row">
             <HowToBuyButton className="btn lg hero-ghost" label="How to buy (video)" />

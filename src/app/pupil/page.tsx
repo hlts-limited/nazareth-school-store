@@ -66,7 +66,7 @@ export default async function PupilPage() {
                   <div key={o.id} className="order-row" style={{ cursor: "default" }}>
                     <div className="grow">
                       <div className="row tight"><b className="mono">{orderNo(o.number)}</b><Pill tone={ORDER_STATUS[o.status].tone}>{ORDER_STATUS[o.status].label}</Pill></div>
-                      <div className="small muted">{o.lines.map((l) => l.itemName).join(", ")}</div>
+                      <div className="small muted">{[...new Set(o.lines.map((l) => l.pileName ?? l.itemName))].join(", ")}</div>
                     </div>
                   </div>
                 ))}

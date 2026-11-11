@@ -26,7 +26,7 @@ export default async function ClockPage() {
             <h3>Before your first clock-in</h3>
             <p>When you clock in or out, the app {[s.photoRequired && `takes a photo of ${s.photoSpot}`, gps && "checks your location"].filter(Boolean).join(" and ") || "records the time"} to confirm you are at your branch.</p>
             <ul className="small">
-              <li>Only HR and the Proprietor can see the photos, and every look is recorded.</li>
+              <li>Only HR and the Super Admin can see the photos, and every look is recorded.</li>
               <li>Photos are deleted automatically after 31 days. Your clock times stay for payroll.</li>
               {gps && <li>Your location is only checked at the moment you clock in or out. It is never tracked.</li>}
             </ul>

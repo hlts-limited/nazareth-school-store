@@ -53,11 +53,11 @@ const toInput = (d: z.infer<typeof recordFields>): Omit<EmployeeInput, "email"> 
   tin: d.tin, pfaName: d.pfaName, rsaPin: d.rsaPin, nhfNumber: d.nhfNumber, nhisNumber: d.nhisNumber, annualRentNaira: Math.round(d.annualRent),
 });
 
-/** Roles HR may give from Staff records. Higher roles (HR, Bursar, Proprietor) need Staff & roles permission. */
+/** Roles HR may give from Staff records. Higher roles (HR, Bursar) need Staff & roles permission. */
 function allowedRoles(v: StaffViewer, asked: string[]) {
-  const high = ["hr", "bursar", "proprietor"];
+  const high = ["hr", "bursar"];
   const bad = asked.filter((r) => high.includes(r) && !v.permissions.has("staff.manage"));
-  if (bad.length) throw new Error("Only the Super Admin can give the HR, Bursar or Proprietor role.");
+  if (bad.length) throw new Error("Only the Super Admin can give the HR or Bursar role.");
   return asked;
 }
 

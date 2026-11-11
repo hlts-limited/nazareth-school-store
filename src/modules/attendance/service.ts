@@ -300,7 +300,7 @@ export async function acceptNotice(employeeId: string) {
   return db.employee.update({ where: { id: employeeId }, data: { attendanceConsentAt: new Date() } });
 }
 
-/** HR or the Proprietor clock someone in or out by hand, with a reason. Logged, and shown on the person's page. */
+/** HR or the Super Admin clock someone in or out by hand, with a reason. Logged, and shown on the person's page. */
 export async function manualClock(employeeId: string, kind: "in" | "out", day: string, time: string, reason: string, by: string) {
   if (!/^\d{2}:\d{2}$/.test(time)) throw new UserError("Enter the time as HH:MM.", { time: "HH:MM" });
   if (!reason.trim()) throw new UserError("Give a reason for the manual entry.", { reason: "Required" });

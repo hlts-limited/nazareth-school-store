@@ -47,9 +47,9 @@ export const PERMISSIONS = {
   PAYROLL_RUN: "payroll.run",
   /** Enter penalties and waivers */
   PAYROLL_PENALTIES: "payroll.penalties",
-  /** Approve a run (never one you prepared) */
+  /** Approve a run (the Accountant; never someone who prepared it) */
   PAYROLL_APPROVE: "payroll.approve",
-  /** Press Pay (the Proprietor only) */
+  /** Press Pay (the Super Admin) */
   PAYROLL_PAY: "payroll.pay",
   /** Alpha Admin only: raw data editing, SQL console. Never part of a role; see ALPHA_ADMIN_EMAIL. */
   ALPHA: "system.alpha",
@@ -61,7 +61,7 @@ const P = PERMISSIONS;
 export const ROLE_DEFS: { id: string; name: string; permissions: Permission[]; requires2fa: boolean }[] = [
   {
     id: "accountant", name: "Accountant", requires2fa: true,
-    permissions: [P.PAYMENTS_REVIEW, P.INVOICES_MANAGE, P.INVOICES_EXPORT, P.WALLETS_ADJUST, P.PUPILS_VIEW, P.REPORTS_VIEW],
+    permissions: [P.PAYMENTS_REVIEW, P.INVOICES_MANAGE, P.INVOICES_EXPORT, P.WALLETS_ADJUST, P.PUPILS_VIEW, P.REPORTS_VIEW, P.PAYROLL_VIEW, P.PAYROLL_APPROVE],
   },
   {
     id: "registrar", name: "Registrar", requires2fa: false,
@@ -70,10 +70,6 @@ export const ROLE_DEFS: { id: string; name: string; permissions: Permission[]; r
   {
     id: "secretary", name: "Secretary", requires2fa: false,
     permissions: [P.PUPILS_VIEW, P.PUPILS_MANAGE, P.PUPILS_DELETE, P.ADMISSIONS_VIEW, P.ADMISSIONS_MANAGE, P.ADMISSIONS_PUBLISH, P.WEBSITE_MANAGE],
-  },
-  {
-    id: "proprietor", name: "Proprietor", requires2fa: true,
-    permissions: [P.SELF_SERVICE, P.HR_VIEW_SECTION, P.HR_VIEW, P.HR_MANAGE, P.HR_SALARY, P.ATTENDANCE_VIEW_SECTION, P.ATTENDANCE_MANAGE, P.ATTENDANCE_PHOTOS, P.PAYROLL_VIEW, P.PAYROLL_PENALTIES, P.PAYROLL_APPROVE, P.PAYROLL_PAY],
   },
   {
     id: "bursar", name: "Bursar", requires2fa: true,
@@ -93,8 +89,8 @@ export const ROLE_DEFS: { id: string; name: string; permissions: Permission[]; r
   },
   {
     id: "admin", name: "Super Admin", requires2fa: true,
-    // Everything except Alpha; approving and paying salaries stays with the Proprietor
-    permissions: (Object.values(P) as Permission[]).filter((p) => p !== P.ALPHA && p !== P.PAYROLL_APPROVE && p !== P.PAYROLL_PAY),
+    // Everything except Alpha. Pays salaries once the Accountant has approved; approving is the Accountant's alone
+    permissions: (Object.values(P) as Permission[]).filter((p) => p !== P.ALPHA && p !== P.PAYROLL_APPROVE),
   },
 ];
 

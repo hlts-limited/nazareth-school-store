@@ -91,14 +91,14 @@ export async function cancelLeaveAction(_: ActionResult, form: FormData): Promis
   });
 }
 
-// ---------- HR and the Proprietor ----------
+// ---------- HR and the Super Admin ----------
 
 export async function manualClockAction(_: ActionResult, form: FormData): Promise<ActionResult> {
   return runAction(async () => {
     const v = await staffFor("attendance.manage");
     const d = parseForm(z.object({ employeeId: zText(100), kind: z.enum(["in", "out"]), day: zDay("Choose the day"), time: zText(5, "Enter the time"), reason: zText(200, "Give a reason") }), form);
     const target = await db.employee.findUniqueOrThrow({ where: { id: d.employeeId } });
-    if (target.userId === v.user.id) return fail("You can't clock yourself in by hand. Ask another member of HR or the Proprietor.");
+    if (target.userId === v.user.id) return fail("You can't clock yourself in by hand. Ask another member of HR or the Super Admin.");
     const rec = await manualClock(d.employeeId, d.kind, d.day, d.time, d.reason, name(v));
     await audit(await auditActor(v), d.kind === "in" ? "Manual clock-in" : "Manual clock-out", "Attendance", rec.id, { staffCode: target.staffCode, day: d.day, time: d.time, reason: d.reason });
     return ok(`Clocked ${d.kind} at ${d.time}. They can see this on their page.`);

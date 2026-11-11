@@ -9,7 +9,7 @@ import { defaultsStillCurrent, periodLabel, runTotals, type Actor } from "./serv
 const payable = <I extends { held: boolean; netKobo: number }>(items: I[]) => items.filter((i) => !i.held && i.netKobo > 0);
 const naira = (k: number) => `₦${(k / 100).toLocaleString("en-NG", { maximumFractionDigits: 2 })}`;
 
-/** What the Proprietor sees before approving: totals, held staff, and the change from last month. */
+/** What the Accountant sees before approving: totals, held staff, and the change from last month. */
 export async function approvalSummary(runId: string) {
   const run = await db.payrollRun.findUniqueOrThrow({ where: { id: runId }, include: { items: { include: { employee: { include: { user: true } }, payments: true } } } });
   const prev = await db.payrollRun.findFirst({ where: { period: { lt: run.period }, status: { in: ["APPROVED", "PAID", "LOCKED"] } }, orderBy: { period: "desc" }, include: { items: true } });
@@ -69,7 +69,7 @@ export async function payPreview(runId: string) {
 }
 
 /**
- * Pay every due salary through Paystack bulk transfers (100 a batch). The Proprietor retypes the total; if the
+ * Pay every due salary through Paystack bulk transfers (100 a batch). The Super Admin retypes the total; if the
  * balance is short nothing is sent. Each payment row is written before sending, and the database allows only one
  * live payment per payslip, so a double press or a second person can't pay anyone twice.
  */

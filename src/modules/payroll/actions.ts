@@ -51,7 +51,7 @@ export async function markReviewedAction(_: ActionResult, form: FormData): Promi
     const run = await markReviewed(runId, stage, actor(v));
     const t = runTotals(await db.payrollItem.findMany({ where: { runId } }));
     await audit(await auditActor(v), `Reviewed payroll stage ${stage}`, "PayrollRun", runId, { period: run.period, net: t.net / 100, gross: t.gross / 100 });
-    return ok(stage === 3 ? `Payroll ready for the Proprietor's approval: net pay ${naira(t.netPayable)} for ${t.staff - t.held} staff.` : `Stage ${stage} reviewed. Stage ${stage + 1} is open.`);
+    return ok(stage === 3 ? `Payroll ready for the Accountant's approval: net pay ${naira(t.netPayable)} for ${t.staff - t.held} staff.` : `Stage ${stage} reviewed. Stage ${stage + 1} is open.`);
   });
 }
 
@@ -106,7 +106,7 @@ export async function saveRatesAction(_: ActionResult, form: FormData): Promise<
   });
 }
 
-// ---------- Approval and payment (the Proprietor) ----------
+// ---------- Approval (the Accountant) and payment (the Super Admin) ----------
 
 /** Approving and paying need a sign-in in the last 15 minutes, or the 2FA code typed now. */
 function recentlySignedIn(v: StaffViewer, code: string | null) {
