@@ -189,3 +189,13 @@ a.chip{text-decoration:none}
 .pile-books ul{margin:6px 0 0;padding-left:18px;display:grid;gap:2px}
 .pile-group{display:grid;gap:4px;padding:8px 10px;border-radius:10px;background:var(--violet-soft)}
 .pile-group>.row:not(:first-child){padding-left:10px}
+
+/* Pupil page header: dark band with the pupil's name and wallet */
+.pupil-hero{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.pupil-hero .row{gap:16px}
+.pupil-hero h1{color:var(--surface)}
+.pupil-hero p,.pupil-hero .kpi .l{color:inherit;opacity:.75}
+.order-row.static{cursor:default}
+.cart-aside{position:sticky;top:84px}
+.line-name{font-weight:600;font-size:13.5px}
+.self-start{align-self:flex-start}

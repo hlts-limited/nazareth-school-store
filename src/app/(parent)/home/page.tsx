@@ -4,7 +4,7 @@ import { Avatar, Card, CardHeader, Empty, LinkButton, PageHeader } from "@/share
 import { ActionForm, SubmitButton } from "@/shared/ui/client";
 import { Icon } from "@/shared/ui/icon";
 import { requireParentActor } from "@/modules/auth";
-import { addBooklistAction, addToCartAction, booklistProgress, wishlistForParent } from "@/modules/cart";
+import { addBooklistAction, addToCartAction, booklistProgress, removeWishAction, wishlistForParent } from "@/modules/cart";
 import { amountDue, ordersForParent } from "@/modules/orders";
 import { OrderRow } from "../_order-row";
 import { childrenOf } from "@/modules/pupils";
@@ -75,15 +75,14 @@ export default async function ParentHome() {
                       <div className={`progress ${pct === 100 ? "ok" : ""}`}><span style={{ width: `${pct}%` }} /></div>
                       <div className="stat-line"><span>Wallet balance</span><b>{naira(bal[k.id] ?? 0)}</b></div>
                     </div>
-                    <div className="row">
-                      <LinkButton href={`/shop?child=${k.id}`} variant="primary" size="sm">Shop for {k.firstName}</LinkButton>
-                      {p.have.length < p.required.length && (
-                        <ActionForm action={addBooklistAction} className="inline-form">
-                          <input type="hidden" name="pupilId" value={k.id} />
-                          <SubmitButton size="sm" variant="default" disabled={readOnly}>Add full booklist</SubmitButton>
-                        </ActionForm>
-                      )}
-                    </div>
+                    {p.missing.length > 0 ? (
+                      // The most common purchase in one tap: everything on the booklist not yet bought, straight to the cart
+                      <ActionForm action={addBooklistAction} className="stack tight">
+                        <input type="hidden" name="pupilId" value={k.id} /><input type="hidden" name="then" value="cart" />
+                        <SubmitButton size="sm" block icon="cart" disabled={readOnly}>Buy what&apos;s missing · {p.missing.length} item{p.missing.length === 1 ? "" : "s"}, {naira(p.missingTotal)}</SubmitButton>
+                      </ActionForm>
+                    ) : p.required.length > 0 && <p className="small c-ok">Booklist complete</p>}
+                    <LinkButton href={`/shop?child=${k.id}`} variant={p.missing.length ? "default" : "primary"} size="sm">Shop for {k.firstName}</LinkButton>
                   </article>
                 );
               })}
@@ -93,18 +92,24 @@ export default async function ParentHome() {
 
         {wish.length > 0 && (
           <Card className="stack tight">
-            <div className="row between"><h3>Wishlist from your children</h3><span className="small muted">Added in the pupil dashboard</span></div>
+            <div className="row between"><h3>Wishlist from your children</h3><span className="small muted">Added on their own page</span></div>
             {wish.map((w) => (
               <div key={`${w.pupilId}-${w.itemId}`} className="row between">
                 <span>{w.pupil.firstName} wants <b>{w.item.name}</b> · {naira(w.item.price)}</span>
-                {w.item.hasVariants ? (
-                  <LinkButton href={`/shop?child=${w.pupilId}&q=${encodeURIComponent(w.item.name)}`} size="sm">Choose size</LinkButton>
-                ) : (
-                  <ActionForm action={addToCartAction} className="inline-form">
-                    <input type="hidden" name="pupilId" value={w.pupilId} /><input type="hidden" name="variantId" value={w.item.variants[0]?.id ?? ""} />
-                    <SubmitButton size="sm" variant="default" disabled={readOnly}>Add to cart</SubmitButton>
+                <span className="row tight">
+                  {w.item.hasVariants ? (
+                    <LinkButton href={`/shop?child=${w.pupilId}&q=${encodeURIComponent(w.item.name)}`} size="sm">Choose size</LinkButton>
+                  ) : (
+                    <ActionForm action={addToCartAction} className="inline-form">
+                      <input type="hidden" name="pupilId" value={w.pupilId} /><input type="hidden" name="variantId" value={w.item.variants[0]?.id ?? ""} />
+                      <SubmitButton size="sm" variant="default" disabled={readOnly}>Add to cart</SubmitButton>
+                    </ActionForm>
+                  )}
+                  <ActionForm action={removeWishAction} className="inline-form">
+                    <input type="hidden" name="pupilId" value={w.pupilId} /><input type="hidden" name="itemId" value={w.itemId} />
+                    <SubmitButton size="sm" variant="ghost" icon="x" disabled={readOnly}>Not now</SubmitButton>
                   </ActionForm>
-                )}
+                </span>
               </div>
             ))}
           </Card>

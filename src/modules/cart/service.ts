@@ -1,6 +1,6 @@
 import { db } from "@/shared/lib/db";
 import { UserError } from "@/shared/lib/action";
-import { balances } from "@/modules/wallet";
+import { balance, balances } from "@/modules/wallet";
 
 const cartInclude = {
   pupil: { include: { class: true } },
@@ -92,7 +92,9 @@ export async function addBooklist(parentId: string, pupilId: string) {
 export async function booklistProgress(pupilId: string, classId: string) {
   const required = await db.item.findMany({ where: { isActive: true, inPiles: { none: {} }, classes: { some: { classId, isCompulsory: true } } }, select: { id: true, name: true, price: true } });
   const bought = await boughtItemIds(pupilId);
-  return { required, have: required.filter((r) => bought.has(r.id)), bought };
+  const missing = required.filter((r) => !bought.has(r.id));
+  // What "Buy what's missing" would add, so the parent sees the count and the cost before tapping
+  return { required, have: required.filter((r) => bought.has(r.id)), bought, missing, missingTotal: missing.reduce((a, r) => a + r.price, 0) };
 }
 
 // ---- Wishlist (pupils suggest, parents buy) ----
@@ -103,6 +105,38 @@ export async function toggleWish(pupilId: string, itemId: string) {
   await db.wishlistItem.create({ data: { pupilId, itemId } });
   return true;
 }
+/** A parent takes an item off one of their children's wishlists */
+export async function removeWishForParent(parentId: string, pupilId: string, itemId: string) {
+  await assertGuardian(parentId, pupilId);
+  await db.wishlistItem.deleteMany({ where: { pupilId, itemId } });
+}
+
+/** Once an item is in the cart for a child, it comes off that child's wishlist */
+export async function clearWish(pupilId: string, itemId: string) {
+  await db.wishlistItem.deleteMany({ where: { pupilId, itemId } });
+}
+
+/**
+ * Everything on a pupil's own page: class, booklist progress, wishlist, other items they could wish for,
+ * their orders and wallet. Pupils can't pay; their wishlist shows on their parents' home page.
+ */
+export async function pupilDashboard(pupil: { id: string; classId: string }) {
+  const [cls, progress, wish, extras, orders, wallet] = await Promise.all([
+    db.class.findUniqueOrThrow({ where: { id: pupil.classId } }),
+    booklistProgress(pupil.id, pupil.classId),
+    db.wishlistItem.findMany({ where: { pupilId: pupil.id }, include: { item: true }, orderBy: { createdAt: "desc" } }),
+    db.item.findMany({
+      where: { isActive: true, inPiles: { none: {} }, classes: { some: { classId: pupil.classId, isCompulsory: false } } },
+      orderBy: { name: "asc" }, take: 12,
+    }),
+    db.order.findMany({ where: { lines: { some: { pupilId: pupil.id } } }, include: { lines: { where: { pupilId: pupil.id } } }, orderBy: { createdAt: "desc" }, take: 10 }),
+    balance(pupil.id),
+  ]);
+  const required = await db.item.findMany({ where: { id: { in: progress.required.map((r) => r.id) } }, include: { category: { include: { parent: true } } }, orderBy: { name: "asc" } });
+  const wishIds = new Set(wish.map((w) => w.itemId));
+  return { cls, progress, required, wish, suggestions: extras.filter((i) => !wishIds.has(i.id) && !progress.bought.has(i.id)).slice(0, 8), orders, wallet };
+}
+
 export async function wishlistForParent(parentId: string) {
   return db.wishlistItem.findMany({
     where: { pupil: { guardians: { some: { parentId } }, deletedAt: null } },
