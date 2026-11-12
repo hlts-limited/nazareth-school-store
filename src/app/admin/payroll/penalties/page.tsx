@@ -33,7 +33,7 @@ export default async function PenaltiesPage({ searchParams }: { searchParams: Pr
       <PageHeader title="Penalties & bonuses" sub={periodLabel(m)}
         actions={<div className="row tight"><Link className="btn sm" href={`?m=${shift(m, -1)}`}>Previous month</Link>{m < thisMonth && <Link className="btn sm" href={`?m=${shift(m, 1)}`}>Next month</Link>}</div>} />
       <div className="stack">
-        <p className="small muted">Lateness ({money(rates.latePenaltyNaira * 100)} a day) and absence without permission ({rates.absenceRule === "dayPay" ? "a day's pay" : `${money(rates.absencePenaltyNaira * 100)} a day`}) come from attendance automatically. Penalty categories and bonus types are set in <Link href="/admin/payroll/settings">Rates &amp; tax</Link>. Nobody can enter one for themselves, and whoever enters one can&apos;t approve that month&apos;s payroll.</p>
+        <p className="small muted">Lateness ({money(rates.latePenaltyNaira * 100)} a day) and absence without permission ({rates.absenceRule === "dayPay" ? "a day's pay" : `${money(rates.absencePenaltyNaira * 100)} a day`}) come from attendance automatically. Penalty categories and bonus types are set in {v.permissions.has("payroll.run") ? <Link href="/admin/payroll/settings">Rates &amp; tax</Link> : "Rates & tax (Accounts)"}. Nobody can enter one for themselves, and whoever enters one can&apos;t approve that month&apos;s payroll.</p>
         {canEnter && !closed && (
           <div className="grid g2 items-start">
             <PenaltyEntry action={addAdjustmentAction} staff={people} period={m} categories={rates.penaltyCategories.filter((c) => c.active).map((c) => ({ name: c.name, defaultNaira: c.defaultNaira }))} />

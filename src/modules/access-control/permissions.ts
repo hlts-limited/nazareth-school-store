@@ -118,7 +118,8 @@ export type NavSection = { id: string; label: string; perm?: Permission | Permis
 export const SETTINGS_TABS: NavItem[] = [
   { href: "/admin/settings", label: "School & store", icon: "cog", perm: P.SETTINGS_MANAGE },
   { href: "/admin/attendance/settings", label: "Attendance & holidays", icon: "clock", perm: P.ATTENDANCE_MANAGE },
-  { href: "/admin/payroll/settings", label: "Payroll rates & tax", icon: "wallet", perm: P.PAYROLL_VIEW },
+  // Accounts only (plus Super Admin and Alpha): HR sees payroll runs but not the rates
+  { href: "/admin/payroll/settings", label: "Payroll rates & tax", icon: "wallet", perm: P.PAYROLL_RUN },
 ];
 
 /** The back-office menu, named by task rather than by job title, so people with several roles find things in one place. */
@@ -216,7 +217,7 @@ export const STAFF_SECTIONS: NavSection[] = [
     ],
   },
   {
-    id: "settings", label: "Settings", perm: [P.SETTINGS_MANAGE, P.ATTENDANCE_MANAGE, P.PAYROLL_VIEW],
+    id: "settings", label: "Settings", perm: [P.SETTINGS_MANAGE, P.ATTENDANCE_MANAGE, P.PAYROLL_RUN],
     items: SETTINGS_TABS,
   },
   {

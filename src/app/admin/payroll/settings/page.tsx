@@ -11,11 +11,11 @@ const Pct = ({ id, label, value, hint }: { id: string; label: string; value: num
   <div className="field"><label htmlFor={`rt-${id}`}>{label}</label><input className="input" id={`rt-${id}`} name={id} inputMode="decimal" defaultValue={value} /><span className="hint">{hint ?? "%"}</span><FieldError name={id} /></div>
 );
 
-/** The rates and bands each payroll run copies when stage 1 is calculated. */
+/** The rates and bands each payroll run copies when stage 1 is calculated. Accounts only (and Super Admin / Alpha). */
 export default async function PayrollSettingsPage() {
-  const v = await requireStaff("payroll.view");
+  const v = await requireStaff("payroll.run");
   const r = await payrollRates();
-  const can = v.permissions.has("payroll.run");
+  const can = true;
   return (
     <div className="mw-900">
       <PageHeader title="Rates & tax bands" sub="Each run copies these when stage 1 is calculated, so changing them never alters a run already approved or paid." />

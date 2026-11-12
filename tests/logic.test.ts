@@ -123,9 +123,11 @@ test("payroll duties are split: Accounts prepares, the Super Admin approves and 
   const reg = navFor(perms("registrar"));
   assert.ok(reg.some((s) => s.id === "store") && !reg.some((s) => s.id === "payroll" || s.id === "settings"));
   assert.ok(reg.find((s) => s.id === "today"), "everyone has My tasks and Search");
-  // HR sees only the attendance tab of Settings, not school settings
+  // HR sees only the attendance tab of Settings; payroll rates are for Accounts
   const hr = navFor(perms("hr")).find((s) => s.id === "settings")!;
-  assert.deepEqual(hr.items.map((i) => i.href).sort(), ["/admin/attendance/settings", "/admin/payroll/settings"]);
+  assert.deepEqual(hr.items.map((i) => i.href), ["/admin/attendance/settings"], "HR doesn't see payroll rates & tax");
+  const acc = navFor(perms("accountant")).find((s) => s.id === "settings")!;
+  assert.deepEqual(acc.items.map((i) => i.href), ["/admin/payroll/settings"], "Accounts sees only payroll rates & tax");
 });
 
 test("deleting staff, pupils and items is for the Alpha Admin only", async () => {
