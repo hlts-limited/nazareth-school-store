@@ -9,7 +9,7 @@ export const metadata = { title: "Register staff" };
 const ROLE_CHOICES: [string, string, boolean][] = [
   ["head", "Head teacher (sees their section's staff and attendance)", false],
   ["hr", "Admin / HR", true],
-  ["bursar", "Bursar", true],
+  ["accountant", "Accounts (store money, bank checks, payroll)", true],
 ];
 
 export default async function RegisterStaffPage() {
@@ -28,7 +28,7 @@ export default async function RegisterStaffPage() {
               <label key={id} className="check small"><input type="checkbox" name="roles" value={id} /> {label}</label>
             ))}
           </div>
-          {!canGiveHigh && <p className="small muted">The HR and Bursar roles are given by the Super Admin.</p>}
+          {!canGiveHigh && <p className="small muted">The HR and Accounts roles are given by the Super Admin.</p>}
         </fieldset>
         <div className="row"><SubmitButton icon="check">Register staff member</SubmitButton></div>
       </ActionForm>

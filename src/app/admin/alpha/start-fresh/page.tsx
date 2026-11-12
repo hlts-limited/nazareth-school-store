@@ -19,7 +19,7 @@ export default async function StartFreshPage() {
       <div className="stack loose">
         <Note tone="warn" icon="alert">
           This deletes data for everyone. A full backup is saved first, so it can be put back from{" "}
-          <Link href="/admin/alpha/backups">Backups &amp; restores</Link> if needed.
+          <Link href="/admin/backup">Backups &amp; restores</Link> if needed.
         </Note>
         <div className="grid g2" style={{ alignItems: "start" }}>
           <Card className="stack tight">

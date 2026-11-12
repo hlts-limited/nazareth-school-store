@@ -78,7 +78,7 @@ export function StaffLoginForm({ action }: { action: Action }) {
       <FormMessage />
       <div className="field"><label htmlFor="ls-id">Staff email</label><input className="input" id="ls-id" name="email" type="email" autoComplete="username" required /><FieldError name="email" /></div>
       <div className="field"><label htmlFor="ls-pw">Password</label><input className="input" id="ls-pw" name="password" type="password" autoComplete="current-password" required /><FieldError name="password" /></div>
-      <div className="field"><label htmlFor="ls-2fa">2FA code <span className="muted">(Accountant and Super Admin)</span></label><input className="input mono" id="ls-2fa" name="code" inputMode="numeric" maxLength={6} autoComplete="one-time-code" /><FieldError name="code" /></div>
+      <div className="field"><label htmlFor="ls-2fa">2FA code <span className="muted">(Accounts, HR and Super Admin)</span></label><input className="input mono" id="ls-2fa" name="code" inputMode="numeric" maxLength={6} autoComplete="one-time-code" /><FieldError name="code" /></div>
       <SubmitButton variant="dark" size="lg" block>Sign in to back office</SubmitButton>
     </ActionForm>
   );

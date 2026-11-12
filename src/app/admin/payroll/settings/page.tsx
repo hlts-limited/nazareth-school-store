@@ -1,6 +1,7 @@
 import { ActionForm, FieldError, SubmitButton } from "@/shared/ui/client";
 import { Note, PageHeader } from "@/shared/ui/primitives";
 import { requireStaff } from "@/modules/auth";
+import { SettingsTabs } from "@/app/admin/_settings-tabs";
 import { payrollRates, saveRatesAction } from "@/modules/payroll";
 
 export const metadata = { title: "Rates & tax bands" };
@@ -17,6 +18,7 @@ export default async function PayrollSettingsPage() {
   return (
     <div style={{ maxWidth: 900 }}>
       <PageHeader title="Rates & tax bands" sub="Each run copies these when stage 1 is calculated, so changing them never alters a run already approved or paid." />
+      <SettingsTabs v={v} current="/admin/payroll/settings" />
       <ActionForm action={saveRatesAction} className="stack">
         <Note tone="info" icon="info">The defaults follow the plan. The school&apos;s tax adviser should confirm the pension base, the NHIS rate, NHF on basic, and the penalty amounts before the first live payroll.</Note>
         <fieldset className="card stack" disabled={!can}>

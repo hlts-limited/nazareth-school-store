@@ -27,7 +27,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ key: strin
     return serve(key, "private, no-store");
   }
   if (key.startsWith("staff/")) {
-    // Staff documents: the staff member, HR, the Bursar and the Super Admin. Every view of an ID or guarantor form is logged.
+    // Staff documents: the staff member, HR, Accounts and the Super Admin. Every view of an ID or guarantor form is logged.
     const v = await getViewer();
     if (!v) return new NextResponse("Sign in required", { status: 401 });
     if (v.kind !== "staff") return new NextResponse("Not allowed", { status: 403 });

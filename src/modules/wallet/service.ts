@@ -60,7 +60,7 @@ export async function moveExcess(txId: string, toPupilId: string, parentId: stri
   });
 }
 
-/** Accountant: manual credit/debit or a cash/transfer refund to the parent. Reason is required. */
+/** Accounts: manual credit/debit or a cash/transfer refund to the parent. Reason is required. */
 export async function adjust(pupilId: string, kind: "credit" | "debit" | "refund", amount: number, reason: string, actorName: string) {
   if (!reason.trim()) throw new UserError("Enter a reason.");
   return db.$transaction(async (tx) => {

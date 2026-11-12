@@ -14,7 +14,7 @@ export default async function SessionsPage() {
   const rows: [string, string, number, number | string, number, string][] = [
     ["PARENT", "Parent", L.PARENT.idleMinutes, L.PARENT.maxHours, L.PARENT.devices, `or ${L.PARENT.rememberDays} days with “Remember this device”`],
     ["PUPIL", "Pupil", L.PUPIL.idleMinutes, L.PUPIL.maxHours, L.PUPIL.devices, ""],
-    ["STAFF", "Secretary, Registrar, Accountant", L.STAFF.idleMinutes, L.STAFF.maxHours, L.STAFF.devices, ""],
+    ["STAFF", "Secretary, Registrar, Accounts, HR, staff", L.STAFF.idleMinutes, L.STAFF.maxHours, L.STAFF.devices, ""],
     ["ADMIN", "Super Admin", L.ADMIN.idleMinutes, L.ADMIN.maxHours, L.ADMIN.devices, ""],
   ];
   return (

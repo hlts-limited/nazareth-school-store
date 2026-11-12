@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getViewer } from "@/modules/auth";
 import { remittanceXlsx, REMITTANCES, type Remittance } from "@/modules/payroll";
 
-/** The month's pension, NHF, NHIS or PAYE schedule as Excel, for the Bursar to remit. */
+/** The month's pension, NHF, NHIS or PAYE schedule as Excel, for Accounts to remit. */
 export async function GET(req: Request, { params }: { params: Promise<{ period: string }> }) {
   const v = await getViewer();
   if (!v) return new NextResponse("Sign in required", { status: 401 });

@@ -91,10 +91,10 @@ export function Documents({ e, as, viewerId }: { e: Emp; as: "hr" | "self" | "vi
 }
 
 const BANK_TONE: Record<string, ["ok" | "warn" | "err" | "plain", string]> = {
-  NONE: ["plain", "Not entered"], PENDING: ["warn", "Waiting for the Bursar"], VERIFIED: ["ok", "Verified"], REJECTED: ["err", "Rejected"],
+  NONE: ["plain", "Not entered"], PENDING: ["warn", "Waiting for Accounts"], VERIFIED: ["ok", "Verified"], REJECTED: ["err", "Rejected"],
 };
 
-/** Bank details. The Bursar sees the full account number to check it; others see the last 4 digits. */
+/** Bank details. Accounts sees the full account number to check it; others see the last 4 digits. */
 export async function Bank({ e, canEdit, canApprove, viewerId }: { e: Emp; canEdit: boolean; canApprove: boolean; viewerId: string }) {
   const clear = e.accountNameEnc ? bankInClear(e) : null;
   const banks = canEdit ? await listBanks() : [];
@@ -123,7 +123,7 @@ export async function Bank({ e, canEdit, canApprove, viewerId }: { e: Emp; canEd
       {canEdit && (
         <details className="fold" open={e.bankStatus === "NONE" || e.bankStatus === "REJECTED"}>
           <summary>{e.bankName ? "Change bank details" : "Enter bank details"}</summary>
-          <p className="small muted">New details go back to the Bursar to verify before the next payment.</p>
+          <p className="small muted">New details go back to Accounts to verify before the next payment.</p>
           <BankForm action={setBankAction} employeeId={e.id} banks={banks} canCheck={paystackReady()} />
         </details>
       )}

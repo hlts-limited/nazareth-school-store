@@ -1,48 +1,54 @@
-import { redirect } from "next/navigation";
-import { naira } from "@/shared/lib/format";
-import { Bars, Card, Note, PageHeader } from "@/shared/ui/primitives";
-import { ScanChart, StatTile, TimerTile } from "@/shared/ui/charts";
-import { STAFF_SECTIONS } from "@/modules/access-control";
+import Link from "next/link";
+import { Card, Empty, Note, PageHeader } from "@/shared/ui/primitives";
+import { Icon } from "@/shared/ui/icon";
+import { navFor, roleName } from "@/modules/access-control";
 import { requireStaff } from "@/modules/auth";
-import { adminOverview, salesTrend } from "@/modules/reports";
-import { upcomingEvents } from "@/modules/website";
+import { myTasks } from "@/modules/reports";
 
-export const metadata = { title: "Back office" };
+export const metadata = { title: "My tasks" };
 
-export default async function AdminHome({ searchParams }: { searchParams: Promise<{ denied?: string }> }) {
+/** Everyone's first page: what is waiting for them, then shortcuts to the areas they use. */
+export default async function MyTasks({ searchParams }: { searchParams: Promise<{ denied?: string }> }) {
   const v = await requireStaff();
   const { denied } = await searchParams;
-  if (!v.isAdmin) {
-    const first = STAFF_SECTIONS.find((s) => v.permissions.has(s.perm));
-    if (first) redirect(first.items[0].href + (denied ? "?denied=1" : ""));
-    return <Note tone="warn">Your account has no role yet. Ask the Super Admin to give you one.</Note>;
-  }
-  const [o, trend, [next]] = await Promise.all([adminOverview(), salesTrend(30), upcomingEvents(1)]);
-  const daily = trend.labels.map((_, i) => trend.series.reduce((a, s) => a + s.values[i], 0));
-  const month = daily.reduce((a, b) => a + b, 0);
-  const cancelled = (trend.bars ?? []).reduce((a, b) => a + b, 0);
+  const areas = navFor(v.permissions).filter((s) => s.id !== "today");
+  if (!areas.length) return <Note tone="warn">Your account has no role yet. Ask the Super Admin to give you one.</Note>;
+  const tasks = await myTasks(v);
+  const hour = Number(new Date().toLocaleString("en-GB", { hour: "numeric", hour12: false, timeZone: "Africa/Lagos" }));
+  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   return (
     <>
-      {denied && <div style={{ marginBottom: 16 }}><Note tone="warn">You don&apos;t have permission for that page.</Note></div>}
-      <PageHeader title="Overview" sub="Switch workspace at the top to work as the Accountant, Registrar or Secretary." />
+      {denied && <div className="mb-16"><Note tone="warn">You don&apos;t have permission for that page.</Note></div>}
+      <PageHeader title={`${greeting}, ${v.user.firstName}`} sub={`${v.roles.map(roleName).join(", ")} · ${tasks.length ? `${tasks.length} thing${tasks.length === 1 ? "" : "s"} waiting for you` : "nothing waiting for you"}`} />
       <div className="stack loose">
-        <div className="ov-tiles">
-          <StatTile label="Paid sales" value={o.sales} format="naira" sub={`${naira(month)} in the last 30 days`} spark={daily.slice(-14)} />
-          <StatTile label="Orders" value={o.orders} sub="All time" />
-          <StatTile label="Families" value={o.families} sub="With a child at school" />
-          <StatTile label="Signed in now" value={o.sessions} sub="Active sessions" />
-          <TimerTile icon="clock" label={next ? `Next event · ${next.title}` : "Next event"} until={next?.startsAt.toISOString() ?? null} empty="None planned" />
-        </div>
-        <ScanChart
-          title="Store sales · last 30 days"
-          labels={trend.labels} series={trend.series} markers={trend.markers} warn={trend.warn} bars={trend.bars} barsLabel="Cancelled orders"
-          format="naira" empty="No paid orders in the last 30 days."
-          summary={`Paid store sales in the last 30 days: ${naira(month)} across ${trend.series.length} classes. ${cancelled} orders cancelled.`}
-        />
-        <div className="grid g2" style={{ alignItems: "start" }}>
-          <Card className="stack"><h3>Orders by status</h3><Bars rows={o.byStatus.map(([l, n]) => [l, n, String(n)])} /></Card>
-          <Card className="stack"><h3>Paid sales by class</h3><Bars color="var(--ink)" rows={o.byClass.map(([l, n]) => [l, n, naira(n)])} /></Card>
-        </div>
+        <Card pad={false}>
+          {tasks.length === 0 ? <Empty title="All caught up">New work appears here as it comes in.</Empty> : (
+            <ul className="task-list">
+              {tasks.map((t) => (
+                <li key={t.id}>
+                  <Link href={t.href} className={`task tone-${t.tone}`}>
+                    <span className="task-ic"><Icon name={t.icon} size="sm" /></span>
+                    <span className="grow"><b>{t.title}</b>{t.sub && <small>{t.sub}</small>}</span>
+                    {t.count !== undefined && <span className="task-n tnum">{t.count.toLocaleString()}</span>}
+                    <Icon name="chev" size="sm" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+        <section className="stack">
+          <h3>Your areas</h3>
+          <div className="area-grid">
+            {areas.map((s) => (
+              <Link key={s.id} href={s.items[0].href} className="area-card">
+                <Icon name={s.items[0].icon} size="sm" />
+                <b>{s.label}</b>
+                <small>{s.items.slice(0, 3).map((i) => i.label).join(" · ")}</small>
+              </Link>
+            ))}
+          </div>
+        </section>
       </div>
     </>
   );

@@ -3,15 +3,17 @@ import { SCHOOL } from "@/shared/config/school";
 import { Icon } from "@/shared/ui/icon";
 import { ThemeToggle } from "@/shared/ui/client";
 import { IdleWatcher, StaffNav, StaffSide, WorkspaceSwitch } from "@/shared/ui/shell-client";
-import { roleName, STAFF_SECTIONS } from "@/modules/access-control";
+import { navFor, roleName } from "@/modules/access-control";
 import { endViewAs, getViewAs, idleInfo, keepAlive, logout, requireStaff } from "@/modules/auth";
 import { navCounts } from "@/modules/reports";
+import { unreadCount } from "@/modules/notifications";
 import { ViewAsBanner } from "@/app/view-as-banner";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const v = await requireStaff();
-  const sections = STAFF_SECTIONS.filter((s) => v.permissions.has(s.perm)).map((s) => ({ id: s.id, label: s.label, items: s.items }));
-  const [counts, idle, viewAs] = await Promise.all([navCounts(), idleInfo(v.isAdmin ? "ADMIN" : "STAFF"), getViewAs()]);
+  // The menu shows only the areas and links this person can open
+  const sections = navFor(v.permissions).map((s) => ({ id: s.id, label: s.label, items: s.items.map(({ href, label, icon, badge }) => ({ href, label, icon, badge })) }));
+  const [counts, idle, viewAs, unread] = await Promise.all([navCounts(v.permissions), idleInfo(v.isAdmin ? "ADMIN" : "STAFF"), getViewAs(), unreadCount(v.user.id)]);
   const initials = `${v.user.firstName[0]}${v.user.lastName[0]}`;
   return (
     <>
@@ -31,7 +33,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <div className="staff-main">
           <div className="staff-top">
             <WorkspaceSwitch sections={sections} />
+            <form className="top-search" action="/admin/search" method="get" role="search">
+              <Icon name="search" size="sm" />
+              <input name="q" type="search" placeholder="Search pupils, parents, orders, staff" aria-label="Search the back office" />
+            </form>
             <div className="grow" />
+            <Link className="icon-btn top-bell" href="/admin/notifications" aria-label={`Notifications${unread ? `, ${unread} new` : ""}`} title="Notifications">
+              <Icon name="bell" size="sm" />{unread > 0 && <span className="badge">{unread > 9 ? "9+" : unread}</span>}
+            </Link>
             <IdleWatcher idleSeconds={idle.idleSeconds} keepAlive={keepAlive} logout={logout} showTimer />
             <ThemeToggle />
           </div>

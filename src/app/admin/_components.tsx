@@ -9,7 +9,7 @@ import { Icon } from "@/shared/ui/icon";
 type Action = (prev: ActionResult, form: FormData) => Promise<ActionResult>;
 const n = (v: number) => `${v < 0 ? "−" : ""}₦${Math.abs(Math.round(v)).toLocaleString("en-NG")}`;
 
-// ---------------- Accountant ----------------
+// ---------------- Accounts ----------------
 export function ReceiptViewer({ src, mime }: { src: string; mime: string }) {
   const [zoom, setZoom] = useState(1);
   const [rot, setRot] = useState(0);
@@ -378,7 +378,7 @@ export function InviteStaff({ action, roles }: { action: Action; roles: { id: st
           </div>
           <div className="field"><label htmlFor="is-e">Work email</label><input className="input" id="is-e" name="email" type="email" /><FieldError name="email" /></div>
           <div className="field"><span className="lbl">Roles</span><div className="row tight">{roles.map((r) => <label key={r.id} className="chip"><input type="checkbox" name="roles" value={r.id} style={{ accentColor: "var(--red)" }} /> {r.name}</label>)}</div><FieldError name="roles" /></div>
-          <p className="small muted">They get an email link to set a password and, for Accountant and Super Admin, two-factor sign-in.</p>
+          <p className="small muted">They get an email link to set a password and, for Accounts, HR and Super Admin, two-factor sign-in.</p>
           <div className="row" style={{ justifyContent: "flex-end" }}><button type="button" className="btn ghost" onClick={() => setOpen(false)}>Cancel</button><SubmitButton>Send invite</SubmitButton></div>
         </ActionForm>
       </Dialog>

@@ -53,11 +53,11 @@ const toInput = (d: z.infer<typeof recordFields>): Omit<EmployeeInput, "email"> 
   tin: d.tin, pfaName: d.pfaName, rsaPin: d.rsaPin, nhfNumber: d.nhfNumber, nhisNumber: d.nhisNumber, annualRentNaira: Math.round(d.annualRent),
 });
 
-/** Roles HR may give from Staff records. Higher roles (HR, Bursar) need Staff & roles permission. */
+/** Roles HR may give from Staff records. Higher roles (HR, Accounts) need Staff & roles permission. */
 function allowedRoles(v: StaffViewer, asked: string[]) {
-  const high = ["hr", "bursar"];
+  const high = ["hr", "accountant"];
   const bad = asked.filter((r) => high.includes(r) && !v.permissions.has("staff.manage"));
-  if (bad.length) throw new Error("Only the Super Admin can give the HR or Bursar role.");
+  if (bad.length) throw new Error("Only the Super Admin can give the HR or Accounts role.");
   return asked;
 }
 
@@ -184,7 +184,7 @@ export async function setBankAction(_: ActionResult, form: FormData): Promise<Ac
     if (!bank) return fail("Choose the bank from the list.", { bankCode: "Choose a bank" });
     const r = await setBankDetails(who.emp.id, { bankCode: bank.code, bankName: bank.name, accountNumber: d.accountNumber, accountName: d.accountName });
     await audit(await auditActor(who.v), "Entered bank details", "Employee", who.emp.id, { staffCode: who.emp.staffCode, bank: bank.name, last4: d.accountNumber.slice(-4), nameChecked: r.checked });
-    return ok(`Saved: ${bank.name}, account ending ${d.accountNumber.slice(-4)}, in the name of ${r.accountName}. The Bursar will verify it before salaries are paid.`);
+    return ok(`Saved: ${bank.name}, account ending ${d.accountNumber.slice(-4)}, in the name of ${r.accountName}. Accounts will verify it before salaries are paid.`);
   });
 }
 

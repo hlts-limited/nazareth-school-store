@@ -16,7 +16,7 @@ export default async function PayrollRunsPage() {
   const canRun = v.permissions.has("payroll.run");
   return (
     <>
-      <PageHeader title="Payroll" sub="Each month: the Bursar calculates and reviews three stages (statutory, tax, penalties), then the Accountant approves and the Super Admin pays." actions={<PaystackStatus />} />
+      <PageHeader title="Payroll" sub="Each month: Accounts calculates and reviews three stages (statutory, tax, penalties), then the Super Admin approves and pays." actions={<PaystackStatus />} />
       <div className="stack">
         {canRun && !runs.some((r) => r.period === thisMonth) && (
           <ActionForm action={startRunAction} className="card row tight">
@@ -27,7 +27,7 @@ export default async function PayrollRunsPage() {
           </ActionForm>
         )}
         <section className="card pad-0">
-          {!runs.length ? <Empty title="No payroll yet">{canRun ? "Start this month's payroll above." : "The Bursar starts each month's payroll."}</Empty> : (
+          {!runs.length ? <Empty title="No payroll yet">{canRun ? "Start this month's payroll above." : "Accounts starts each month's payroll."}</Empty> : (
             <div className="tbl-wrap"><table className="t rt">
               <thead><tr><th>Month</th><th>Staff</th><th>Status</th><th /></tr></thead>
               <tbody>{runs.map((r) => (

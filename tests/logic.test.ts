@@ -103,9 +103,29 @@ test("role boundaries for the website and admissions", async () => {
     assert.ok(!perms("accountant").has(p as never), `accountant lacks ${p}`);
     assert.ok(!perms("registrar").has(p as never), `registrar lacks ${p}`);
   }
-  // Every back-office link sits in a section guarded by a real permission
-  const all = new Set(ALL_PERMISSIONS);
-  for (const s of STAFF_SECTIONS) assert.ok(all.has(s.perm), `${s.id} uses a known permission`);
+  // Every back-office menu area and link is guarded by real permissions (or open to all staff)
+  const all = new Set<string>(ALL_PERMISSIONS);
+  for (const s of STAFF_SECTIONS) {
+    for (const p of [s.perm ?? []].flat()) assert.ok(all.has(p), `${s.id} uses a known permission`);
+    for (const i of s.items) if (i.perm) assert.ok(all.has(i.perm), `${i.href} uses a known permission`);
+  }
+});
+
+test("payroll duties are split: Accounts prepares, the Super Admin approves and pays; one menu per person", async () => {
+  const { ROLE_DEFS, navFor } = await import("../src/modules/access-control/permissions");
+  const perms = (id: string) => new Set<string>(ROLE_DEFS.find((r) => r.id === id)!.permissions);
+  assert.ok(!ROLE_DEFS.some((r) => r.id === "bursar" || r.id === "proprietor"), "Bursar and Proprietor are gone");
+  const accounts = perms("accountant");
+  for (const p of ["payroll.run", "hr.bank.approve", "payments.review", "self.service"]) assert.ok(accounts.has(p), `Accounts has ${p}`);
+  assert.ok(!accounts.has("payroll.approve") && !accounts.has("payroll.pay"), "Accounts can't approve or pay payroll");
+  assert.ok(perms("admin").has("payroll.approve") && perms("admin").has("payroll.pay"));
+  // A Registrar's menu has the store, no payroll and no settings; every link in it is one they may open
+  const reg = navFor(perms("registrar"));
+  assert.ok(reg.some((s) => s.id === "store") && !reg.some((s) => s.id === "payroll" || s.id === "settings"));
+  assert.ok(reg.find((s) => s.id === "today"), "everyone has My tasks and Search");
+  // HR sees only the attendance tab of Settings, not school settings
+  const hr = navFor(perms("hr")).find((s) => s.id === "settings")!;
+  assert.deepEqual(hr.items.map((i) => i.href).sort(), ["/admin/attendance/settings", "/admin/payroll/settings"]);
 });
 
 test("Alpha access is never part of a role, not even Super Admin", async () => {

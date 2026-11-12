@@ -1,0 +1,70 @@
+/* Back office: My tasks, search, settings tabs, shared data tables, and small layout helpers used instead of inline styles. */
+
+/* Search box in the staff top bar */
+.top-search{display:flex;align-items:center;gap:8px;flex:1 1 280px;max-width:420px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--muted)}
+.top-search input{border:0;outline:0;background:transparent;color:var(--ink);font:inherit;font-size:14px;padding:9px 0;width:100%;min-width:0}
+.top-search:focus-within{border-color:var(--ink-2);box-shadow:0 0 0 3px color-mix(in srgb,var(--ink) 10%,transparent)}
+.top-bell .badge{position:absolute;top:4px;right:4px}
+@media (max-width:720px){.top-search{order:5;flex-basis:100%;max-width:none}}
+
+/* My tasks */
+.task-list,.hit-list{list-style:none;margin:0;padding:0}
+.task-list li+li,.hit-list li+li{border-top:1px solid var(--line-2)}
+.task,.hit{display:flex;align-items:center;gap:12px;padding:14px 18px;color:inherit;text-decoration:none;min-width:0}
+a.task:hover,a.hit:hover{background:var(--surface-2)}
+.task b,.hit b{display:block;overflow-wrap:anywhere}
+.task small,.hit small{display:block;color:var(--muted);font-size:12.5px;overflow-wrap:anywhere}
+.task-ic{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;flex:none;background:var(--line-2);color:var(--ink-2)}
+.task.tone-err .task-ic{background:var(--err-soft);color:var(--err)}
+.task.tone-warn .task-ic{background:var(--warn-soft);color:var(--warn)}
+.task.tone-info .task-ic{background:var(--info-soft);color:var(--info)}
+.task-n{font-weight:700;font-size:18px;min-width:2ch;text-align:right}
+.area-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.area-card{display:flex;flex-direction:column;gap:4px;padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:inherit;text-decoration:none;min-width:0}
+.area-card:hover{border-color:var(--ink-2)}
+.area-card small{color:var(--muted);font-size:12.5px;overflow-wrap:anywhere}
+.search-wide{max-width:560px}
+
+/* Settings tabs (links styled like the segmented control) */
+.tabs-nav{margin-bottom:16px}
+.tabs-nav a{padding:7px 12px;border-radius:8px;font-weight:600;font-size:13px;color:var(--muted);text-decoration:none}
+.tabs-nav a.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+
+/* Notifications list (staff and parents) */
+.note-row{display:flex;flex-direction:column;gap:6px;padding:14px 18px}
+.note-row+.note-row{border-top:1px solid var(--line-2)}
+
+/* Shared data table (src/shared/ui/data-table.tsx): sortable headers, a toolbar, phones get stacked cards from .rt */
+.dt-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--line-2)}
+.dt-sort{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:4px;font:inherit;color:inherit}
+.dt-sort:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:4px}
+.dt-sort .dir{font-size:10px;opacity:.6}
+.dt-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 16px;border-top:1px solid var(--line-2)}
+
+/* Small helpers that replace one-off inline styles */
+.mb-8{margin-bottom:8px}.mb-10{margin-bottom:10px}.mb-16{margin-bottom:16px}.mt-8{margin-top:8px}.mt-16{margin-top:16px}
+.w-full{width:100%}.mw-460{max-width:460px}.mw-560{max-width:560px}.mw-720{max-width:720px}.mw-900{max-width:900px}
+.items-start{align-items:start}.self-end{align-self:end}.text-right{text-align:right}.nowrap{white-space:nowrap}
+.fs-18{font-size:18px}.fs-13{font-size:13px}.fw-600{font-weight:600}
+.details-cell{max-width:380px;overflow-wrap:anywhere}
+.c-ok{color:var(--ok)}.c-err{color:var(--err)}.c-warn{color:var(--warn)}.c-muted{color:var(--muted)}
+.rel{position:relative}.block{display:block}
+.price-col{min-width:78px;text-align:right}
+
+/* Loading screens (loading.tsx): grey placeholders that pulse while a page loads */
+.skel{display:block;border-radius:10px;background:linear-gradient(90deg,var(--line-2) 25%,var(--line) 37%,var(--line-2) 63%);background-size:400% 100%;animation:skel 1.4s ease infinite}
+.skel-title{height:28px;width:min(320px,70%)}
+.skel-line{height:14px;width:min(520px,90%)}
+.skel-card{height:120px}
+.skel-row{height:44px}
+@keyframes skel{0%{background-position:100% 50%}100%{background-position:0 50%}}
+@media (prefers-reduced-motion:reduce){.skel{animation:none}}
+
+/* Error screens (error.tsx) for one area */
+.area-error{display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding:24px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+
+/* Checkout steps (cart) */
+.steps-mini{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.steps-mini span{font-size:12px;font-weight:600;color:var(--muted);padding:4px 10px;border-radius:999px;background:var(--line-2)}
+.steps-mini span.on{background:var(--ink);color:var(--surface)}
+.missing-box{display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:space-between}

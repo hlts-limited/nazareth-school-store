@@ -137,7 +137,7 @@ export async function staffFormPdf(id: string, view: StaffFormView) {
     section("Bank details");
     rows([
       ["Bank", e.bankName], ["Account number", e.accountLast4 ? `******${e.accountLast4}` : null],
-      ["Status", { NONE: "Not entered", PENDING: "Waiting for the Bursar", VERIFIED: "Verified", REJECTED: "Needs correcting" }[e.bankStatus]],
+      ["Status", { NONE: "Not entered", PENDING: "Waiting for Accounts", VERIFIED: "Verified", REJECTED: "Needs correcting" }[e.bankStatus]],
     ], 3);
   }
 

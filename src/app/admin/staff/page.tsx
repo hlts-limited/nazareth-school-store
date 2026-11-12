@@ -30,7 +30,7 @@ export default async function StaffPage() {
           <div className="tbl-wrap"><table className="t rt">
             <thead><tr><th>Name</th><th>Email</th><th>Roles</th><th>Status</th><th>2FA</th><th /></tr></thead>
             <tbody>
-              {!staff.length && <tr><td colSpan={6} className="empty">No staff yet. Use <b>Invite staff</b> to add your Registrar, Secretary and Accountant.</td></tr>}
+              {!staff.length && <tr><td colSpan={6} className="empty">No staff yet. Use <b>Invite staff</b> to add your Registrar, Secretary and Accounts staff.</td></tr>}
               {staff.map((s) => {
                 const roles = s.roles.map((r) => r.roleId);
                 return (

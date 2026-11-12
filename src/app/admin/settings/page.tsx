@@ -1,6 +1,7 @@
 import { PageHeader } from "@/shared/ui/primitives";
 import { ActionForm, FieldError, SubmitButton } from "@/shared/ui/client";
 import { requireStaff } from "@/modules/auth";
+import { SettingsTabs } from "@/app/admin/_settings-tabs";
 import { getSettings } from "@/modules/settings";
 import { saveSchoolSettingsAction } from "@/modules/settings-admin";
 import { paystackMock } from "@/modules/payments";
@@ -9,11 +10,12 @@ import { Note } from "@/shared/ui/primitives";
 export const metadata = { title: "Settings" };
 
 export default async function SettingsPage() {
-  await requireStaff("settings.manage");
+  const v = await requireStaff("settings.manage");
   const s = await getSettings();
   return (
     <div style={{ maxWidth: 820 }}>
       <PageHeader title="Settings" sub="School details used at checkout, on invoices and in messages." />
+      <SettingsTabs v={v} current="/admin/settings" />
       <div className="stack">
         {paystackMock() && <Note tone="warn">Paystack is in simulated mode because PAYSTACK_SECRET_KEY is not set. Add your keys to .env before going live.</Note>}
         <ActionForm action={saveSchoolSettingsAction} className="card stack">

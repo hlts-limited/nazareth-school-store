@@ -79,7 +79,7 @@ export function BankForm({ action, employeeId, banks, canCheck }: { action: Acti
         <div className="field">
           <label htmlFor={`aname-${employeeId}`}>Name on the account</label>
           <input className="input" id={`aname-${employeeId}`} name="accountName" autoComplete="off" />
-          <span className="hint">Type it exactly as the bank shows it. The Bursar checks it before any payment.</span>
+          <span className="hint">Type it exactly as the bank shows it. Accounts checks it before any payment.</span>
           <FieldError name="accountName" />
         </div>
       )}

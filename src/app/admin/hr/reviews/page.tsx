@@ -7,14 +7,14 @@ import { hrReviewQueue, reviewStaffDocAction, staffDocLabel } from "@/modules/hr
 
 export const metadata = { title: "To review" };
 
-/** Documents waiting for HR and bank details waiting for the Bursar, oldest first. */
+/** Documents waiting for HR and bank details waiting for Accounts, oldest first. */
 export default async function ReviewsPage() {
   const v = await requireStaff("hr.view.section");
   const docs = v.permissions.has("hr.manage"), bank = v.permissions.has("hr.bank.approve");
   const q = await hrReviewQueue({ docs, bank });
   return (
     <>
-      <PageHeader title="To review" sub="Documents for HR to approve, and bank details for the Bursar to verify. Nobody reviews their own." />
+      <PageHeader title="To review" sub="Documents for HR to approve, and bank details for Accounts to verify. Nobody reviews their own." />
       <div className="stack">
         {docs && (
           <section className="card pad-0">
@@ -57,7 +57,7 @@ export default async function ReviewsPage() {
             )}
           </section>
         )}
-        {!docs && !bank && <Empty title="Nothing for you here">Reviews are done by HR and the Bursar.</Empty>}
+        {!docs && !bank && <Empty title="Nothing for you here">Reviews are done by HR and Accounts.</Empty>}
       </div>
     </>
   );

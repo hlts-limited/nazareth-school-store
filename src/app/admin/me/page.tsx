@@ -26,7 +26,7 @@ export default async function MyProfilePage() {
         actions={<a className="btn" href={`/api/staff-form/${e.id}`}><Icon name="download" size="sm" />Download my form</a>} />
       <div className="detail-grid">
         <div className="stack">
-          {!e.onboarding.complete && <Note tone="warn" icon="alert">Please finish the steps on the right: upload your documents and enter your bank details. HR and the Bursar then check them.</Note>}
+          {!e.onboarding.complete && <Note tone="warn" icon="alert">Please finish the steps on the right: upload your documents and enter your bank details. HR and Accounts then check them.</Note>}
           <ActionForm action={updateOwnProfileAction} className="card stack">
             <h3>My details</h3>
             <div className="grid g3">

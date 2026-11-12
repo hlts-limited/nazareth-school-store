@@ -21,7 +21,7 @@ export default async function AlphaOverview() {
         <div className="ov-tiles">
           <div className="glass stat-tile"><span className="stat-l">Database size</span><span className="stat-v">{o.size}</span><span className="stat-s">{o.counts.length} tables · {rows.toLocaleString()} rows</span></div>
           <StatTile label="Signed-in sessions" value={o.sessions} sub={<Link href="/admin/sessions">Manage sessions</Link>} />
-          <StatTile label="Audit log" value={o.auditCount} sub={<Link href="/admin/alpha/audit">Open the full log</Link>} spark={daily.slice(-14)} />
+          <StatTile label="Audit log" value={o.auditCount} sub={<Link href="/admin/audit">Open the full log</Link>} spark={daily.slice(-14)} />
           <TimerTile icon="download" label={`Since the last backup · ${o.backups} kept`} since={o.lastBackup?.createdAt.toISOString() ?? null} warnAfterHours={36} empty="No backup yet" />
         </div>
         <ScanChart
@@ -29,7 +29,7 @@ export default async function AlphaOverview() {
           labels={trend.labels} series={trend.series} markers={trend.markers} warn={trend.warn} bars={trend.bars} barsLabel="Failed sign-ins"
           empty="No activity in the last 30 days."
           summary={`Changes logged, sign-ins and orders per day over the last 30 days. ${failed} failed sign-in attempts.`}
-          right={<Link className="btn sm" href="/admin/alpha/backups">Backups</Link>}
+          right={<Link className="btn sm" href="/admin/backup">Backups</Link>}
         />
         <Note icon="shield">The audit log stays append-only and the SQL console is read-only, even for the Alpha Admin. Change data through the Data explorer, where each change is logged with its old and new values.</Note>
         <div className="grid g2" style={{ alignItems: "start" }}>

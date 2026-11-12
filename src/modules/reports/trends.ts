@@ -79,7 +79,7 @@ export async function salesTrend(days = 30): Promise<Trend> {
   return { labels, series, bars, warn: quietDays(keys, series), markers };
 }
 
-/** Accountant: money received per day by method; rejected payments as red bars and amber days */
+/** Accounts: money received per day by method; rejected payments as red bars and amber days */
 export async function moneyTrend(days = 30): Promise<Trend & { reviewedIn24h: number | null; reviewed: number }> {
   const { keys, labels, since } = lastDays(days);
   const METHOD = { PAYSTACK: "Paystack", TRANSFER: "Bank transfer", WALLET: "Wallet" } as const;

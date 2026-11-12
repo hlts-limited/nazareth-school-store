@@ -9,7 +9,7 @@ import { money } from "../_ui";
 const PAY_TONE = { PENDING: "warn", SUCCESS: "ok", FAILED: "err", REVERSED: "err" } as const;
 const PAY_WORD = { PENDING: "Waiting for Paystack", SUCCESS: "Paid", FAILED: "Failed", REVERSED: "Reversed" } as const;
 
-/** Approval (the Accountant, never someone who prepared the run) and payment through Paystack (the Super Admin). */
+/** Approval and payment through Paystack, both by the Super Admin (never someone who prepared the run). */
 export async function ApproveAndPay({ runId, v }: { runId: string; v: StaffViewer }) {
   const s = await approvalSummary(runId);
   const { run, totals: t } = s;
@@ -49,7 +49,7 @@ export async function ApproveAndPay({ runId, v }: { runId: string; v: StaffViewe
             <div><SubmitButton size="sm" variant="ghost">Send back</SubmitButton></div>
           </ActionForm>
         </div>
-      )) : <p className="small muted">Waiting for the Accountant to approve.</p>)}
+      )) : <p className="small muted">Waiting for the Super Admin to approve.</p>)}
 
       {(run.status === "APPROVED" || run.status === "PAID" || run.status === "LOCKED") && (
         <p className="small">Approved by <b>{run.approvedBy}</b> on {fmtDateTime(run.approvedAt!)}.{run.paidAt ? ` Paid ${fmtDateTime(run.paidAt)}.` : ""}</p>

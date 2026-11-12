@@ -75,7 +75,7 @@ export async function listBanks(): Promise<{ code: string; name: string }[]> {
 
 /**
  * The account holder's name from Paystack's account check. null = can't check here (no key, or Paystack is
- * unavailable), so the name must be typed and checked by the Bursar. Throws a UserError for a wrong number.
+ * unavailable), so the name must be typed and checked by Accounts. Throws a UserError for a wrong number.
  */
 export async function resolveAccount(accountNumber: string, bankCode: string): Promise<string | null> {
   if (paystackMock()) return `TEST ACCOUNT ${accountNumber.slice(-4)}`;

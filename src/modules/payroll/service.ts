@@ -53,7 +53,7 @@ const addPreparer = (ids: string[], id: string) => (ids.includes(id) ? ids : [..
 
 async function openRun(runId: string) {
   const run = await db.payrollRun.findUniqueOrThrow({ where: { id: runId } });
-  if (!OPEN.includes(run.status)) throw new UserError("This run has been approved, so its figures can't change. The Accountant can send it back if needed.");
+  if (!OPEN.includes(run.status)) throw new UserError("This run has been approved, so its figures can't change. The Super Admin can send it back if needed.");
   return run;
 }
 

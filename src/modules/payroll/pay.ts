@@ -9,7 +9,7 @@ import { defaultsStillCurrent, periodLabel, runTotals, type Actor } from "./serv
 const payable = <I extends { held: boolean; netKobo: number }>(items: I[]) => items.filter((i) => !i.held && i.netKobo > 0);
 const naira = (k: number) => `₦${(k / 100).toLocaleString("en-NG", { maximumFractionDigits: 2 })}`;
 
-/** What the Accountant sees before approving: totals, held staff, and the change from last month. */
+/** What the Super Admin sees before approving: totals, held staff, and the change from last month. */
 export async function approvalSummary(runId: string) {
   const run = await db.payrollRun.findUniqueOrThrow({ where: { id: runId }, include: { items: { include: { employee: { include: { user: true } }, payments: true } } } });
   const prev = await db.payrollRun.findFirst({ where: { period: { lt: run.period }, status: { in: ["APPROVED", "PAID", "LOCKED"] } }, orderBy: { period: "desc" }, include: { items: true } });
@@ -23,7 +23,7 @@ export async function approveRun(runId: string, by: Actor) {
   const run = await db.payrollRun.findUniqueOrThrow({ where: { id: runId } });
   if (run.status !== "DEFAULTS_REVIEWED") throw new UserError("This run isn't waiting for approval.");
   if (run.preparerIds.includes(by.id)) throw new UserError("You worked on this run's stages, so you can't approve it. Someone who didn't prepare it must approve.");
-  if (!(await defaultsStillCurrent(runId))) throw new UserError("Attendance or penalties have changed since stage 3 was reviewed. Send it back so the Bursar can calculate again.");
+  if (!(await defaultsStillCurrent(runId))) throw new UserError("Attendance or penalties have changed since stage 3 was reviewed. Send it back so Accounts can calculate again.");
   // An encrypted backup first, as in the plan
   await createBackup("SAFETY", { id: by.id, name: `${by.name} (before approving ${periodLabel(run.period)} payroll)` });
   return db.payrollRun.update({ where: { id: runId }, data: { status: "APPROVED", approvedBy: by.name, approvedById: by.id, approvedAt: new Date(), sentBackNote: null } });

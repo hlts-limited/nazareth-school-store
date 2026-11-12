@@ -5,7 +5,17 @@ import { SCHOOL } from "@/shared/config/school";
 import { ToastProvider } from "@/shared/ui/client";
 import { ServiceWorker } from "@/shared/ui/pwa";
 import { isLite } from "@/shared/lib/lite";
-import "./globals.css";
+// Styles, in cascade order (see src/styles): shared base first, then each part of the app
+import "@/styles/01-base.css";
+import "@/styles/02-login.css";
+import "@/styles/03-shell.css";
+import "@/styles/04-store.css";
+import "@/styles/05-website.css";
+import "@/styles/06-motion.css";
+import "@/styles/07-staff.css";
+import "@/styles/08-charts.css";
+import "@/styles/09-features.css";
+import "@/styles/10-back-office.css";
 
 const display = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["600", "700", "800"], variable: "--font-display", display: "swap" });
 const body = Inter({ subsets: ["latin"], variable: "--font-body", display: "swap" });

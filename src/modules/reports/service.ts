@@ -1,20 +1,6 @@
 import { db } from "@/shared/lib/db";
 import { ORDER_STATUS, PAID_STATUSES } from "@/modules/orders";
 
-export async function navCounts() {
-  const [review, pack, bin, apps, enq, hrDocs, hrBanks, leave] = await Promise.all([
-    db.order.count({ where: { status: "AWAITING_VERIFICATION" } }),
-    db.order.count({ where: { status: { in: ["PAYMENT_APPROVED", "PACKING"] } } }),
-    db.pupil.count({ where: { deletedAt: { not: null } } }),
-    db.application.count({ where: { status: "SUBMITTED" } }), // new applications nobody has scheduled or decided yet
-    db.enquiry.count({ where: { handledAt: null } }),
-    db.employeeDocument.count({ where: { status: "PENDING" } }),
-    db.employee.count({ where: { bankStatus: "PENDING" } }),
-    db.leaveRequest.count({ where: { status: "PENDING" } }),
-  ]);
-  return { review, pack, bin, apps, enq, hr: hrDocs + hrBanks, leave };
-}
-
 export async function adminOverview() {
   const [paid, orders, families, sessions, byStatus, classes] = await Promise.all([
     db.order.aggregate({ where: { status: { in: PAID_STATUSES } }, _sum: { subtotal: true } }),

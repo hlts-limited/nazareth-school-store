@@ -5,6 +5,7 @@ import { fmtDate } from "@/shared/lib/format";
 import { ActionForm, FieldError, SubmitButton } from "@/shared/ui/client";
 import { Note, PageHeader } from "@/shared/ui/primitives";
 import { requireStaff } from "@/modules/auth";
+import { SettingsTabs } from "@/app/admin/_settings-tabs";
 import {
   addHolidayAction, attendanceSettings, BRANCHES, currentGateCode, KioskLink, lagosDate, newKioskLinkAction, PrintButton, removeHolidayAction, retirePrintedCodeAction,
   PreciseLocation, saveAttendanceSettingsAction,
@@ -15,7 +16,7 @@ export const metadata = { title: "Attendance settings" };
 const DAYS: [number, string][] = [[1, "Mon"], [2, "Tue"], [3, "Wed"], [4, "Thu"], [5, "Fri"], [6, "Sat"], [7, "Sun"]];
 
 export default async function AttendanceSettingsPage() {
-  await requireStaff("attendance.manage");
+  const v = await requireStaff("attendance.manage");
   const s = await attendanceSettings();
   const year = lagosDate().slice(0, 4);
   const holidays = await db.holiday.findMany({ where: { date: { gte: new Date(`${Number(year) - 1}-09-01T00:00:00Z`) } }, orderBy: { date: "asc" } });
@@ -23,6 +24,7 @@ export default async function AttendanceSettingsPage() {
   return (
     <div style={{ maxWidth: 980 }}>
       <PageHeader title="Attendance settings" sub="These apply to every clock-in. The open questions for the school (cutoff, location, photo spot) are set here." />
+      <SettingsTabs v={v} current="/admin/attendance/settings" />
       <div className="stack">
         <ActionForm action={saveAttendanceSettingsAction} className="card stack">
           <h3>Clock-in rules</h3>
