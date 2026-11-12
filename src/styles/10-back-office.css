@@ -78,3 +78,4 @@ a.task:hover,a.hit:hover{background:var(--surface-2)}
 .w-70{width:70px}
 .wallet-strip{display:flex;align-items:center;gap:12px;padding:14px 18px;color:inherit;text-decoration:none}
 .wallet-kpi{max-width:420px}
+.tax-list{flex-wrap:wrap}

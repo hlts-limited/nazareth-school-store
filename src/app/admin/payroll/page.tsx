@@ -7,6 +7,7 @@ import { RunStatus } from "./_ui";
 import { DataTable } from "@/shared/ui/data-table";
 import { keyed } from "@/shared/ui/table-cells";
 import { PaystackStatus } from "./_paystack";
+import { Icon } from "@/shared/ui/icon";
 
 export const metadata = { title: "Payroll" };
 
@@ -16,10 +17,26 @@ export default async function PayrollRunsPage() {
   const now = new Date();
   const thisMonth = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
   const canRun = v.permissions.has("payroll.run");
+  // The staff tax list covers approved months only, so its figures are final
+  const final = runs.filter((r) => ["APPROVED", "PAID", "LOCKED"].includes(r.status)).map((r) => r.period).sort().reverse();
+  const years = [...new Set(final.map((p) => p.slice(0, 4)))];
   return (
     <>
       <PageHeader title="Payroll" sub="Each month: Accounts calculates and reviews three stages (statutory, tax, penalties), then the Super Admin approves and pays." actions={<PaystackStatus />} />
       <div className="stack">
+        <form className="card row tight tax-list" action="/api/admin/payroll/tax-list" method="get">
+          <span className="grow"><b>Staff tax list</b><span className="small muted"> · every staff member and the tax (PAYE) deducted, as Excel</span></span>
+          {final.length ? (
+            <>
+              <label className="sr-only" htmlFor="tl-p">Period</label>
+              <select className="input w-auto" id="tl-p" name="period" defaultValue={final[0]}>
+                <optgroup label="One month">{final.map((p) => <option key={p} value={p}>{periodLabel(p)}</option>)}</optgroup>
+                <optgroup label="Whole year (month by month)">{years.map((y) => <option key={y} value={y}>{y}</option>)}</optgroup>
+              </select>
+              <button className="btn primary" type="submit"><Icon name="download" size="sm" /> Download tax list</button>
+            </>
+          ) : <span className="small muted">Ready once a month&apos;s payroll is approved.</span>}
+        </form>
         {canRun && !runs.some((r) => r.period === thisMonth) && (
           <ActionForm action={startRunAction} className="card row tight">
             <label className="lbl" htmlFor="pr-m">Start payroll for</label>

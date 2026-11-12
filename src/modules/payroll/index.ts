@@ -7,4 +7,5 @@ export {
 } from "./actions";
 export { approvalSummary, payPreview, applyTransferResult, lockFinishedRuns } from "./pay";
 export { payslipPdf, payslipItem, remittanceXlsx, REMITTANCES } from "./payslip";
+export { taxListXlsx, taxListScope } from "./tax-list";
 export type { Remittance } from "./payslip";
