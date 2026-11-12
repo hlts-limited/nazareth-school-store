@@ -63,7 +63,7 @@ export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 const P = PERMISSIONS;
 
 /** Only the Alpha Admin may do these: never part of any role, not even Super Admin */
-export const ALPHA_ONLY: Permission[] = [P.ALPHA, P.PUPILS_DELETE, P.PUPILS_EMPTY_BIN, P.STAFF_DELETE, P.ITEMS_DELETE];
+export const ALPHA_ONLY: Permission[] = [P.ALPHA, P.PUPILS_DELETE, P.PUPILS_EMPTY_BIN, P.STAFF_DELETE, P.ITEMS_DELETE, P.AUDIT_VIEW];
 
 export const ROLE_DEFS: { id: string; name: string; permissions: Permission[]; requires2fa: boolean }[] = [
   {
@@ -221,14 +221,13 @@ export const STAFF_SECTIONS: NavSection[] = [
     items: SETTINGS_TABS,
   },
   {
-    id: "system", label: "System", perm: [P.SETTINGS_MANAGE, P.STAFF_MANAGE, P.AUDIT_VIEW, P.BACKUP_MANAGE],
+    id: "system", label: "System", perm: [P.SETTINGS_MANAGE, P.STAFF_MANAGE, P.BACKUP_MANAGE],
     items: [
       { href: "/admin/overview", label: "School overview", icon: "chart", perm: P.REPORTS_VIEW },
       { href: "/admin/staff", label: "Staff & roles", icon: "shield", perm: P.STAFF_MANAGE },
       { href: "/admin/people", label: "View as parent / pupil", icon: "eye", perm: P.VIEW_AS },
       { href: "/admin/sessions", label: "Sessions", icon: "clock", perm: P.SESSIONS_MANAGE },
       { href: "/admin/backup", label: "Backups & restores", icon: "db", perm: P.BACKUP_MANAGE },
-      { href: "/admin/audit", label: "Audit log", icon: "list", perm: P.AUDIT_VIEW },
     ],
   },
   {
@@ -238,6 +237,7 @@ export const STAFF_SECTIONS: NavSection[] = [
       { href: "/admin/alpha/data", label: "Data explorer", icon: "db" },
       { href: "/admin/alpha/sql", label: "SQL console", icon: "file" },
       { href: "/admin/alpha/start-fresh", label: "Start fresh", icon: "refresh" },
+      { href: "/admin/audit", label: "Audit log", icon: "list", perm: P.AUDIT_VIEW },
     ],
   },
 ];

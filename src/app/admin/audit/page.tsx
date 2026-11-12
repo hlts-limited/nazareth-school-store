@@ -20,7 +20,7 @@ export default async function AuditLog({ searchParams }: { searchParams: Promise
   const link = (n: number) => `/admin/audit?${new URLSearchParams({ ...params, page: String(n) })}`;
   return (
     <>
-      <PageHeader title="Audit log" sub="Everything everyone has done, newest first. Entries can never be edited or deleted, not even by the Super Admin."
+      <PageHeader title="Audit log" sub="Everything everyone has done, newest first. Only the Alpha Admin can see it, and entries can never be edited or deleted."
         actions={v.isAlpha ? <a className="btn" href={`/admin/audit/export?${new URLSearchParams(params)}`}><Icon name="download" size="sm" /> Export CSV</a> : undefined} />
       <div className="stack">
         <Card>

@@ -16,7 +16,7 @@ const PERM_LABELS: [string, string][] = [
   ["payments.review", "Approve payments & invoices"], ["invoices.export", "Export invoices"], ["wallets.adjust", "Adjust parent wallets"],
   ["catalogue.manage", "Manage items & categories"], ["stock.manage", "Manage stock"], ["fulfilment.manage", "Pack & hand out orders"],
   ["pupils.manage", "Add & import pupils"], ["pupils.delete", "Delete pupils (Alpha only)"], ["pupils.empty_bin", "Empty the bin (Alpha only)"], ["staff.delete", "Delete staff (Alpha only)"], ["catalogue.delete", "Delete items (Alpha only)"],
-  ["viewas.use", "View as parent / pupil"], ["backup.manage", "Backup & restore"], ["staff.manage", "Manage staff"], ["settings.manage", "School settings"], ["audit.view", "Audit log"],
+  ["viewas.use", "View as parent / pupil"], ["backup.manage", "Backup & restore"], ["staff.manage", "Manage staff"], ["settings.manage", "School settings"], ["audit.view", "Audit log (Alpha only)"],
   ["admissions.view", "See applications"], ["admissions.manage", "Handle applications & enrol"], ["admissions.publish", "Open admission & publish results"], ["website.manage", "Website notices, events, gallery & messages"],
   ["self.service", "Own staff page (profile, documents, clock-in, payslips)"], ["hr.view.section", "See own section's staff"], ["hr.view", "See all staff records"],
   ["hr.manage", "Register staff & review documents"], ["hr.salary", "See and set salaries"], ["hr.bank.approve", "Verify staff bank details"],
