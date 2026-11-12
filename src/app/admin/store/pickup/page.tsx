@@ -2,11 +2,10 @@ import Link from "next/link";
 import { orderNo } from "@/shared/lib/format";
 import { Card, Empty, PageHeader, Pill } from "@/shared/ui/primitives";
 import { ActionForm, FieldError, SubmitButton } from "@/shared/ui/client";
-import { db } from "@/shared/lib/db";
 import { requireStaff } from "@/modules/auth";
-import { findByPickupCode, handOutAction } from "@/modules/fulfilment";
+import { findByPickupCode, handOutAction, readyForPickup } from "@/modules/fulfilment";
 import { LINE_STATUS, ORDER_STATUS } from "@/modules/orders";
-import { PickupCodeInput } from "../../_components";
+import { PickupCodeInput } from "../_widgets";
 
 export const metadata = { title: "Pick-up desk" };
 
@@ -14,7 +13,7 @@ export default async function PickupPage({ searchParams }: { searchParams: Promi
   await requireStaff("fulfilment.manage");
   const { code = "" } = await searchParams;
   const o = code ? await findByPickupCode(code) : null;
-  const waiting = await db.order.findMany({ where: { status: { in: ["READY", "PARTIALLY_HANDED_OUT"] } }, include: { parent: true }, orderBy: { updatedAt: "asc" }, take: 30 });
+  const waiting = await readyForPickup();
   return (
     <>
       <PageHeader title="Pick-up desk" sub="Type the 4-digit code from the parent's phone (or scan the QR code with a barcode scanner)." />

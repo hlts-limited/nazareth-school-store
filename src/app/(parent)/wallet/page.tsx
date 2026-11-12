@@ -1,10 +1,10 @@
 import { fmtDate, naira, orderNo } from "@/shared/lib/format";
 import { Avatar, Card, CardHeader, Empty, Note, PageHeader } from "@/shared/ui/primitives";
-import { db } from "@/shared/lib/db";
 import { requireParentActor } from "@/modules/auth";
 import { childrenOf } from "@/modules/pupils";
 import { balances, moveExcessAction, statement } from "@/modules/wallet";
 import { AutoSubmitSelect } from "../_components";
+import { orderNumbers } from "@/modules/orders";
 
 export const metadata = { title: "Wallet" };
 
@@ -18,8 +18,8 @@ export default async function WalletPage() {
   const kids = await childrenOf(parent.id);
   const [bal, tx] = await Promise.all([balances(kids.map((k) => k.id)), statement(kids.map((k) => k.id))]);
   const orderIds = [...new Set(tx.map((t) => t.orderId).filter(Boolean))] as string[];
-  const orders = await db.order.findMany({ where: { id: { in: orderIds } }, select: { id: true, number: true } });
-  const onum = (id: string | null) => { const o = orders.find((x) => x.id === id); return o ? orderNo(o.number) : "—"; };
+  const numbers = await orderNumbers(orderIds);
+  const onum = (id: string | null) => { const n = id ? numbers.get(id) : undefined; return n !== undefined ? orderNo(n) : "—"; };
   const movable = tx.filter((t) => t.movable && t.amount > 0);
   return (
     <>

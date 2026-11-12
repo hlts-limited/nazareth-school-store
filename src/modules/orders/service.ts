@@ -188,3 +188,15 @@ export async function expireUnpaidOrders() {
   }
   return { cancelled, reminded, paymentReminders, reviewReminders };
 }
+
+/** Order numbers for a list of order ids (e.g. to label wallet entries) */
+export async function orderNumbers(ids: string[]) {
+  if (!ids.length) return new Map<string, number>();
+  const rows = await db.order.findMany({ where: { id: { in: ids } }, select: { id: true, number: true } });
+  return new Map(rows.map((o) => [o.id, o.number]));
+}
+
+/** Is this order one of this parent's? (receipts and invoices check this before showing a file) */
+export const parentOwnsOrder = async (orderId: string, parentId: string) => !!(await db.order.findFirst({ where: { id: orderId, parentId }, select: { id: true } }));
+
+export const orderByNumber = (number: number) => db.order.findUnique({ where: { number } });

@@ -1,8 +1,7 @@
 import Link from "next/link";
-import { db } from "@/shared/lib/db";
 import { PageHeader } from "@/shared/ui/primitives";
 import { requireStaff } from "@/modules/auth";
-import { sectionName } from "@/modules/hr";
+import { sectionName, sectionScope, activeStaff } from "@/modules/hr";
 import { lagosDate, monthTotals } from "@/modules/attendance";
 
 export const metadata = { title: "Attendance by month" };
@@ -14,9 +13,9 @@ export default async function AttendanceMonthPage({ searchParams }: { searchPara
   const v = await requireStaff("attendance.view.section");
   const sp = await searchParams;
   const m = /^\d{4}-\d{2}$/.test(sp.m ?? "") ? sp.m! : lagosDate().slice(0, 7);
-  const own = v.permissions.has("attendance.manage") ? null : (await db.employee.findUnique({ where: { userId: v.user.id }, select: { section: true } }))?.section ?? "none";
+  const own = await sectionScope(v, "attendance.manage");
   const [staff, totals] = await Promise.all([
-    db.employee.findMany({ where: { status: "ACTIVE", ...(own ? { section: own } : {}) }, include: { user: { select: { firstName: true, lastName: true } } }, orderBy: [{ section: "asc" }, { staffCode: "asc" }] }),
+    activeStaff(own),
     monthTotals(m),
   ]);
   const label = new Date(`${m}-01T00:00:00Z`).toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });

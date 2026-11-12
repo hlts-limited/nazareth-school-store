@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import ExcelJS from "exceljs";
-import { db } from "@/shared/lib/db";
 import { getViewer } from "@/modules/auth";
-import { sectionName } from "@/modules/hr";
+import { sectionName, activeStaff } from "@/modules/hr";
 import { lagosDate, monthTotals } from "@/modules/attendance";
 
 /** A month's attendance per staff member, as Excel. */
@@ -13,7 +12,7 @@ export async function GET(req: Request) {
   const q = new URL(req.url).searchParams.get("m") ?? "";
   const m = /^\d{4}-\d{2}$/.test(q) ? q : lagosDate().slice(0, 7);
   const [staff, totals] = await Promise.all([
-    db.employee.findMany({ where: { status: "ACTIVE" }, include: { user: { select: { firstName: true, lastName: true } } }, orderBy: [{ section: "asc" }, { staffCode: "asc" }] }),
+    activeStaff(),
     monthTotals(m),
   ]);
   const wb = new ExcelJS.Workbook();

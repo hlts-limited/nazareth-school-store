@@ -114,3 +114,6 @@ export async function handOut(orderId: string, lineIds: string[], collectedByNam
   await notify(res.order.parentId, `${orderNo(res.order.number)} collected`, `${res.count} item${res.count > 1 ? "s" : ""} from order ${orderNo(res.order.number)} ${res.count > 1 ? "were" : "was"} collected by ${collectedByName}.${res.left ? " Some items are still to come." : " Thank you!"}`, ["whatsapp"]);
   return res;
 }
+
+/** Orders packed and waiting to be collected, oldest first (the pick-up desk's list) */
+export const readyForPickup = (take = 30) => db.order.findMany({ where: { status: { in: ["READY", "PARTIALLY_HANDED_OUT"] } }, include: { parent: true }, orderBy: { updatedAt: "asc" }, take });

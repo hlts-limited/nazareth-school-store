@@ -2,7 +2,7 @@ import { PageHeader } from "@/shared/ui/primitives";
 import { requireStaff } from "@/modules/auth";
 import { listClasses } from "@/modules/catalogue";
 import { commitImportAction, previewImportAction } from "@/modules/pupils";
-import { ImportTool } from "../../_components";
+import { ImportTool } from "../_widgets";
 
 export const metadata = { title: "Bulk import" };
 

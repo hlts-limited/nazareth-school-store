@@ -1,21 +1,18 @@
-import { db } from "@/shared/lib/db";
 import { Icon } from "@/shared/ui/icon";
 import { Empty, PageHeader, Pill } from "@/shared/ui/primitives";
 import { requireStaff } from "@/modules/auth";
-import { periodLabel } from "@/modules/payroll";
+import { periodLabel, payslipsFor } from "@/modules/payroll";
 import { money } from "../../payroll/_ui";
+import { employeeForUser } from "@/modules/hr";
 
 export const metadata = { title: "My payslips" };
 
 /** A staff member's payslips: every approved month, to download or print. */
 export default async function MyPayslipsPage() {
   const v = await requireStaff("self.service");
-  const e = await db.employee.findUnique({ where: { userId: v.user.id } });
+  const e = await employeeForUser(v.user.id);
   if (!e) return <><PageHeader title="My payslips" /><div className="card"><Empty title="No staff record yet">HR hasn&apos;t registered you as a member of staff.</Empty></div></>;
-  const items = await db.payrollItem.findMany({
-    where: { employeeId: e.id, run: { status: { in: ["APPROVED", "PAID", "LOCKED"] } } },
-    include: { run: true, payments: true }, orderBy: { run: { period: "desc" } },
-  });
+  const items = await payslipsFor(e.id);
   return (
     <div style={{ maxWidth: 820 }}>
       <PageHeader title="My payslips" sub="Each month's payslip shows your pay, every deduction and your totals for the year." />

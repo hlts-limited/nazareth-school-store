@@ -128,3 +128,6 @@ export async function listActiveSessions() {
 export async function revokeSessionById(id: string, reason: string) {
   await db.session.updateMany({ where: { id, revokedAt: null }, data: { revokedAt: new Date(), revokeReason: reason } });
 }
+
+/** The account an invite link belongs to, if any */
+export const userByInviteToken = (token: string) => db.user.findUnique({ where: { inviteToken: token } });

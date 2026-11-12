@@ -5,7 +5,7 @@ import { Icon } from "@/shared/ui/icon";
 import { requireStaff } from "@/modules/auth";
 import { listClasses } from "@/modules/catalogue";
 import { deletePupilsAction, moveClassAction, resendInviteAction, searchPupils, selectAllMatchingAction, whatsAppInviteLink } from "@/modules/pupils";
-import { PupilTable } from "../../_components";
+import { PupilTable } from "../_widgets";
 
 export const metadata = { title: "Pupils" };
 

@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { db } from "@/shared/lib/db";
 import { fmtDate } from "@/shared/lib/format";
 import { ActionForm, FieldError, SubmitButton } from "@/shared/ui/client";
 import { PageHeader, Pill } from "@/shared/ui/primitives";
 import { requireStaff } from "@/modules/auth";
-import { addAdjustmentAction, payrollRates, periodLabel, removeAdjustmentAction } from "@/modules/payroll";
+import { addAdjustmentAction, payrollRates, periodLabel, removeAdjustmentAction, adjustmentsFor, runByPeriod } from "@/modules/payroll";
 import { money } from "../_ui";
+import { activeStaff } from "@/modules/hr";
 
 export const metadata = { title: "Penalties & waivers" };
 
@@ -20,9 +20,7 @@ export default async function PenaltiesPage({ searchParams }: { searchParams: Pr
   const m = /^\d{4}-\d{2}$/.test(sp.m ?? "") ? sp.m! : thisMonth;
   const canEnter = v.permissions.has("payroll.penalties");
   const [staff, list, rates, run] = await Promise.all([
-    db.employee.findMany({ where: { status: "ACTIVE" }, include: { user: { select: { firstName: true, lastName: true } } }, orderBy: { staffCode: "asc" } }),
-    db.payrollAdjustment.findMany({ where: { period: m }, include: { employee: { include: { user: { select: { firstName: true, lastName: true } } } } }, orderBy: { createdAt: "desc" } }),
-    payrollRates(), db.payrollRun.findUnique({ where: { period: m } }),
+    activeStaff(), adjustmentsFor(m), payrollRates(), runByPeriod(m),
   ]);
   const closed = run && !["DRAFT", "STATUTORY_REVIEWED", "TAX_REVIEWED", "DEFAULTS_REVIEWED"].includes(run.status);
   return (

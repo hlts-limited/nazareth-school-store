@@ -196,3 +196,6 @@ export async function listEnquiries(show: "open" | "handled" | "all", take = 100
 export async function setEnquiryHandled(id: string, handled: boolean, staffId: string) {
   return db.enquiry.update({ where: { id }, data: handled ? { handledAt: new Date(), handledById: staffId } : { handledAt: null, handledById: null } });
 }
+
+/** One published event (for its calendar file) */
+export const publishedEvent = (id: string) => db.event.findFirst({ where: { id, published: true } });

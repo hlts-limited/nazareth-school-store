@@ -6,7 +6,6 @@ import { Avatar, Card, CardHeader, Note, PageHeader, Pill } from "@/shared/ui/pr
 import { ActionForm, CopyButton, SubmitButton } from "@/shared/ui/client";
 import { Icon } from "@/shared/ui/icon";
 import { SCHOOL } from "@/shared/config/school";
-import { db } from "@/shared/lib/db";
 import { requireParentActor } from "@/modules/auth";
 import { amountDue, cancelOrderAction, getOrderByNo, isPaid, LINE_STATUS, ORDER_STATUS, pileStatus, stepIndex, UNPAID_STATUSES } from "@/modules/orders";
 import { payFromWalletAction, paystackReady, startPaystackAction, uploadReceiptAction } from "@/modules/payments";
@@ -14,6 +13,7 @@ import { getSettings } from "@/modules/settings";
 import { balances } from "@/modules/wallet";
 import { childrenOf } from "@/modules/pupils";
 import { UploadReceipt } from "../../_components";
+import { pileDescriptions } from "@/modules/catalogue";
 
 export async function generateMetadata({ params }: { params: Promise<{ no: string }> }) {
   return { title: `Order ${(await params).no}` };
@@ -42,7 +42,7 @@ export default async function OrderPage({ params }: { params: Promise<{ no: stri
   const qr = o.pickupCode && (o.status === "READY" || o.status === "PARTIALLY_HANDED_OUT") ? await QRCode.toDataURL(`NAZ-PICKUP:${o.pickupCode}`, { margin: 1, width: 192 }) : null;
   const unpaid = UNPAID_STATUSES.includes(o.status);
   const pileIds = [...new Set(o.lines.flatMap((l) => (l.pileItemId ? [l.pileItemId] : [])))];
-  const pileDesc = new Map((pileIds.length ? await db.item.findMany({ where: { id: { in: pileIds } }, select: { id: true, description: true } }) : []).map((p) => [p.id, p.description ?? ""]));
+  const pileDesc = await pileDescriptions(pileIds);
 
   const transferBox = (
     <div className="bank-box">

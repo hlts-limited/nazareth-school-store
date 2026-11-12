@@ -242,3 +242,12 @@ export async function updatePile(id: string, input: PileInput) {
     return tx.item.findUniqueOrThrow({ where: { id } });
   });
 }
+
+/** What parents see for each pile: its description, by pile id */
+export async function pileDescriptions(pileIds: string[]) {
+  if (!pileIds.length) return new Map<string, string>();
+  const rows = await db.item.findMany({ where: { id: { in: pileIds } }, select: { id: true, description: true } });
+  return new Map(rows.map((p) => [p.id, p.description ?? ""]));
+}
+
+export const classById = (id: string) => db.class.findUnique({ where: { id } });

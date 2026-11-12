@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { db } from "@/shared/lib/db";
 import { isoDay, slugify } from "@/shared/lib/format";
 import { auditActor, getViewer } from "@/modules/auth";
 import { audit } from "@/modules/audit";
 import { INVOICE_LABELS, type InvoiceLabel } from "@/modules/orders";
 import { invoiceRows, toCsv, toPdf, toXlsx } from "@/modules/payments";
+import { classById } from "@/modules/catalogue";
 
 /** Export exactly what the Invoices page is showing: ?format=xlsx|csv|pdf&cls=&from=&to=&status=&q= */
 export async function GET(req: Request) {
@@ -21,7 +21,7 @@ export async function GET(req: Request) {
     q: u.searchParams.get("q") || undefined,
   };
   const rows = await invoiceRows(f);
-  const cls = f.classId ? (await db.class.findUnique({ where: { id: f.classId } }))?.name : undefined;
+  const cls = f.classId ? (await classById(f.classId))?.name : undefined;
   const base = `invoices_${cls ? slugify(cls) : "all-classes"}_${f.from ?? "start"}_to_${f.to ?? isoDay()}_${f.status ? slugify(f.status) : "all"}`;
   const title = `Invoices · ${cls ?? "All classes"} · ${f.from ?? "start"} to ${f.to ?? isoDay()} · ${f.status ?? "All statuses"}`;
   await audit(await auditActor(v), "Exported invoices", "Invoice", null, { format, rows: rows.length, filters: f });

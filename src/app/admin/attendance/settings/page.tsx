@@ -1,15 +1,11 @@
 import QRCode from "qrcode";
-import { db } from "@/shared/lib/db";
 import { SCHOOL } from "@/shared/config/school";
 import { fmtDate } from "@/shared/lib/format";
 import { ActionForm, FieldError, SubmitButton } from "@/shared/ui/client";
 import { Note, PageHeader } from "@/shared/ui/primitives";
 import { requireStaff } from "@/modules/auth";
 import { SettingsTabs } from "@/app/admin/_settings-tabs";
-import {
-  addHolidayAction, attendanceSettings, BRANCHES, currentGateCode, KioskLink, lagosDate, newKioskLinkAction, PrintButton, removeHolidayAction, retirePrintedCodeAction,
-  PreciseLocation, saveAttendanceSettingsAction,
-} from "@/modules/attendance";
+import { addHolidayAction, attendanceSettings, BRANCHES, currentGateCode, KioskLink, lagosDate, newKioskLinkAction, PrintButton, removeHolidayAction, retirePrintedCodeAction, PreciseLocation, saveAttendanceSettingsAction, holidaysFrom } from "@/modules/attendance";
 
 export const metadata = { title: "Attendance settings" };
 
@@ -19,7 +15,7 @@ export default async function AttendanceSettingsPage() {
   const v = await requireStaff("attendance.manage");
   const s = await attendanceSettings();
   const year = lagosDate().slice(0, 4);
-  const holidays = await db.holiday.findMany({ where: { date: { gte: new Date(`${Number(year) - 1}-09-01T00:00:00Z`) } }, orderBy: { date: "asc" } });
+  const holidays = await holidaysFrom(new Date(`${Number(year) - 1}-09-01T00:00:00Z`));
   const printed = s.qrMode === "static" ? await QRCode.toDataURL((await currentGateCode()).code, { margin: 1, width: 600 }) : null;
   return (
     <div style={{ maxWidth: 980 }}>

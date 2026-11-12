@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { db } from "@/shared/lib/db";
 import { Card, Empty, PageHeader } from "@/shared/ui/primitives";
 import { SearchParamInput } from "@/shared/ui/client";
 import { requireStaff, startViewAs } from "@/modules/auth";
-import { ViewAsButton } from "../_components";
+import { ViewAsButton } from "./_widgets";
+import { viewAsCandidates } from "@/modules/pupils";
 
 export const metadata = { title: "View as parent or pupil" };
 
@@ -12,14 +12,7 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
   const sp = await searchParams;
   const tab = sp.tab === "pupils" ? "pupils" : "parents";
   const q = sp.q?.trim();
-  const parents = tab === "parents" ? await db.user.findMany({
-    where: { type: "PARENT", ...(q ? { OR: [{ firstName: { contains: q, mode: "insensitive" } }, { lastName: { contains: q, mode: "insensitive" } }, { phone: { contains: q } }, { email: { contains: q, mode: "insensitive" } }] } : {}) },
-    include: { guardianships: { include: { pupil: true } } }, orderBy: { lastName: "asc" }, take: 40,
-  }) : [];
-  const pupils = tab === "pupils" ? await db.pupil.findMany({
-    where: { deletedAt: null, ...(q ? { OR: [{ firstName: { contains: q, mode: "insensitive" } }, { lastName: { contains: q, mode: "insensitive" } }, { regNumber: { contains: q, mode: "insensitive" } }] } : {}) },
-    include: { class: true }, orderBy: { lastName: "asc" }, take: 40,
-  }) : [];
+  const { parents, pupils } = await viewAsCandidates(tab, q);
   return (
     <>
       <PageHeader title="View as parent or pupil" sub="Open anyone's dashboard without their password. Views are read-only, need your 2FA code and a reason, end after 30 minutes, and are logged." />

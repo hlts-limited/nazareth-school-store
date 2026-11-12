@@ -4,7 +4,7 @@ import { ActionForm, SubmitButton } from "@/shared/ui/client";
 import { requireStaff } from "@/modules/auth";
 import { lineReadyAction, markReadyAction, packingQueue, setLinePackedAction, startPackingAction } from "@/modules/fulfilment";
 import { ORDER_STATUS } from "@/modules/orders";
-import { PackCheckbox } from "../../_components";
+import { PackCheckbox } from "../_widgets";
 
 export const metadata = { title: "Orders to pack" };
 

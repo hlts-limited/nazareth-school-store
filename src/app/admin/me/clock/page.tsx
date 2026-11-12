@@ -1,19 +1,19 @@
 import { ActionForm, SubmitButton } from "@/shared/ui/client";
 import { Empty, Note, PageHeader } from "@/shared/ui/primitives";
-import { db } from "@/shared/lib/db";
 import { requireStaff } from "@/modules/auth";
-import { acceptNoticeAction, attendanceSettings, ClockIn, clockInPlaces, completeClockAction, dayValue, lagosDate, nextClock, scanGateCodeAction } from "@/modules/attendance";
+import { acceptNoticeAction, attendanceSettings, ClockIn, clockInPlaces, completeClockAction, nextClock, scanGateCodeAction, todayRecord } from "@/modules/attendance";
 import { timeOf } from "../../attendance/_status";
+import { employeeForUser } from "@/modules/hr";
 
 export const metadata = { title: "Clock in / out" };
 export const dynamic = "force-dynamic";
 
 export default async function ClockPage() {
   const v = await requireStaff("self.service");
-  const e = await db.employee.findUnique({ where: { userId: v.user.id } });
+  const e = await employeeForUser(v.user.id);
   if (!e) return <><PageHeader title="Clock in / out" /><div className="card"><Empty title="No staff record yet">HR hasn&apos;t registered you as a member of staff.</Empty></div></>;
   const [s, next, today] = await Promise.all([
-    attendanceSettings(), nextClock(e.id), db.attendance.findUnique({ where: { employeeId_date: { employeeId: e.id, date: dayValue(lagosDate()) } } }),
+    attendanceSettings(), nextClock(e.id), todayRecord(e.id),
   ]);
   const gps = s.gpsRequired !== false && clockInPlaces(s).length > 0;
   const done = today?.status === "LEAVE" ? "You're on leave today." : today?.status === "HOLIDAY" ? "Today is a holiday." : "You've clocked in and out today. See you tomorrow.";

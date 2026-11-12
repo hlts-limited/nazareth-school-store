@@ -1,4 +1,5 @@
 export {
+  sectionScope, employeeForUser, activeStaff, documentByFile,
   STAFF_DOC_KINDS, STAFF_SECTIONS_LIST, POSITIONS, STAFF_APP_ROLES, staffDocLabel, isSensitiveDoc, requiredDocKinds, sectionName,
   listEmployees, employeeDetail, employeeOwner, myEmployee, onboarding, hrReviewQueue, hrPendingCount, bankInClear, expiringDocuments, remindExpiringDocuments, whatsAppTo, staffInviteText,
 } from "./service";

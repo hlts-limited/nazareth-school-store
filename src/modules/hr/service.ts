@@ -297,3 +297,27 @@ export async function remindExpiringDocuments(now = new Date()) {
   }
   return sent;
 }
+
+// ---------- Lookups used by pages ----------
+
+/**
+ * The staff section a person is limited to: null when they hold `wide` (they see every section), otherwise
+ * their own section ("none" when they have no staff record). Head teachers see only their own section.
+ */
+export async function sectionScope(v: { user: { id: string }; permissions: ReadonlySet<string> }, wide: string) {
+  if (v.permissions.has(wide)) return null;
+  return (await db.employee.findUnique({ where: { userId: v.user.id }, select: { section: true } }))?.section ?? "none";
+}
+
+/** The staff record of a signed-in user, if they have one */
+export const employeeForUser = (userId: string) => db.employee.findUnique({ where: { userId } });
+
+/** Everyone currently working (optionally one section), by section then staff code */
+export const activeStaff = (section?: string | null) => db.employee.findMany({
+  where: { status: "ACTIVE", ...(section ? { section } : {}) },
+  include: { user: { select: { firstName: true, lastName: true } } },
+  orderBy: [{ section: "asc" }, { staffCode: "asc" }],
+});
+
+/** A staff document by its stored file, with its owner (for the file server's access check) */
+export const documentByFile = (fileKey: string) => db.employeeDocument.findFirst({ where: { fileKey }, include: { employee: true } });

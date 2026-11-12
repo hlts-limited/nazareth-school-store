@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { db } from "@/shared/lib/db";
 import { fmtDate } from "@/shared/lib/format";
 import { ActionForm, SubmitButton } from "@/shared/ui/client";
 import { Empty, PageHeader, Pill } from "@/shared/ui/primitives";
 import { requireStaff } from "@/modules/auth";
-import { decideLeaveAction, LEAVE_TYPES } from "@/modules/attendance";
+import { decideLeaveAction, LEAVE_TYPES, leaveLists } from "@/modules/attendance";
+import { sectionScope } from "@/modules/hr";
 
 export const metadata = { title: "Leave requests" };
 
@@ -14,12 +14,7 @@ const typeName = (t: string) => LEAVE_TYPES.find(([k]) => k === t)?.[1] ?? t;
 export default async function LeavePage() {
   const v = await requireStaff("attendance.view.section");
   const manage = v.permissions.has("attendance.manage");
-  const own = manage ? null : (await db.employee.findUnique({ where: { userId: v.user.id }, select: { section: true } }))?.section ?? "none";
-  const scope = own ? { employee: { section: own } } : {};
-  const [pending, recent] = await Promise.all([
-    db.leaveRequest.findMany({ where: { status: "PENDING", ...scope }, include: { employee: { include: { user: true } } }, orderBy: { fromDate: "asc" } }),
-    db.leaveRequest.findMany({ where: { status: { in: ["APPROVED", "REJECTED"] }, ...scope }, include: { employee: { include: { user: true } } }, orderBy: { decidedAt: "desc" }, take: 30 }),
-  ]);
+  const { pending, recent } = await leaveLists(await sectionScope(v, "attendance.manage"));
   return (
     <>
       <PageHeader title="Leave requests" sub="Approved leave is never counted as absence, so it never leads to a penalty." />

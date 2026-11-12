@@ -2,10 +2,10 @@ import Link from "next/link";
 import { fmtDate } from "@/shared/lib/format";
 import { ActionForm, FieldError, SubmitButton } from "@/shared/ui/client";
 import { Empty, Kpi, PageHeader, Pill } from "@/shared/ui/primitives";
-import { db } from "@/shared/lib/db";
 import { requireStaff } from "@/modules/auth";
-import { cancelLeaveAction, lagosDate, LEAVE_TYPES, monthFor, requestLeaveAction } from "@/modules/attendance";
+import { cancelLeaveAction, lagosDate, LEAVE_TYPES, monthFor, requestLeaveAction, leaveFor } from "@/modules/attendance";
 import { STATUS_TONE, STATUS_WORD, timeOf } from "../../attendance/_status";
+import { employeeForUser } from "@/modules/hr";
 
 export const metadata = { title: "My attendance & leave" };
 
@@ -14,11 +14,11 @@ const shift = (m: string, by: number) => { const d = new Date(`${m}-01T00:00:00Z
 
 export default async function MyAttendancePage({ searchParams }: { searchParams: Promise<{ m?: string }> }) {
   const v = await requireStaff("self.service");
-  const e = await db.employee.findUnique({ where: { userId: v.user.id } });
+  const e = await employeeForUser(v.user.id);
   if (!e) return <><PageHeader title="My attendance & leave" /><div className="card"><Empty title="No staff record yet">HR hasn&apos;t registered you as a member of staff.</Empty></div></>;
   const sp = await searchParams;
   const m = /^\d{4}-\d{2}$/.test(sp.m ?? "") ? sp.m! : lagosDate().slice(0, 7);
-  const [rows, leave] = await Promise.all([monthFor(e.id, m), db.leaveRequest.findMany({ where: { employeeId: e.id }, orderBy: { fromDate: "desc" }, take: 20 })]);
+  const [rows, leave] = await Promise.all([monthFor(e.id, m), leaveFor(e.id)]);
   const count = (s: string) => rows.filter((r) => r.status === s).length;
   const label = new Date(`${m}-01T00:00:00Z`).toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
   return (

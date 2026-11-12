@@ -1,4 +1,5 @@
-export { childrenOf, searchPupils, suggestRegNumber, binContents, emptyBin, whatsAppInviteLink, addPupil, PER_PAGE } from "./service";
+export {
+  viewAsCandidates, childrenOf, searchPupils, suggestRegNumber, binContents, emptyBin, whatsAppInviteLink, addPupil, PER_PAGE } from "./service";
 export type { ImportRow } from "./service";
 export {
   addPupilAction, deletePupilsAction, moveClassAction, selectAllMatchingAction, restorePupilAction, emptyBinAction,

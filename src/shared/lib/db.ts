@@ -10,3 +10,8 @@ if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = db;
 
 /** Works for both `db` and the client inside `db.$transaction(async (tx) => ...)` */
 export type Tx = Prisma.TransactionClient;
+
+/** Is the database answering? (for the uptime check) */
+export async function databaseReachable() {
+  try { await db.$queryRaw`SELECT 1`; return true; } catch { return false; }
+}

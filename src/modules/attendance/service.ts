@@ -460,3 +460,28 @@ export async function photoStats() {
   ]);
   return { stored, overdue };
 }
+
+// ---------- Lookups used by pages ----------
+
+/** Leave waiting for a decision, and the last 30 decided, optionally for one section */
+export async function leaveLists(section: string | null) {
+  const scope = section ? { employee: { section } } : {};
+  const include = { employee: { include: { user: true } } } as const;
+  const [pending, recent] = await Promise.all([
+    db.leaveRequest.findMany({ where: { status: "PENDING", ...scope }, include, orderBy: { fromDate: "asc" } }),
+    db.leaveRequest.findMany({ where: { status: { in: ["APPROVED", "REJECTED"] }, ...scope }, include, orderBy: { decidedAt: "desc" }, take: 30 }),
+  ]);
+  return { pending, recent };
+}
+
+/** Holidays on or after a date, in order */
+export const holidaysFrom = (from: Date) => db.holiday.findMany({ where: { date: { gte: from } }, orderBy: { date: "asc" } });
+
+/** A person's attendance record for today (Lagos), if any */
+export const todayRecord = (employeeId: string) => db.attendance.findUnique({ where: { employeeId_date: { employeeId, date: dayValue(lagosDate()) } } });
+
+/** A person's most recent leave requests */
+export const leaveFor = (employeeId: string, take = 20) => db.leaveRequest.findMany({ where: { employeeId }, orderBy: { fromDate: "desc" }, take });
+
+/** The attendance record a clock-in photo belongs to, with its owner (for the file server's access check) */
+export const recordByPhoto = (key: string) => db.attendance.findFirst({ where: { OR: [{ inPhotoKey: key }, { outPhotoKey: key }] }, include: { employee: true } });

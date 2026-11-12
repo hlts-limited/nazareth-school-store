@@ -4,7 +4,7 @@ import { Card, Empty, Note, PageHeader, Pill } from "@/shared/ui/primitives";
 import { requireStaff } from "@/modules/auth";
 import { ORDER_STATUS } from "@/modules/orders";
 import { approvePaymentAction, rejectPaymentAction, reviewQueue } from "@/modules/payments";
-import { ApproveForm, ReceiptViewer } from "../../_components";
+import { ApproveForm, ReceiptViewer } from "../_widgets";
 
 export const metadata = { title: "Payments to review" };
 

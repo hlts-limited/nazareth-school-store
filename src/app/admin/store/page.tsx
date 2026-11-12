@@ -5,7 +5,7 @@ import { Icon } from "@/shared/ui/icon";
 import { requireStaff } from "@/modules/auth";
 import { lowStock, recordStockMovement } from "@/modules/inventory";
 import { storeOverview, storeTrend } from "@/modules/reports";
-import { StockDialog } from "../_components";
+import { StockDialog } from "./_widgets";
 
 export const metadata = { title: "Store" };
 

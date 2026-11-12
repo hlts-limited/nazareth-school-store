@@ -248,3 +248,16 @@ export function runTotals(items: { grossKobo: number; pensionKobo: number; nhfKo
     penalties: sum((i) => i.penaltiesKobo), net: sum((i) => i.netKobo), netPayable: payable.reduce((a, i) => a + i.netKobo, 0),
   };
 }
+
+// ---------- Lookups used by pages ----------
+
+/** A person's payslips: every approved, paid or locked month, newest first */
+export const payslipsFor = (employeeId: string) => db.payrollItem.findMany({
+  where: { employeeId, run: { status: { in: ["APPROVED", "PAID", "LOCKED"] } } },
+  include: { run: true, payments: true }, orderBy: { run: { period: "desc" } },
+});
+
+/** Penalties and waivers entered for a month, newest first */
+export const adjustmentsFor = (period: string) => db.payrollAdjustment.findMany({
+  where: { period }, include: { employee: { include: { user: { select: { firstName: true, lastName: true } } } } }, orderBy: { createdAt: "desc" },
+});

@@ -1,9 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import QRCode from "qrcode";
-import { db } from "@/shared/lib/db";
 import { SCHOOL } from "@/shared/config/school";
-import { acceptInvite, totpUri } from "@/modules/auth";
+import { acceptInvite, totpUri, userByInviteToken } from "@/modules/auth";
 import { ActionForm, FieldError, SubmitButton } from "@/shared/ui/client";
 import { Note } from "@/shared/ui/primitives";
 
@@ -11,7 +10,7 @@ export const metadata = { title: "Set your password" };
 
 export default async function InvitePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
-  const user = await db.user.findUnique({ where: { inviteToken: token } });
+  const user = await userByInviteToken(token);
   const valid = user && user.inviteExpiresAt && user.inviteExpiresAt > new Date();
   const qr = valid && user.type === "STAFF" && user.totpSecret && user.email ? await QRCode.toDataURL(totpUri(user.email, user.totpSecret), { margin: 1, width: 180 }) : null;
 

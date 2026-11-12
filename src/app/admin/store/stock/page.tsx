@@ -3,7 +3,7 @@ import { Card, CardHeader, Empty, PageHeader } from "@/shared/ui/primitives";
 import { SearchParamInput } from "@/shared/ui/client";
 import { requireStaff } from "@/modules/auth";
 import { recentMovements, recordStockMovement, stockLevels } from "@/modules/inventory";
-import { StockDialog } from "../../_components";
+import { StockDialog } from "../_widgets";
 
 export const metadata = { title: "Stock" };
 

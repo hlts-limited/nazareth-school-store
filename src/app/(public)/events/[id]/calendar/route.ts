@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { db } from "@/shared/lib/db";
 import { SCHOOL } from "@/shared/config/school";
+import { publishedEvent } from "@/modules/website";
 
 const esc = (t: string) => t.replace(/\\/g, "\\\\").replace(/([,;])/g, "\\$1").replace(/\r?\n/g, "\\n");
 const utc = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
@@ -10,7 +10,7 @@ const lagosTime = (d: Date) => new Intl.DateTimeFormat("en-GB", { timeZone: "Afr
 /** One event as a calendar file (.ics): phones offer to add it to the calendar when it's opened. */
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const e = await db.event.findFirst({ where: { id, published: true } });
+  const e = await publishedEvent(id);
   if (!e) return new NextResponse("Event not found", { status: 404 });
 
   // Events saved without a time (midnight in Lagos) are all-day events

@@ -5,7 +5,7 @@ import { Icon } from "@/shared/ui/icon";
 import { ROLE_DEFS, roleName } from "@/modules/access-control";
 import { requireStaff } from "@/modules/auth";
 import { inviteStaffAction, listStaff, resetStaffAction, setRolesAction, setStaffStatusAction } from "@/modules/staff";
-import { InviteStaff, RolesForm } from "../_components";
+import { InviteStaff, RolesForm } from "./_widgets";
 
 export const metadata = { title: "Staff & roles" };
 

@@ -1,12 +1,11 @@
 import Link from "next/link";
-import { db } from "@/shared/lib/db";
 import { ActionForm, FieldError, SubmitButton } from "@/shared/ui/client";
 import { Note, PageHeader, Pill } from "@/shared/ui/primitives";
 import { Ruler, ScanChart, StatTile } from "@/shared/ui/charts";
 import { morningCurve } from "@/modules/reports";
 import { auditActor, requireStaff } from "@/modules/auth";
 import { audit } from "@/modules/audit";
-import { sectionName } from "@/modules/hr";
+import { sectionName, sectionScope } from "@/modules/hr";
 import { attendanceSettings, closeDayAction, dayBoard, lagosDate, LEAVE_TYPES, manualClockAction, photoStats, weekday } from "@/modules/attendance";
 import { STATUS_TONE, STATUS_WORD, timeOf } from "./_status";
 
@@ -25,7 +24,7 @@ export default async function AttendanceTodayPage({ searchParams }: { searchPara
   const day = /^\d{4}-\d{2}-\d{2}$/.test(sp.day ?? "") && sp.day! <= today ? sp.day! : today;
   const manage = v.permissions.has("attendance.manage");
   const photos = v.permissions.has("attendance.photos");
-  const own = manage ? null : (await db.employee.findUnique({ where: { userId: v.user.id }, select: { section: true } }))?.section ?? "none";
+  const own = await sectionScope(v, "attendance.manage");
   const [board, s, stats] = await Promise.all([dayBoard(day, own), attendanceSettings(), photos ? photoStats() : null]);
   // Looking at the clock-in photos is recorded, once per page view
   if (photos && board.rows.some((r) => r.rec?.inPhotoKey || r.rec?.outPhotoKey)) {

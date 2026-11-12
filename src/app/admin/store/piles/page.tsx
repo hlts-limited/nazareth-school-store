@@ -4,7 +4,7 @@ import { Card, CardHeader, Empty, LinkButton, PageHeader, Pill } from "@/shared/
 import { requireStaff } from "@/modules/auth";
 import { listClasses, listPiles, pileStock, variantAvailable } from "@/modules/catalogue";
 import { awaitingByVariant, recordStockMovement } from "@/modules/inventory";
-import { StockDialog } from "../../_components";
+import { StockDialog } from "../_widgets";
 
 export const metadata = { title: "Core-textbook piles" };
 

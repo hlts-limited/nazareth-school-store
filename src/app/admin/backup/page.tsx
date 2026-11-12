@@ -6,7 +6,7 @@ import { Icon } from "@/shared/ui/icon";
 import { requireStaff } from "@/modules/auth";
 import { listAudit } from "@/modules/audit";
 import { createBackupAction, listBackups, prepareRestoreAction, restoreAction, uploadBackupAction } from "@/modules/backup";
-import { RestoreFlow } from "../_components";
+import { RestoreFlow } from "./_widgets";
 
 export const metadata = { title: "Backups & restores" };
 

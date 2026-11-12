@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { branchName } from "@/shared/config/school";
 import { notFound } from "next/navigation";
-import { db } from "@/shared/lib/db";
 import { env } from "@/shared/config/env";
 import { fmtDate, naira } from "@/shared/lib/format";
 import { ActionForm, CopyButton, SubmitButton } from "@/shared/ui/client";
@@ -9,7 +8,7 @@ import { Icon } from "@/shared/ui/icon";
 import { Note, PageHeader, Pill } from "@/shared/ui/primitives";
 import { roleName } from "@/modules/access-control";
 import { requireStaff } from "@/modules/auth";
-import { employeeDetail, resendStaffInviteAction, sectionName, setEmployeeStatusAction, staffInviteText, updateEmployeeAction, whatsAppTo } from "@/modules/hr";
+import { employeeDetail, resendStaffInviteAction, sectionName, setEmployeeStatusAction, staffInviteText, updateEmployeeAction, whatsAppTo, sectionScope } from "@/modules/hr";
 import { RecordFields } from "../_fields";
 import { Bank, Checklist, Documents } from "../_parts";
 
@@ -21,10 +20,8 @@ export default async function StaffRecordPage({ params }: { params: Promise<{ id
   const v = await requireStaff("hr.view.section");
   const e = await employeeDetail((await params).id);
   if (!e) notFound();
-  if (!v.permissions.has("hr.view")) {
-    const mine = await db.employee.findUnique({ where: { userId: v.user.id }, select: { section: true } });
-    if (mine?.section !== e.section) notFound();
-  }
+  const own = await sectionScope(v, "hr.view");
+  if (own && own !== e.section) notFound(); // head teachers: their own section only
   const canManage = v.permissions.has("hr.manage");
   const salary = v.permissions.has("hr.salary");
   const u = e.user;

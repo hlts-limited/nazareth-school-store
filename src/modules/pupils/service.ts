@@ -207,3 +207,24 @@ export async function commitImport(rows: ImportRow[]) {
   }
   return added;
 }
+
+/** Parents or pupils to open with "View as", searched by name, phone, email or registration number */
+export async function viewAsCandidates(tab: "parents" | "pupils", q?: string) {
+  const ci = (v: string) => ({ contains: v, mode: "insensitive" as const });
+  if (tab === "parents") {
+    return {
+      parents: await db.user.findMany({
+        where: { type: "PARENT", ...(q ? { OR: [{ firstName: ci(q) }, { lastName: ci(q) }, { phone: { contains: q } }, { email: ci(q) }] } : {}) },
+        include: { guardianships: { include: { pupil: true } } }, orderBy: { lastName: "asc" }, take: 40,
+      }),
+      pupils: [],
+    };
+  }
+  return {
+    parents: [],
+    pupils: await db.pupil.findMany({
+      where: { deletedAt: null, ...(q ? { OR: [{ firstName: ci(q) }, { lastName: ci(q) }, { regNumber: ci(q) }] } : {}) },
+      include: { class: true }, orderBy: { lastName: "asc" }, take: 40,
+    }),
+  };
+}

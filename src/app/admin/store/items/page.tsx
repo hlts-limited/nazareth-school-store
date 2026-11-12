@@ -5,7 +5,7 @@ import { SearchParamInput } from "@/shared/ui/client";
 import { requireStaff } from "@/modules/auth";
 import { categoryTree, ItemArt, itemAvailable, itemLook, listClasses, pageItems, pileStock } from "@/modules/catalogue";
 import { recordStockMovement } from "@/modules/inventory";
-import { StockDialog } from "../../_components";
+import { StockDialog } from "../_widgets";
 
 export const metadata = { title: "Items" };
 

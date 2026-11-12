@@ -3,7 +3,7 @@ import { Card, Empty, PageHeader } from "@/shared/ui/primitives";
 import { SearchParamInput } from "@/shared/ui/client";
 import { requireStaff } from "@/modules/auth";
 import { adjustWalletAction, pupilsWithBalance } from "@/modules/wallet";
-import { WalletAdjust } from "../../_components";
+import { WalletAdjust } from "../_widgets";
 
 export const metadata = { title: "Pupil wallets" };
 

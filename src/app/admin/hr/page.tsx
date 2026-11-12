@@ -1,10 +1,9 @@
 import Link from "next/link";
 import { branchName } from "@/shared/config/school";
-import { db } from "@/shared/lib/db";
 import { LinkButton, PageHeader, Pill } from "@/shared/ui/primitives";
 import { SearchParamInput, SearchParamSelect } from "@/shared/ui/client";
 import { requireStaff } from "@/modules/auth";
-import { listEmployees, sectionName, STAFF_SECTIONS_LIST } from "@/modules/hr";
+import { listEmployees, sectionName, STAFF_SECTIONS_LIST, sectionScope } from "@/modules/hr";
 
 export const metadata = { title: "Staff" };
 
@@ -16,7 +15,7 @@ export default async function StaffListPage({ searchParams }: { searchParams: Pr
   const v = await requireStaff("hr.view.section");
   const sp = await searchParams;
   // Head teachers see only their own section
-  const own = v.permissions.has("hr.view") ? null : (await db.employee.findUnique({ where: { userId: v.user.id }, select: { section: true } }))?.section ?? "none";
+  const own = await sectionScope(v, "hr.view");
   const status = sp.status === "INACTIVE" || sp.status === "all" ? sp.status : "ACTIVE";
   const rows = await listEmployees({ q: sp.q, section: sp.section, status, onlySection: own });
   const canManage = v.permissions.has("hr.manage");

@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
-import { db } from "@/shared/lib/db";
 import { sniffType, storage } from "@/shared/lib/storage";
 import { auditActor, getViewAs, getViewer } from "@/modules/auth";
 import { audit } from "@/modules/audit";
-import { isSensitiveDoc, staffDocLabel } from "@/modules/hr";
+import { isSensitiveDoc, staffDocLabel, documentByFile } from "@/modules/hr";
+import { recordByPhoto } from "@/modules/attendance";
+import { parentOwnsOrder } from "@/modules/orders";
 
 /** Serves stored files. Product, gallery, event and news photos are public; receipts only for the parent who uploaded them and accounts staff;
  *  admission documents only for admissions staff. */
@@ -21,7 +22,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ key: strin
     const v = await getViewer();
     if (!v) return new NextResponse("Sign in required", { status: 401 });
     if (v.kind !== "staff") return new NextResponse("Not allowed", { status: 403 });
-    const rec = await db.attendance.findFirst({ where: { OR: [{ inPhotoKey: key }, { outPhotoKey: key }] }, include: { employee: true } });
+    const rec = await recordByPhoto(key);
     if (!rec) return new NextResponse("Not found", { status: 404 });
     if (rec.employee.userId !== v.user.id && !v.permissions.has("attendance.photos")) return new NextResponse("Not allowed", { status: 403 });
     return serve(key, "private, no-store");
@@ -31,7 +32,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ key: strin
     const v = await getViewer();
     if (!v) return new NextResponse("Sign in required", { status: 401 });
     if (v.kind !== "staff") return new NextResponse("Not allowed", { status: 403 });
-    const doc = await db.employeeDocument.findFirst({ where: { fileKey: key }, include: { employee: true } });
+    const doc = await documentByFile(key);
     if (!doc) return new NextResponse("Not found", { status: 404 });
     const own = doc.employee.userId === v.user.id;
     if (!own && !v.permissions.has("hr.view")) return new NextResponse("Not allowed", { status: 403 });
@@ -47,9 +48,9 @@ export async function GET(_: Request, { params }: { params: Promise<{ key: strin
   if (v.kind === "staff" && v.permissions.has("payments.review")) allowed = true;
   if (v.kind === "staff") {
     const va = await getViewAs();
-    if (va?.targetKind === "parent") allowed = allowed || !!(await db.order.findFirst({ where: { id: orderId, parentId: va.targetId } }));
+    if (va?.targetKind === "parent") allowed = allowed || (await parentOwnsOrder(orderId, va.targetId));
   }
-  if (v.kind === "parent") allowed = !!(await db.order.findFirst({ where: { id: orderId, parentId: v.user.id } }));
+  if (v.kind === "parent") allowed = await parentOwnsOrder(orderId, v.user.id);
   if (!allowed) return new NextResponse("Not allowed", { status: 403 });
   return serve(key, "private, no-store");
 }
