@@ -159,7 +159,7 @@ async function seedDemo(classes: { id: string; name: string }[]) {
   for (const [title, first, last, phone, kids] of fam) {
     const p = await db.user.create({ data: { type: "PARENT", status: "ACTIVE", title, firstName: first, lastName: last, phone, email: `${first.toLowerCase()}.${last.toLowerCase()}@example.com`, passwordHash: demoPw, consentAt: new Date() } });
     for (const [kf, reg, cn] of kids) {
-      await db.pupil.create({ data: { firstName: kf, lastName: last, regNumber: reg, classId: clsId(cn), guardians: { create: { parentId: p.id } }, wallet: { create: {} } } });
+      await db.pupil.create({ data: { firstName: kf, lastName: last, regNumber: reg, classId: clsId(cn), guardians: { create: { parentId: p.id } } } });
     }
   }
   console.log("Demo parents: funke.adeyemi@example.com (or 08034567812) / Demo!2026 — pupils sign in with surname + reg number, e.g. Adeyemi + NAZ/2019/014");

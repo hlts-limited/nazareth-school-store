@@ -101,7 +101,7 @@ export async function handOut(orderId: string, lineIds: string[], collectedByNam
     let count = 0;
     for (const l of o.lines.filter((x) => lineIds.includes(x.id) && x.status === "READY")) {
       await deductForHandout(tx, l.variantId, l.qty, o.id, staff.id, orderNo(o.number));
-      await tx.orderLine.update({ where: { id: l.id }, data: { status: "HANDED_OUT" } });
+      await tx.orderLine.update({ where: { id: l.id }, data: { status: "HANDED_OUT", handedOutAt: new Date() } });
       count += l.qty;
     }
     if (!count) throw new UserError("Nothing selected is ready to hand out.");

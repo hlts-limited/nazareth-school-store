@@ -8,7 +8,7 @@ import { addBooklistAction, addToCartAction, booklistProgress, removeWishAction,
 import { amountDue, ordersForParent } from "@/modules/orders";
 import { OrderRow } from "../_order-row";
 import { childrenOf } from "@/modules/pupils";
-import { balances } from "@/modules/wallet";
+import { balance } from "@/modules/wallet";
 import { getSettings } from "@/modules/settings";
 
 export const metadata = { title: "Home" };
@@ -21,7 +21,7 @@ function greet() {
 export default async function ParentHome() {
   const { parent, readOnly } = await requireParentActor();
   const [kids, orders, wish, settings] = await Promise.all([childrenOf(parent.id), ordersForParent(parent.id, 20), wishlistForParent(parent.id), getSettings()]);
-  const [bal, progress] = await Promise.all([balances(kids.map((k) => k.id)), Promise.all(kids.map((k) => booklistProgress(k.id, k.classId)))]);
+  const [wallet, progress] = await Promise.all([balance(parent.id), Promise.all(kids.map((k) => booklistProgress(k.id, k.classId)))]);
 
   type Alert = { tone: "warn" | "err" | "ok" | "info"; icon: string; title: string; sub: string; href: string; cta: string };
   const alerts: Alert[] = [];
@@ -55,6 +55,14 @@ export default async function ParentHome() {
           </section>
         )}
 
+        {wallet > 0 && (
+          <Link href="/wallet" className="card wallet-strip">
+            <Icon name="wallet" />
+            <span className="grow"><b>{naira(wallet)} in your wallet</b><span className="small muted"> · used first on your next order</span></span>
+            <Icon name="chev" size="sm" />
+          </Link>
+        )}
+
         <section className="stack tight">
           <div className="eyebrow">Your children</div>
           {kids.length === 0 ? (
@@ -73,7 +81,6 @@ export default async function ParentHome() {
                     <div className="stack tight">
                       <div className="stat-line"><span>Booklist</span><b>{p.have.length} of {p.required.length} items</b></div>
                       <div className={`progress ${pct === 100 ? "ok" : ""}`}><span style={{ width: `${pct}%` }} /></div>
-                      <div className="stat-line"><span>Wallet balance</span><b>{naira(bal[k.id] ?? 0)}</b></div>
                     </div>
                     {p.missing.length > 0 ? (
                       // The most common purchase in one tap: everything on the booklist not yet bought, straight to the cart

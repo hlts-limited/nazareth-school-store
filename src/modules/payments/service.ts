@@ -5,43 +5,37 @@ import { randomToken, sha256 } from "@/shared/lib/crypto";
 import { naira, orderNo } from "@/shared/lib/format";
 import { storage } from "@/shared/lib/storage";
 import { env } from "@/shared/config/env";
-import { credit, debit, balances } from "@/modules/wallet";
+import { balance, credit, spendUpTo } from "@/modules/wallet";
 import { notify } from "@/modules/notifications";
 import { addEvent, amountDue, settle, UNPAID_STATUSES } from "@/modules/orders";
 import { initializeTransaction, verifyTransaction } from "./paystack";
 
-type Applied = { outcome: "approved" | "part"; excess: number; balance: number; creditedPupilId?: string; multiChild: boolean };
+type Applied = { outcome: "approved" | "part"; excess: number; balance: number };
 
 /**
  * Apply money received to an order (shared by bank transfers and Paystack).
- * Overpayment → order approved, excess credited to a child's wallet (movable if several children).
+ * Overpayment → order approved, the extra goes to the parent's wallet for next time.
  * Underpayment → order "Part paid".
  */
 async function applyReceived(tx: Tx, order: Order, received: number, actorName: string): Promise<Applied> {
   const due = amountDue(order);
   const r = settle(due, received);
-  const lines = await tx.orderLine.findMany({ where: { orderId: order.id }, select: { pupilId: true } });
-  const pupils = [...new Set(lines.map((l) => l.pupilId))];
   if (r.outcome === "approved") {
     await tx.order.update({ where: { id: order.id }, data: { status: "PAYMENT_APPROVED", amountReceived: order.amountReceived + r.applied, excess: order.excess + r.excess, rejectReason: null } });
     await tx.invoice.updateMany({ where: { orderId: order.id }, data: { status: "APPROVED", approvedAt: new Date() } });
-    if (r.excess > 0) await credit(tx, pupils[0], "OVERPAYMENT_CREDIT", r.excess, { orderId: order.id, reason: `Overpayment on ${orderNo(order.number)}`, actorName, movable: pupils.length > 1 });
+    if (r.excess > 0) await credit(tx, order.parentId, "OVERPAYMENT_CREDIT", r.excess, { orderId: order.id, reason: `Overpayment on ${orderNo(order.number)}`, actorName });
     await addEvent(tx, order.id, `Payment approved${r.excess ? ` · ${naira(r.excess)} extra credited to wallet` : ""}`, actorName);
   } else {
     await tx.order.update({ where: { id: order.id }, data: { status: "PART_PAID", amountReceived: order.amountReceived + r.applied } });
     await addEvent(tx, order.id, `Part paid: ${naira(received)} received, ${naira(r.balance)} balance`, actorName);
   }
-  return { outcome: r.outcome, excess: r.excess, balance: r.balance, creditedPupilId: r.excess ? pupils[0] : undefined, multiChild: pupils.length > 1 };
+  return { outcome: r.outcome, excess: r.excess, balance: r.balance };
 }
 
 async function notifyApplied(order: Order, a: Applied, received: number) {
   const no = orderNo(order.number);
   if (a.outcome === "approved") {
-    let extra = "";
-    if (a.excess && a.creditedPupilId) {
-      const p = await db.pupil.findUnique({ where: { id: a.creditedPupilId } });
-      extra = ` You paid ${naira(a.excess)} more than was due; it's in ${p?.firstName}'s wallet${a.multiChild ? " (you can move it to another child in the app)" : ""}.`;
-    }
+    const extra = a.excess ? ` You paid ${naira(a.excess)} more than was due; it's in your wallet and will be used on your next order.` : "";
     await notify(order.parentId, `Payment for ${no} approved`, `Payment for order ${no} is approved. We'll message you on WhatsApp when it's ready for pick-up.${extra}`);
   } else {
     await notify(order.parentId, `Balance due on ${no}`, `We received ${naira(received)} for order ${no}. Balance due: ${naira(a.balance)}. Pay the balance in the app to complete your order.`, ["whatsapp", "email"]);
@@ -114,30 +108,45 @@ export async function rejectTransfer(paymentId: string, reason: string, staff: {
 }
 
 // ---------- Wallet ----------
-export async function payFromWallet(parentId: string, orderId: string, actorName: string) {
+/**
+ * Use the parent's wallet on an unpaid order, as much as it holds (the wallet always goes first).
+ * Returns what is still due afterwards; 0 means the order is now paid.
+ */
+export async function applyWallet(parentId: string, orderId: string, actorName: string) {
   const res = await db.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT 1 FROM "Order" WHERE "id" = ${orderId} FOR UPDATE`;
     const order = await tx.order.findFirst({ where: { id: orderId, parentId } });
     if (!order || !UNPAID_STATUSES.includes(order.status)) throw new UserError("This order isn't waiting for a payment.");
-    let due = amountDue(order);
-    const kids = await tx.guardian.findMany({ where: { parentId } });
-    const bal = await balances(kids.map((k) => k.pupilId), tx);
-    const total = Object.values(bal).reduce((a, b) => a + b, 0);
-    if (total < due) throw new UserError(`Your children's wallets hold ${naira(total)}; ${naira(due)} is due.`);
-    let used = 0;
-    for (const k of kids) {
-      const use = Math.min(bal[k.pupilId] ?? 0, due);
-      if (use > 0) { await debit(tx, k.pupilId, "CHECKOUT_DEBIT", use, { orderId, actorName, reason: `Balance for ${orderNo(order.number)}` }); due -= use; used += use; }
-    }
+    const used = await spendUpTo(tx, parentId, amountDue(order), { orderId, actorName, reason: `Used for ${orderNo(order.number)}` });
+    if (!used) return { order, a: null, due: amountDue(order) };
     const updated = await tx.order.update({ where: { id: orderId }, data: { walletUsed: order.walletUsed + used } });
-    const a = await applyReceived(tx, updated, 0, actorName); // due is now 0 → approved
     await tx.payment.create({ data: { orderId, method: "WALLET", amountDue: used, amountReceived: used, status: "APPROVED", verifiedAt: new Date() } });
-    return { order: updated, a };
+    const due = amountDue(updated);
+    if (due > 0) { await addEvent(tx, orderId, `${naira(used)} taken from the wallet · ${naira(due)} still to pay`, actorName); return { order: updated, a: null, due }; }
+    const a = await applyReceived(tx, updated, 0, actorName); // nothing left to pay → approved
+    return { order: updated, a, due: 0 };
   });
-  await notifyApplied(res.order, res.a, 0);
+  if (res.a) await notifyApplied(res.order, res.a, 0);
+  return res.due;
+}
+
+/** Pay an order entirely from the wallet (the button shows only when the wallet covers it) */
+export async function payFromWallet(parentId: string, orderId: string, actorName: string) {
+  const order = await db.order.findFirst({ where: { id: orderId, parentId } });
+  if (!order) throw new UserError("Order not found.");
+  const held = await balance(parentId);
+  if (held < amountDue(order)) throw new UserError(`Your wallet holds ${naira(held)}; ${naira(amountDue(order))} is due.`);
+  await applyWallet(parentId, orderId, actorName);
 }
 
 // ---------- Paystack ----------
-export async function startPaystack(parent: { id: string; email: string | null; phone: string | null }, orderId: string) {
+/**
+ * Send the parent to Paystack for what is due, after first taking what the wallet holds.
+ * Returns null when the wallet covered everything (no Paystack needed).
+ */
+export async function startPaystack(parent: { id: string; email: string | null; phone: string | null; firstName?: string; lastName?: string }, orderId: string) {
+  const left = await applyWallet(parent.id, orderId, parent.firstName ? `${parent.firstName} ${parent.lastName ?? ""}`.trim() : "Parent");
+  if (left === 0) return null;
   const order = await db.order.findFirst({ where: { id: orderId, parentId: parent.id } });
   if (!order || !UNPAID_STATUSES.includes(order.status)) throw new UserError("This order isn't waiting for a payment.");
   const due = amountDue(order);

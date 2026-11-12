@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { DataTable } from "@/shared/ui/data-table";
+import { AlphaDelete } from "@/shared/ui/alpha-delete";
+import { deleteStaffAction } from "@/modules/staff";
 import { keyed } from "@/shared/ui/table-cells";
 import { branchName } from "@/shared/config/school";
 import { LinkButton, PageHeader, Pill } from "@/shared/ui/primitives";
@@ -21,6 +23,7 @@ export default async function StaffListPage({ searchParams }: { searchParams: Pr
   const status = sp.status === "INACTIVE" || sp.status === "all" ? sp.status : "ACTIVE";
   const rows = await listEmployees({ q: sp.q, section: sp.section, status, onlySection: own });
   const canManage = v.permissions.has("hr.manage");
+  const canDelete = v.permissions.has("staff.delete"); // Alpha Admin only
   return (
     <>
       <PageHeader title="Staff" sub={own ? `${sectionName(own)} · ${rows.length} staff` : `${rows.length} ${status === "ACTIVE" ? "active" : status === "INACTIVE" ? "former" : ""} staff`}
@@ -34,18 +37,19 @@ export default async function StaffListPage({ searchParams }: { searchParams: Pr
         <section className="card pad-0">
           <DataTable
             empty="No staff here yet" emptyText={canManage ? "Use Register staff to add the first one." : undefined}
-            columns={[{ label: "Staff", sortable: true }, { label: "Position", sortable: true }, { label: "Section · branch", sortable: true }, { label: "Onboarding", sortable: true }, { label: "Bank", sortable: true }]}
+            columns={[{ label: "Staff", sortable: true }, { label: "Position", sortable: true }, { label: "Section · branch", sortable: true }, { label: "Onboarding", sortable: true }, { label: "Bank", sortable: true }, ...(canDelete ? [{ label: "", right: true }] : [])]}
             rows={rows.map((e) => {
               const done = e.onboarding.steps.filter((st) => st.done).length;
               return {
                 id: e.id,
-                sort: [`${e.user.lastName} ${e.user.firstName}`, e.position, `${sectionName(e.section)} ${e.branch ?? ""}`, e.onboarding.complete ? 99 : done, BANK[e.bankStatus][0]],
+                sort: [`${e.user.lastName} ${e.user.firstName}`, e.position, `${sectionName(e.section)} ${e.branch ?? ""}`, e.onboarding.complete ? 99 : done, BANK[e.bankStatus][0], null],
                 cells: keyed([
                   <><Link href={`/admin/hr/${e.id}`}><b>{e.user.firstName} {e.user.lastName}</b></Link><div className="small muted mono">{e.staffCode}{e.status === "INACTIVE" ? " · left" : ""}</div></>,
                   <>{e.position}{e.isTeacher ? <span className="small muted"> · teacher</span> : null}</>,
                   <>{sectionName(e.section)}{e.branch !== e.section && <div className="small muted">{e.branch ? branchName(e.branch) : <Pill tone="warn">Branch not set</Pill>}</div>}</>,
                   e.onboarding.complete ? <Pill tone="ok">Complete</Pill> : <Pill tone="warn">{done} of {e.onboarding.steps.length} done</Pill>,
                   <Pill key="bank" tone={BANK[e.bankStatus][1]}>{BANK[e.bankStatus][0]}</Pill>,
+                  ...(canDelete ? [<AlphaDelete key="del" action={deleteStaffAction} field="userId" id={e.userId} what={`${e.user.firstName} ${e.user.lastName}`} />] : []),
                 ]),
               };
             })}

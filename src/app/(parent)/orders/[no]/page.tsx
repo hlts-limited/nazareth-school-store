@@ -8,10 +8,9 @@ import { Icon } from "@/shared/ui/icon";
 import { SCHOOL } from "@/shared/config/school";
 import { requireParentActor } from "@/modules/auth";
 import { amountDue, cancelOrderAction, getOrderByNo, isPaid, LINE_STATUS, ORDER_STATUS, pileStatus, stepIndex, UNPAID_STATUSES } from "@/modules/orders";
-import { payFromWalletAction, paystackReady, startPaystackAction, uploadReceiptAction } from "@/modules/payments";
+import { paystackReady, startPaystackAction, uploadReceiptAction } from "@/modules/payments";
 import { getSettings } from "@/modules/settings";
-import { balances } from "@/modules/wallet";
-import { childrenOf } from "@/modules/pupils";
+import { balance } from "@/modules/wallet";
 import { UploadReceipt } from "../../_components";
 import { pileDescriptions } from "@/modules/catalogue";
 
@@ -24,10 +23,12 @@ export default async function OrderPage({ params }: { params: Promise<{ no: stri
   const { parent, readOnly } = await requireParentActor();
   const o = await getOrderByNo(no, parent.id);
   if (!o) notFound();
-  const [settings, kids] = await Promise.all([getSettings(), childrenOf(parent.id)]);
-  const bal = await balances(kids.map((k) => k.id));
-  const walletTotal = Object.values(bal).reduce((a, b) => a + b, 0);
+  const settings = await getSettings();
+  const walletTotal = await balance(parent.id);
   const due = amountDue(o);
+  // The wallet is always used first; the button says what's left for Paystack
+  const fromWallet = Math.min(walletTotal, due), payNow = due - fromWallet;
+  const payLabel = payNow === 0 ? `Pay ${naira(due)} from your wallet` : `Pay ${naira(payNow)} with Paystack${fromWallet ? ` (+ ${naira(fromWallet)} from your wallet)` : ""}`;
   const st = ORDER_STATUS[o.status];
   const cur = stepIndex(o.status);
   const steps: [string, string][] = [
@@ -77,24 +78,21 @@ export default async function OrderPage({ params }: { params: Promise<{ no: stri
                 );
               })}
             </div>
-          ) : <Note tone="err" icon="x">This order was cancelled. Any money already paid is in your child&apos;s wallet.</Note>}
+          ) : <Note tone="err" icon="x">This order was cancelled. Any money already paid is in your wallet.</Note>}
 
           {o.status === "PENDING_PAYMENT" && o.method === "TRANSFER" && (<>{transferBox}<div className="row"><UploadReceipt action={uploadReceiptAction} orderId={o.id} due={due} readOnly={readOnly} today={isoDay()} /></div></>)}
           {o.status === "PENDING_PAYMENT" && o.method === "PAYSTACK" && (paystackReady() ? (
-            <ActionForm action={startPaystackAction} className="row"><input type="hidden" name="orderId" value={o.id} /><SubmitButton size="lg" disabled={readOnly}>Pay {naira(due)} with Paystack</SubmitButton></ActionForm>
+            <ActionForm action={startPaystackAction} className="row"><input type="hidden" name="orderId" value={o.id} /><SubmitButton size="lg" disabled={readOnly}>{payLabel}</SubmitButton></ActionForm>
           ) : <Note icon="info">Online payment isn&apos;t available at the moment. Please try again later, or contact the school.</Note>)}
           {o.status === "PAYMENT_REJECTED" && (<><Note tone="err" icon="alert"><b>Receipt not accepted:</b> {o.rejectReason}</Note>{transferBox}<div className="row"><UploadReceipt action={uploadReceiptAction} orderId={o.id} due={due} readOnly={readOnly} today={isoDay()} label="Upload a new receipt" /></div></>)}
           {o.status === "PART_PAID" && (
             <>
-              <Note tone="err" icon="alert"><b>Balance due: {naira(due)}.</b> We received {naira(o.amountReceived)} of {naira(o.subtotal - o.walletUsed)}. Your items stay reserved while you pay the balance; if it isn&apos;t paid within {settings.autoCancelHours} hours, the order is cancelled and the money received goes to your child&apos;s wallet.</Note>
+              <Note tone="err" icon="alert"><b>Balance due: {naira(due)}.</b> We received {naira(o.amountReceived)} of {naira(o.subtotal - o.walletUsed)}. Your items stay reserved while you pay the balance; if it isn&apos;t paid within {settings.autoCancelHours} hours, the order is cancelled and the money received goes to your wallet.</Note>
               <div className="row">
-                {paystackReady() && <ActionForm action={startPaystackAction} className="inline-form"><input type="hidden" name="orderId" value={o.id} /><SubmitButton icon="card" disabled={readOnly}>Pay {naira(due)} with Paystack</SubmitButton></ActionForm>}
+                {paystackReady() && <ActionForm action={startPaystackAction} className="inline-form"><input type="hidden" name="orderId" value={o.id} /><SubmitButton icon="card" disabled={readOnly}>{payLabel}</SubmitButton></ActionForm>}
                 {o.method === "TRANSFER" && <UploadReceipt action={uploadReceiptAction} orderId={o.id} due={due} readOnly={readOnly} today={isoDay()} label="Upload transfer receipt" />}
               </div>
             </>
-          )}
-          {unpaid && walletTotal >= due && due > 0 && (
-            <ActionForm action={payFromWalletAction} className="row"><input type="hidden" name="orderId" value={o.id} /><SubmitButton variant="default" icon="wallet" disabled={readOnly}>Pay {naira(due)} from wallets ({naira(walletTotal)} available)</SubmitButton></ActionForm>
           )}
           {o.status === "AWAITING_VERIFICATION" && <Note icon="clock"><b>Your receipt is with the accounts office.</b> You&apos;ll get a WhatsApp message as soon as it&apos;s confirmed, usually within one working day.</Note>}
           {qr && (
@@ -115,7 +113,8 @@ export default async function OrderPage({ params }: { params: Promise<{ no: stri
                 {ls.filter((l) => !l.pileItemId).map((l) => (
                   <div key={l.id} className="row between small">
                     <span className="grow">{l.qty} × {l.itemName}{l.variantLabel !== "Standard" && <span className="muted"> ({l.variantLabel})</span>}</span>
-                    <Pill tone={LINE_STATUS[l.status].tone}>{LINE_STATUS[l.status].label}</Pill>
+                    {l.returnedQty > 0 ? <Pill tone="info">{l.returnedQty === l.qty ? "Returned" : `${l.returnedQty} returned`} · {naira(l.returnedQty * l.unitPrice)} to wallet</Pill>
+                      : <Pill tone={LINE_STATUS[l.status].tone}>{LINE_STATUS[l.status].label}</Pill>}
                   </div>
                 ))}
                 {/* A pile shows as one row with its description and an overall status; the books in it stay with the back office */}

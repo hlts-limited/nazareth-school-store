@@ -8,10 +8,24 @@ import { invoiceLabel, statusesFor, type InvoiceLabel } from "@/modules/orders";
 
 export type InvoiceFilters = { classId?: string; from?: string; to?: string; status?: InvoiceLabel; q?: string };
 
+/**
+ * One row per child per order. Amount is what the child's items cost; Returned is what came back (credited to the
+ * parent's wallet); the payment columns say how the order was paid. An order's payments are shared between its
+ * children in proportion to their items, so every column adds up to the order's real totals.
+ */
 export type InvoiceRow = {
   invoice: string; order: string; date: Date; parent: string; pupil: string; regNumber: string; className: string;
-  method: string; amount: number; status: InvoiceLabel;
+  method: string; amount: number; returned: number; fromWallet: number; paystack: number; transfer: number; balance: number; status: InvoiceLabel;
 };
+
+/** Split `total` in proportion to `weights`, in whole naira, so the parts add up to exactly `total` */
+function share(total: number, weights: number[]) {
+  const sum = weights.reduce((a, b) => a + b, 0);
+  if (!sum || !total) return weights.map(() => 0);
+  const parts = weights.map((w) => Math.floor((total * w) / sum));
+  parts[parts.length - 1] += total - parts.reduce((a, b) => a + b, 0);
+  return parts;
+}
 
 /** Lagos day boundaries → UTC instants */
 const dayStart = (d: string) => new Date(`${d}T00:00:00+01:00`);
@@ -34,28 +48,42 @@ export async function invoiceRows(f: InvoiceFilters): Promise<InvoiceRow[]> {
   }
   const orders = await db.order.findMany({
     where, orderBy: { createdAt: "desc" }, take: 5000,
-    include: { parent: true, lines: { include: { pupil: { include: { class: true } } } } },
+    include: { parent: true, lines: { include: { pupil: { include: { class: true } } } }, payments: { where: { status: { in: ["APPROVED", "PART_PAID"] } } } },
   });
   const rows: InvoiceRow[] = [];
   for (const o of orders) {
     const byPupil = new Map<string, typeof o.lines>();
     for (const l of o.lines) byPupil.set(l.pupilId, [...(byPupil.get(l.pupilId) ?? []), l]);
-    for (const [, ls] of byPupil) {
+    const groups = [...byPupil.values()];
+    const weights = groups.map((ls) => ls.reduce((a, l) => a + l.qty * l.unitPrice, 0));
+    const received = (m: string) => o.payments.filter((p) => p.method === m).reduce((a, p) => a + (p.amountReceived ?? 0), 0);
+    const cancelled = o.status === "CANCELLED";
+    const wallet = share(o.walletUsed, weights), paystack = share(received("PAYSTACK"), weights), transfer = share(received("TRANSFER"), weights);
+    const balance = share(cancelled ? 0 : Math.max(0, o.subtotal - o.walletUsed - o.amountReceived), weights);
+    const methods = [o.walletUsed && "Wallet", received("PAYSTACK") && "Paystack", received("TRANSFER") && "Transfer"].filter(Boolean).join(" + ");
+    groups.forEach((ls, i) => {
       const p = ls[0].pupil;
-      if (f.classId && p.classId !== f.classId) continue;
+      if (f.classId && p.classId !== f.classId) return;
       rows.push({
         invoice: invoiceNo(o.number), order: orderNo(o.number), date: o.createdAt,
         parent: `${o.parent.firstName} ${o.parent.lastName}`, pupil: `${p.firstName} ${p.lastName}`, regNumber: p.regNumber, className: p.class.name,
-        method: o.method === "PAYSTACK" ? "Paystack" : o.method === "WALLET" ? "Wallet" : "Transfer",
-        amount: ls.reduce((a, l) => a + l.qty * l.unitPrice, 0), status: invoiceLabel(o.status),
+        method: methods || (o.method === "PAYSTACK" ? "Paystack" : o.method === "WALLET" ? "Wallet" : "Transfer"),
+        amount: weights[i], returned: ls.reduce((a, l) => a + l.returnedQty * l.unitPrice, 0),
+        fromWallet: wallet[i], paystack: paystack[i], transfer: transfer[i], balance: balance[i], status: invoiceLabel(o.status),
       });
-    }
+    });
   }
   return rows;
 }
 
-const HEAD = ["Invoice", "Order", "Date", "Parent", "Pupil", "Reg no.", "Class", "Method", "Amount (NGN)", "Status"];
-const cells = (r: InvoiceRow) => [r.invoice, r.order, fmtDate(r.date), r.parent, r.pupil, r.regNumber, r.className, r.method, r.amount, r.status];
+const HEAD = ["Invoice", "Order", "Date", "Parent", "Pupil", "Reg no.", "Class", "Paid by", "Amount", "From wallet", "Paystack", "Transfer", "Balance", "Returned to wallet", "Status"];
+/** Columns holding money (0-based), for formatting and totals */
+const MONEY = [8, 9, 10, 11, 12, 13];
+const cells = (r: InvoiceRow) => [r.invoice, r.order, fmtDate(r.date), r.parent, r.pupil, r.regNumber, r.className, r.method, r.amount, r.fromWallet, r.paystack, r.transfer, r.balance, r.returned, r.status];
+const totals = (rows: InvoiceRow[]) => ({
+  amount: rows.reduce((a, r) => a + r.amount, 0), fromWallet: rows.reduce((a, r) => a + r.fromWallet, 0), paystack: rows.reduce((a, r) => a + r.paystack, 0),
+  transfer: rows.reduce((a, r) => a + r.transfer, 0), balance: rows.reduce((a, r) => a + r.balance, 0), returned: rows.reduce((a, r) => a + r.returned, 0),
+});
 
 export function toCsv(rows: InvoiceRow[]) {
   const esc = (v: unknown) => { const s = String(v); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
@@ -73,10 +101,11 @@ export async function toXlsx(rows: InvoiceRow[], title: string) {
   h.font = { bold: true, color: { argb: "FFFFFFFF" } };
   h.eachCell((c) => { c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFD7262D" } }; });
   rows.forEach((r) => ws.addRow(cells(r)));
-  const total = ws.addRow(["", "", "", "", "", "", "", "Total", rows.reduce((a, r) => a + r.amount, 0), ""]);
+  const t = totals(rows);
+  const total = ws.addRow(["", "", "", "", "", "", "", "Total", t.amount, t.fromWallet, t.paystack, t.transfer, t.balance, t.returned, ""]);
   total.font = { bold: true };
-  ws.getColumn(9).numFmt = "#,##0";
-  [12, 11, 13, 22, 22, 15, 13, 10, 14, 11].forEach((w, i) => (ws.getColumn(i + 1).width = w));
+  MONEY.forEach((c) => (ws.getColumn(c + 1).numFmt = "#,##0"));
+  [12, 11, 13, 22, 22, 15, 13, 16, 12, 12, 12, 12, 12, 14, 11].forEach((w, i) => (ws.getColumn(i + 1).width = w));
   return Buffer.from(await wb.xlsx.writeBuffer());
 }
 
@@ -111,7 +140,7 @@ export async function toPdf(rows: InvoiceRow[], title: string) {
   const font = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const logo = await logoImage(pdf);
-  const cols = [60, 58, 62, 110, 110, 70, 62, 52, 70, 58];
+  const cols = [50, 50, 50, 78, 78, 56, 48, 62, 52, 52, 52, 48, 48, 56, 50];
   let page: PDFPage = pdf.addPage([842, 595]); // A4 landscape
   let y = 0;
   const header = () => {
@@ -130,14 +159,15 @@ export async function toPdf(rows: InvoiceRow[], title: string) {
     if (y < 40) { page = pdf.addPage([842, 595]); header(); }
     let x = 30;
     cells(r).forEach((c, i) => {
-      const s = i === 8 ? pdfMoney(Number(c)) : String(c);
+      const s = MONEY.includes(i) ? Math.round(Number(c)).toLocaleString("en-NG") : String(c);
       draw(page, textFit(font, s, 8, cols[i] - 4), { x: x + 2, y, size: 8, font, color: INK });
       x += cols[i];
     });
     y -= 14;
   }
   y -= 6;
-  draw(page, `Total: ${pdfMoney(rows.reduce((a, r) => a + r.amount, 0))}`, { x: 620, y: Math.max(y, 24), size: 10, font: bold, color: INK });
+  const t = totals(rows);
+  draw(page, `Totals (NGN): items ${t.amount.toLocaleString("en-NG")} | from wallet ${t.fromWallet.toLocaleString("en-NG")} | Paystack ${t.paystack.toLocaleString("en-NG")} | transfer ${t.transfer.toLocaleString("en-NG")} | balance ${t.balance.toLocaleString("en-NG")} | returned to wallet ${t.returned.toLocaleString("en-NG")}`, { x: 30, y: Math.max(y, 24), size: 9, font: bold, color: INK });
   return Buffer.from(await pdf.save());
 }
 
@@ -191,9 +221,23 @@ export async function orderInvoicePdf(orderId: string) {
   const sum = (k: string, v: string) => { draw(page, k, { x: 380, y, size: 10, font, color: MUTED }); draw(page, v, { x: 480, y, size: 10, font: bold, color: INK }); y -= 16; };
   sum("Subtotal", pdfMoney(o.subtotal));
   if (o.walletUsed) sum("Paid from wallet", pdfMoney(o.walletUsed));
-  if (o.amountReceived) sum("Payments received", pdfMoney(o.amountReceived));
+  if (o.amountReceived) sum(o.method === "TRANSFER" ? "Paid by transfer" : "Paid by Paystack", pdfMoney(o.amountReceived));
   if (o.excess) sum("Extra to wallet", pdfMoney(o.excess));
-  sum("Balance", pdfMoney(Math.max(0, o.subtotal - o.walletUsed - o.amountReceived)));
+  sum("Balance", pdfMoney(o.status === "CANCELLED" ? 0 : Math.max(0, o.subtotal - o.walletUsed - o.amountReceived)));
+  // Items brought back: credited to the parent's wallet, not paid back in cash
+  const returned = o.lines.filter((l) => l.returnedQty > 0);
+  if (returned.length && y > 150) {
+    y -= 8;
+    draw(page, "Returned items (credited to your wallet)", { x: 40, y, size: 10, font: bold, color: INK });
+    y -= 15;
+    for (const l of returned) {
+      if (y < 110) break;
+      draw(page, textFit(font, `${l.returnedQty} x ${l.itemName}${l.variantLabel !== "Standard" ? ` (${l.variantLabel})` : ""}`, 9, 330), { x: 40, y, size: 9, font, color: INK });
+      draw(page, pdfMoney(l.returnedQty * l.unitPrice), { x: 480, y, size: 9, font, color: INK });
+      y -= 14;
+    }
+    sum("Credited to wallet", pdfMoney(returned.reduce((a, l) => a + l.returnedQty * l.unitPrice, 0)));
+  }
   draw(page, `Pick up at ${SCHOOL.pickupPlace}.`, { x: 40, y: 60, size: 8, font, color: MUTED });
   return { bytes: Buffer.from(await pdf.save()), name: `${paid ? "receipt" : "invoice"}-${orderNo(o.number)}.pdf` };
 }

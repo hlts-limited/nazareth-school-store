@@ -66,3 +66,25 @@ export async function resetStaff(userId: string) {
   await revokeAllForUser(userId, "Password reset");
   await sendStaffInvite(userId);
 }
+
+/**
+ * Alpha Admin only: remove a staff member for good, with their documents, attendance and photos.
+ * Refused for the owner and Alpha accounts, for yourself, and for anyone already in a payroll run
+ * (pay records must be kept: mark them as Left instead).
+ */
+export async function deleteStaffMember(userId: string, byUserId: string) {
+  if (userId === byUserId) throw new UserError("You can't delete your own account.");
+  const user = await db.user.findUnique({ where: { id: userId }, include: { employee: { include: { documents: true, attendance: true, _count: { select: { payrollItems: true } } } } } });
+  if (!user || user.type !== "STAFF") throw new UserError("That staff member wasn't found.");
+  if (protectedEmails().some((e) => e.toLowerCase() === user.email?.toLowerCase())) throw new UserError("The owner and Alpha accounts can't be deleted.");
+  const e = user.employee;
+  if (e && e._count.payrollItems > 0) throw new UserError(`${user.firstName} has been on a payroll, so their pay records must be kept. Mark them as Left on their staff record instead.`);
+  const files = e ? [...e.documents.map((d) => d.fileKey), ...e.attendance.flatMap((a) => [a.inPhotoKey, a.outPhotoKey]).filter((k): k is string => !!k)] : [];
+  await db.$transaction(async (tx) => {
+    if (e) await tx.employee.delete({ where: { id: e.id } }); // documents, attendance, leave, clock attempts go with it
+    await tx.user.delete({ where: { id: userId } }); // roles, sessions, notifications go with it
+  });
+  const { storage } = await import("@/shared/lib/storage");
+  for (const k of files) await storage().delete(k).catch(() => undefined); // a missing file is fine
+  return { name: `${user.firstName} ${user.lastName}`, staffCode: e?.staffCode ?? null, files: files.length };
+}

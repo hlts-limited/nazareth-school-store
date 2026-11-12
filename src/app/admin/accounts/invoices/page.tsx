@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { fmtDate, isoDay, naira } from "@/shared/lib/format";
-import { Card, Empty, PageHeader, Pill } from "@/shared/ui/primitives";
+import { Card, Empty, Kpi, PageHeader, Pill } from "@/shared/ui/primitives";
 import { Icon } from "@/shared/ui/icon";
 import { requireStaff } from "@/modules/auth";
 import { listClasses } from "@/modules/catalogue";
@@ -62,17 +62,28 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
           </div>
         </form>
         <div className="row between"><span><b className="tnum">{rows.length}</b> <span className="muted">invoice rows</span></span><span className="muted">Total <b className="tnum c-ink fs-16">{naira(total)}</b></span></div>
+        <div className="grid g4">
+          <Kpi label="From wallets" value={naira(rows.reduce((a, r) => a + r.fromWallet, 0))} sub="Store credit used" />
+          <Kpi label="Paid by Paystack" value={naira(rows.reduce((a, r) => a + r.paystack, 0))} />
+          <Kpi label="Still owed" value={naira(rows.reduce((a, r) => a + r.balance, 0))} />
+          <Kpi label="Returned to wallets" value={naira(rows.reduce((a, r) => a + r.returned, 0))} sub="Approved returns" />
+        </div>
         <Card pad={false}>
           {rows.length === 0 ? <Empty title="No invoices match">Widen the dates or clear the filters.</Empty> : (
             <div className="tbl-wrap">
               <table className="t rt">
-                <thead><tr><th>Invoice</th><th>Date</th><th>Parent</th><th>Pupil</th><th>Class</th><th>Method</th><th className="r">Amount</th><th>Status</th></tr></thead>
+                <thead><tr><th>Invoice</th><th>Date</th><th>Parent</th><th>Pupil</th><th>Class</th><th className="r">Amount</th><th className="r">From wallet</th><th className="r">Paystack</th><th className="r">Balance</th><th className="r">Returned</th><th>Status</th></tr></thead>
                 <tbody>
                   {shown.map((r) => (
                     <tr key={`${r.invoice}-${r.regNumber}`}>
                       <td data-label="Invoice" className="mono">{r.invoice}</td><td data-label="Date">{fmtDate(r.date)}</td><td data-label="Parent">{r.parent}</td>
-                      <td data-label="Pupil">{r.pupil}</td><td data-label="Class">{r.className}</td><td data-label="Method">{r.method}</td>
-                      <td data-label="Amount" className="r tnum">{naira(r.amount)}</td><td data-label="Status"><Pill tone={TONE[r.status]}>{r.status}</Pill></td>
+                      <td data-label="Pupil">{r.pupil}</td><td data-label="Class">{r.className}</td>
+                      <td data-label="Amount" className="r tnum">{naira(r.amount)}</td>
+                      <td data-label="From wallet" className="r tnum">{r.fromWallet ? naira(r.fromWallet) : "—"}</td>
+                      <td data-label="Paystack" className="r tnum">{r.paystack ? naira(r.paystack) : r.transfer ? <span title="Bank transfer (older order)">{naira(r.transfer)} (transfer)</span> : "—"}</td>
+                      <td data-label="Balance" className={`r tnum ${r.balance ? "c-err" : ""}`}>{r.balance ? naira(r.balance) : "—"}</td>
+                      <td data-label="Returned" className="r tnum">{r.returned ? naira(r.returned) : "—"}</td>
+                      <td data-label="Status"><Pill tone={TONE[r.status]}>{r.status}</Pill></td>
                     </tr>
                   ))}
                 </tbody>

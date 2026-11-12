@@ -7,6 +7,8 @@ export type SessionLimits = { PARENT: SessionLimit & { rememberDays: number }; P
 export type Settings = {
   bank: { accountName: string; bankName: string; accountNumber: string };
   autoCancelHours: number;
+  /** Days after collection that an item can be brought back for wallet credit */
+  returnWindowDays: number;
   feeBearer: "school" | "parent";
   currentTerm: string;
   sessionLimits: SessionLimits;
@@ -15,6 +17,7 @@ export type Settings = {
 export const DEFAULT_SETTINGS: Settings = {
   bank: { accountName: "Nazareth School", bankName: "Your bank", accountNumber: "0000000000" },
   autoCancelHours: 72,
+  returnWindowDays: 14,
   feeBearer: "school",
   currentTerm: "First term 2026/2027",
   sessionLimits: {

@@ -6,7 +6,6 @@ import { normalizePhone } from "@/shared/lib/format";
 import { env } from "@/shared/config/env";
 import { SCHOOL } from "@/shared/config/school";
 import { notify } from "@/modules/notifications";
-import { balances } from "@/modules/wallet";
 
 export const PER_PAGE = 20;
 
@@ -109,7 +108,6 @@ export async function addPupil(input: NewPupil) {
     data: {
       firstName: input.firstName.trim(), lastName: input.lastName.trim(), regNumber: reg, classId: input.classId, gender: input.gender,
       guardians: { create: { parentId: parent.id, relationship: input.relationship ?? "Parent" } },
-      wallet: { create: {} },
     },
   });
   if (created || parent.status === "INVITED") await sendParentInvite(parent.id);
@@ -122,13 +120,12 @@ export async function moveToClass(ids: string[], classId: string) {
 }
 
 /**
- * Delete selected pupils. Pupils with orders or a wallet balance are archived instead,
- * so financial records stay complete. Deleted pupils stay in the bin for 30 days.
+ * Delete selected pupils. Pupils with orders are archived instead, so financial records stay complete.
+ * (Wallets belong to parents, so deleting a pupil never loses money.) Deleted pupils stay in the bin for 30 days.
  */
 export async function deletePupils(ids: string[], byName: string) {
   const withOrders = await db.orderLine.findMany({ where: { pupilId: { in: ids } }, select: { pupilId: true }, distinct: ["pupilId"] });
-  const bal = await balances(ids);
-  const keep = new Set([...withOrders.map((o) => o.pupilId), ...ids.filter((id) => (bal[id] ?? 0) !== 0)]);
+  const keep = new Set(withOrders.map((o) => o.pupilId));
   const archiveIds = ids.filter((id) => keep.has(id));
   const deleteIds = ids.filter((id) => !keep.has(id));
   await db.$transaction([

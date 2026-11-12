@@ -44,16 +44,23 @@ export function parseForm<T extends z.ZodTypeAny>(schema: T, form: FormData): z.
   return r.data;
 }
 
+/** Things to refresh after any successful change (e.g. the menu's counts); registered by the modules that keep them */
+const afterChange = new Set<() => void>();
+export const onAnyChange = (fn: () => void) => { afterChange.add(fn); };
+
 /**
  * Wrap a server action body: turns UserError into a friendly result and hides unexpected errors.
  * Next.js redirect()/notFound() errors are re-thrown so they still work.
  */
 export async function runAction(fn: () => Promise<ActionResult>): Promise<ActionResult> {
   try {
-    return await fn();
+    const r = await fn();
+    if (r.ok) afterChange.forEach((f) => f());
+    return r;
   } catch (e) {
     if (e instanceof UserError) return fail(e.message, e.fieldErrors);
     const digest = (e as { digest?: string })?.digest;
+    if (typeof digest === "string" && digest.startsWith("NEXT_REDIRECT")) afterChange.forEach((f) => f()); // a redirect after a change is a success too
     if (typeof digest === "string" && (digest.startsWith("NEXT_REDIRECT") || digest.startsWith("NEXT_NOT_FOUND") || digest.startsWith("NEXT_HTTP_ERROR"))) throw e;
     console.error("[action]", e);
     return fail("Something went wrong. Please try again, and contact the school office if it keeps happening.");

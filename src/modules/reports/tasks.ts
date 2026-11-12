@@ -1,5 +1,6 @@
 import type { PayrollStatus } from "@prisma/client";
 import { db } from "@/shared/lib/db";
+import { onAnyChange } from "@/shared/lib/action";
 import { PERMISSIONS as P, type NavBadge } from "@/modules/access-control";
 import { periodLabel } from "@/modules/payroll";
 
@@ -21,6 +22,8 @@ const since = (days: number) => new Date(Date.now() - days * 86400_000);
  * Kept for a minute per set of permissions, so moving around the back office doesn't re-count on every page.
  */
 const cache = new Map<string, { at: number; value: Counts }>();
+// Any change (a payment approved, an order packed…) clears the counts so the menu is right on the next page
+onAnyChange(() => cache.clear());
 export async function navCounts(perms: Perms): Promise<Counts> {
   const key = [...perms].sort().join(",");
   const hit = cache.get(key);
@@ -28,6 +31,7 @@ export async function navCounts(perms: Perms): Promise<Counts> {
   const has = (p: string) => perms.has(p);
   const jobs: [NavBadge, Promise<number>][] = [];
   if (has(P.PAYMENTS_REVIEW)) jobs.push(["review", db.order.count({ where: { status: "AWAITING_VERIFICATION" } })]);
+  if (has(P.PAYMENTS_REVIEW)) jobs.push(["returns", db.returnRequest.count({ where: { status: "PENDING" } })]);
   if (has(P.FULFILMENT_MANAGE)) jobs.push(["pack", db.order.count({ where: { status: { in: ["PAYMENT_APPROVED", "PACKING"] } } })]);
   if (has(P.PUPILS_MANAGE)) jobs.push(["bin", db.pupil.count({ where: { deletedAt: { not: null } } })]);
   if (has(P.ADMISSIONS_VIEW)) jobs.push(["apps", db.application.count({ where: { status: "SUBMITTED" } })]);
@@ -82,6 +86,7 @@ export async function myTasks(v: { user: { id: string }; permissions: Perms }): 
     }
   }
   add({ id: "review", title: "Payment receipts to check", sub: "Older bank-transfer orders", href: "/admin/accounts/review", count: c.review, tone: "err", icon: "receipt" });
+  add({ id: "returns", title: "Returns to approve", sub: "Approving credits the parent's wallet", href: "/admin/accounts/returns", count: c.returns, tone: "err", icon: "refresh" });
   add({ id: "pack", title: "Paid orders to pack", href: "/admin/store/packing", count: c.pack, tone: "warn", icon: "box" });
   if (has(P.FULFILMENT_MANAGE)) add({ id: "pickup", title: "Orders ready, waiting to be collected", href: "/admin/store/pickup", count: await db.order.count({ where: { status: { in: ["READY", "PARTIALLY_HANDED_OUT"] } } }), tone: "info", icon: "qr" });
   if (has(P.STOCK_MANAGE)) add({ id: "stock", title: "Items low on stock", sub: "At or below their reorder level", href: "/admin/store/stock", count: await lowStockCount(), tone: "warn", icon: "tag" });

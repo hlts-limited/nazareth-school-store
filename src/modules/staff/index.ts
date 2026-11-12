@@ -1,2 +1,2 @@
-export { listStaff, sendStaffInvite } from "./service";
-export { inviteStaffAction, setRolesAction, setStaffStatusAction, resetStaffAction } from "./actions";
+export { listStaff, sendStaffInvite, deleteStaffMember } from "./service";
+export { inviteStaffAction, setRolesAction, setStaffStatusAction, resetStaffAction, deleteStaffAction } from "./actions";

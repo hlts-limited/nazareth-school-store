@@ -6,7 +6,7 @@ import { randomToken } from "@/shared/lib/crypto";
 import { readUpload, storage } from "@/shared/lib/storage";
 import { staffFor, auditActor } from "@/modules/auth";
 import { audit } from "@/modules/audit";
-import { createCategory, createItem, createPile, updateItem, updatePile } from "./service";
+import { createCategory, createItem, createPile, deleteItem, updateItem, updatePile } from "./service";
 
 const itemSchema = z.object({
   name: zText(160, "Enter the item name"),
@@ -93,5 +93,16 @@ export async function savePileAction(_: ActionResult, form: FormData): Promise<A
     const pile = id ? await updatePile(id, input) : await createPile(input);
     await audit(await auditActor(v), id ? "Updated pile" : "Added pile", "Item", pile.id, { name: pile.name, price: pile.price, books: input.parts.length });
     return ok(`${pile.name} saved. Price is now the sum of its books.`, { redirect: "/admin/store/piles" });
+  });
+}
+
+/** Alpha Admin only: delete an item or pile that has never been ordered */
+export async function deleteItemAction(_: ActionResult, form: FormData): Promise<ActionResult> {
+  return runAction(async () => {
+    const v = await staffFor("catalogue.delete");
+    const id = String(form.get("itemId") ?? "");
+    const r = await deleteItem(id);
+    await audit(await auditActor(v), `Alpha: deleted ${r.pile ? "pile" : "item"}`, "Item", id, { name: r.name, sku: r.sku });
+    return ok(`${r.name} was deleted.`);
   });
 }

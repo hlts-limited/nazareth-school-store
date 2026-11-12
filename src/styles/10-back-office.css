@@ -69,3 +69,12 @@ a.task:hover,a.hit:hover{background:var(--surface-2)}
 .steps-mini span.on{background:var(--ink);color:var(--surface)}
 .missing-box{display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:space-between}
 .justify-end{justify-content:flex-end !important}
+
+/* Returns desk and approvals */
+.return-line{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 18px;border-top:1px solid var(--line-2)}
+.card > .return-line:first-of-type{border-top:0}
+.return-form{display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap}
+.return-form label{display:flex;flex-direction:column;gap:4px}
+.w-70{width:70px}
+.wallet-strip{display:flex;align-items:center;gap:12px;padding:14px 18px;color:inherit;text-decoration:none}
+.wallet-kpi{max-width:420px}

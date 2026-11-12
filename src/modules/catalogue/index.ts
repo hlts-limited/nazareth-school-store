@@ -4,6 +4,6 @@ export {
   pileStock, listPiles, pileBookChoices,
 } from "./service";
 export type { ItemFull, CategoryNode } from "./service";
-export { createItemAction, updateItemAction, createCategoryAction, savePileAction } from "./actions";
+export { createItemAction, updateItemAction, createCategoryAction, savePileAction, deleteItemAction } from "./actions";
 export { ItemArt, artKind } from "./components/item-art";
 export { itemLook } from "./look";

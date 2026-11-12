@@ -58,34 +58,32 @@ export function QtyControl({ action, id, qty, readOnly, removeOnly = false }: { 
 }
 
 /** Payment method, wallet use and the totals box on the cart page */
-export function CheckoutBox({ action, subtotal, wallets, autoCancelHours, readOnly, paystack = true }: {
-  action: Action; subtotal: number; autoCancelHours: number; readOnly: boolean; paystack?: boolean;
-  wallets: { pupilId: string; name: string; balance: number; groupTotal: number }[];
+/** Payment box on the cart: the wallet is always used first, then Paystack for the rest */
+export function CheckoutBox({ action, subtotal, wallet, autoCancelHours, readOnly, paystack = true }: {
+  action: Action; subtotal: number; wallet: number; autoCancelHours: number; readOnly: boolean; paystack?: boolean;
 }) {
-  const [use, setUse] = useState<Record<string, boolean>>({});
-  const walletTotal = wallets.reduce((a, w) => a + (use[w.pupilId] ? Math.min(w.balance, w.groupTotal) : 0), 0);
-  const toPay = subtotal - walletTotal;
+  const fromWallet = Math.min(wallet, subtotal);
+  const toPay = subtotal - fromWallet;
   const n = (v: number) => `₦${Math.round(v).toLocaleString("en-NG")}`;
   return (
     <ActionForm action={action} className="card stack">
       <h3>Payment</h3>
-      {wallets.filter((w) => w.balance > 0).map((w) => (
-        <label key={w.pupilId} className="check small">
-          <input type="checkbox" name="useWallet" value={w.pupilId} checked={!!use[w.pupilId]} onChange={(e) => setUse({ ...use, [w.pupilId]: e.target.checked })} />
-          Use {w.name}&apos;s wallet ({n(w.balance)})
-        </label>
-      ))}
       <input type="hidden" name="method" value="PAYSTACK" />
-      <div className="pay-opt on">
-        <Icon name="card" size="sm" />
-        <span><b>Pay online with Paystack</b><br /><span className="small muted">Card, bank app, transfer or USSD. Approved instantly.</span></span>
-      </div>
-      {!paystack && toPay > 0 && <p className="small c-err">Online payment isn&apos;t switched on yet. Please try again later.</p>}
       <div className="stack tight">
         <div className="sum-row"><span className="muted">Items</span><span>{n(subtotal)}</span></div>
-        {walletTotal > 0 && <div className="sum-row"><span className="muted">Wallet</span><span className="c-ok">−{n(walletTotal)}</span></div>}
-        <div className="sum-row total"><span>To pay</span><span>{n(toPay)}</span></div>
+        {fromWallet > 0 && <div className="sum-row"><span className="muted">From your wallet</span><span className="c-ok">−{n(fromWallet)}</span></div>}
+        <div className="sum-row total"><span>{toPay === 0 ? "Nothing more to pay" : "To pay on Paystack"}</span><span>{n(toPay)}</span></div>
       </div>
+      {fromWallet > 0 && (
+        <p className="small muted">Your wallet is used first{wallet > fromWallet ? `; ${n(wallet - fromWallet)} stays in it for next time` : ""}.</p>
+      )}
+      {toPay > 0 && (
+        <div className="pay-opt on">
+          <Icon name="card" size="sm" />
+          <span><b>Pay online with Paystack</b><br /><span className="small muted">Card, bank app, transfer or USSD. Approved instantly.</span></span>
+        </div>
+      )}
+      {!paystack && toPay > 0 && <p className="small c-err">Online payment isn&apos;t switched on yet. Please try again later.</p>}
       <SubmitButton size="lg" block disabled={readOnly || (!paystack && toPay > 0)}>
         {toPay === 0 ? "Pay from wallet" : `Pay ${n(toPay)} with Paystack`}
       </SubmitButton>
@@ -128,7 +126,7 @@ export function UploadReceipt({ action, orderId, due, readOnly, today, label = "
             <div className="field"><label htmlFor="rc-bank">Your bank</label><select className="input" id="rc-bank" name="bankName">{BANKS.map((b) => <option key={b}>{b}</option>)}</select></div>
             <div className="field"><label htmlFor="rc-date">Transfer date</label><input className="input" id="rc-date" name="transferDate" type="date" defaultValue={today} max={today} /></div>
           </div>
-          <p className="hint">If you sent more than {`₦${due.toLocaleString("en-NG")}`}, the extra goes to your child&apos;s wallet. If you sent less, you&apos;ll be asked to pay the balance.</p>
+          <p className="hint">If you sent more than {`₦${due.toLocaleString("en-NG")}`}, the extra goes to your wallet. If you sent less, you&apos;ll be asked to pay the balance.</p>
           <div className="modal-f" style={{ margin: "0 -20px -18px" }}>
             <button type="button" className="btn ghost" onClick={() => setOpen(false)}>Cancel</button>
             <SubmitButton>Submit for review</SubmitButton>
@@ -139,17 +137,3 @@ export function UploadReceipt({ action, orderId, due, readOnly, today, label = "
   );
 }
 
-/** Auto-submitting select (e.g. which child keeps an overpayment) */
-export function AutoSubmitSelect({ action, name, options, defaultValue, hidden, label }: {
-  action: Action; name: string; options: [string, string][]; defaultValue: string; hidden: Record<string, string>; label: string;
-}) {
-  return (
-    <ActionForm action={action} className="inline-form">
-      {Object.entries(hidden).map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
-      <select className="input sm w-auto" name={name} aria-label={label} defaultValue={defaultValue}
-        onChange={(e) => e.currentTarget.form?.requestSubmit()}>
-        {options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-      </select>
-    </ActionForm>
-  );
-}

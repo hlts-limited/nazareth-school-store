@@ -13,10 +13,12 @@ export async function saveSchoolSettingsAction(_: ActionResult, form: FormData):
       accountName: zText(100, "Enter the account name"), bankName: zText(60, "Enter the bank"),
       accountNumber: z.string().trim().regex(/^\d{10}$/, "Account numbers have 10 digits"),
       autoCancelHours: z.coerce.number().int().refine((n) => [24, 48, 72, 96].includes(n), "Choose a value"),
+      returnWindowDays: z.coerce.number().int().min(0, "0 or more days").max(90, "At most 90 days"),
       feeBearer: z.enum(["school", "parent"]), currentTerm: zText(60, "Enter the current term"),
     }), form);
     await saveSetting("bank", { accountName: d.accountName, bankName: d.bankName, accountNumber: d.accountNumber });
     await saveSetting("autoCancelHours", d.autoCancelHours);
+    await saveSetting("returnWindowDays", d.returnWindowDays);
     await saveSetting("feeBearer", d.feeBearer);
     await saveSetting("currentTerm", d.currentTerm);
     await audit(await auditActor(v), "Updated settings", "Setting", null, d);

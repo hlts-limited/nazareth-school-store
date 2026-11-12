@@ -1,2 +1,2 @@
-export { balance, balances, credit, debit, statement, pupilsWithBalance, totalHeld } from "./service";
-export { moveExcessAction, adjustWalletAction } from "./actions";
+export { balance, balances, credit, debit, spendUpTo, statement, parentsWithBalance, totalHeld } from "./service";
+export { adjustWalletAction } from "./actions";

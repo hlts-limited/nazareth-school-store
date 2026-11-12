@@ -48,6 +48,7 @@ export async function startFresh(by: { id?: string; name: string }) {
   const counts = await db.$transaction(async (tx) => {
     const c: Record<string, number> = {};
     const run = async (name: string, p: Promise<{ count: number }>) => { c[name] = (await p).count; };
+    await run("returns", tx.returnRequest.deleteMany());
     await run("pickups", tx.pickup.deleteMany());
     await run("invoices", tx.invoice.deleteMany());
     await run("receipts", tx.receipt.deleteMany());

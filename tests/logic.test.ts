@@ -128,6 +128,12 @@ test("payroll duties are split: Accounts prepares, the Super Admin approves and 
   assert.deepEqual(hr.items.map((i) => i.href).sort(), ["/admin/attendance/settings", "/admin/payroll/settings"]);
 });
 
+test("deleting staff, pupils and items is for the Alpha Admin only", async () => {
+  const { ROLE_DEFS, ALPHA_ONLY } = await import("../src/modules/access-control/permissions");
+  for (const r of ROLE_DEFS) for (const p of ALPHA_ONLY) assert.ok(!(r.permissions as string[]).includes(p), `${r.id} must not have ${p}`);
+  for (const p of ["pupils.delete", "staff.delete", "catalogue.delete"]) assert.ok((ALPHA_ONLY as string[]).includes(p));
+});
+
 test("Alpha access is never part of a role, not even Super Admin", async () => {
   const { ROLE_DEFS, ALL_PERMISSIONS, roleName } = await import("../src/modules/access-control/permissions");
   for (const r of ROLE_DEFS) assert.ok(!(r.permissions as string[]).includes("system.alpha"), `${r.id} must not have system.alpha`);

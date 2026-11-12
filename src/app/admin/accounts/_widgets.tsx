@@ -5,7 +5,7 @@ import type { ActionResult } from "@/shared/lib/action";
 import { ActionForm, Dialog, FieldError, SubmitButton } from "@/shared/ui/client";
 import { Icon } from "@/shared/ui/icon";
 
-/* Accounts: checking transfer receipts and adjusting pupil wallets. */
+/* Accounts: checking transfer receipts and adjusting parent wallets. */
 
 type Action = (prev: ActionResult, form: FormData) => Promise<ActionResult>;
 const n = (v: number) => `${v < 0 ? "−" : ""}₦${Math.abs(Math.round(v)).toLocaleString("en-NG")}`;
@@ -73,20 +73,20 @@ export function ApproveForm({ approve, reject, paymentId, due, claimed, firstChi
     </>
   );
 }
-export function WalletAdjust({ action, pupilId, name, balance }: { action: Action; pupilId: string; name: string; balance: number }) {
+export function WalletAdjust({ action, parentId, name, balance }: { action: Action; parentId: string; name: string; balance: number }) {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <button type="button" className="btn sm" onClick={() => setOpen(true)}>Adjust / refund</button>
+      <button type="button" className="btn sm" onClick={() => setOpen(true)}>Adjust</button>
       <Dialog open={open} onClose={() => setOpen(false)} title={`Wallet: ${name}`}>
         <ActionForm action={action} className="stack" onDone={(r) => r.ok && setOpen(false)}>
           <div className="kpi"><span className="l">Current balance</span><span className="v">{n(balance)}</span></div>
-          <input type="hidden" name="pupilId" value={pupilId} />
+          <input type="hidden" name="parentId" value={parentId} />
           <div className="grid g2">
-            <div className="field"><label htmlFor="aj-k">Type</label><select className="input" id="aj-k" name="kind"><option value="credit">Adjustment (credit)</option><option value="debit">Adjustment (debit)</option><option value="refund">Cash / transfer refund to parent</option></select></div>
+            <div className="field"><label htmlFor="aj-k">Type</label><select className="input" id="aj-k" name="kind"><option value="credit">Adjustment (credit)</option><option value="debit">Adjustment (debit)</option><option value="refund">Paid back to the parent (rare: school decision)</option></select></div>
             <div className="field"><label htmlFor="aj-a">Amount (₦)</label><input className="input tnum" id="aj-a" name="amount" inputMode="numeric" /><FieldError name="amount" /></div>
           </div>
-          <div className="field"><label htmlFor="aj-r">Reason (required, logged)</label><input className="input" id="aj-r" name="reason" placeholder="e.g. Refund for wrong shoe size on NZ-24801" /><FieldError name="reason" /></div>
+          <div className="field"><label htmlFor="aj-r">Reason (required, logged)</label><input className="input" id="aj-r" name="reason" placeholder="e.g. Correction for NZ-24801" /><FieldError name="reason" /></div>
           <div className="row justify-end"><button type="button" className="btn ghost" onClick={() => setOpen(false)}>Cancel</button><SubmitButton>Save and log</SubmitButton></div>
         </ActionForm>
       </Dialog>

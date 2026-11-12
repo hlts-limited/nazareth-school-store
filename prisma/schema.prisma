@@ -45,6 +45,7 @@ model User {
   cartItems     CartItem[]
   orders        Order[]
   notifications Notification[]
+  wallet        Wallet?       @relation("ParentWallet")
   employee      Employee?
 
   @@index([lastName])
@@ -337,6 +338,7 @@ model Order {
   events   OrderEvent[]
   invoice  Invoice?
   pickups  Pickup[]
+  returns  ReturnRequest[]
 
   @@index([parentId, createdAt])
   @@index([status])
@@ -369,6 +371,9 @@ model OrderLine {
   pileName     String?
   // False while a pile book is awaiting stock: no stock is held for it until it arrives
   reserved     Boolean     @default(true)
+  handedOutAt  DateTime? // when it was collected (starts the return window)
+  returnedQty  Int         @default(0) // brought back and approved by Accounts
+  returns      ReturnRequest[]
 
   @@index([orderId])
   @@index([pupilId])
@@ -461,10 +466,14 @@ model Pickup {
 
 // ---------- Wallet ----------
 
+/// One wallet per parent, shared by all their children. (Before Nov 2026 wallets were per pupil: pupilId is kept
+/// only on those old wallets; their entries were moved to the parent's wallet.)
 model Wallet {
   id           String              @id @default(uuid())
-  pupilId      String              @unique
-  pupil        Pupil               @relation(fields: [pupilId], references: [id], onDelete: Cascade)
+  parentId     String?             @unique
+  parent       User?               @relation("ParentWallet", fields: [parentId], references: [id], onDelete: Cascade)
+  pupilId      String?             @unique
+  pupil        Pupil?              @relation(fields: [pupilId], references: [id], onDelete: Cascade)
   transactions WalletTransaction[]
 }
 
@@ -476,6 +485,7 @@ enum WalletTxType {
   ADJUSTMENT
   TRANSFER_IN
   TRANSFER_OUT
+  RETURN_CREDIT // an item brought back, approved by Accounts
 }
 
 model WalletTransaction {
@@ -1021,4 +1031,38 @@ model SalaryPayment {
   updatedAt    DateTime            @updatedAt
 
   @@unique([itemId, attempt])
+}
+
+// ---------- Returns ----------
+
+enum ReturnStatus {
+  PENDING // recorded by the Registrar, waiting for Accounts
+  APPROVED // Accounts approved: the parent's wallet was credited
+  REJECTED
+}
+
+/// An item brought back to the store. The Registrar records it; Accounts approves it, which credits the
+/// parent's wallet (no cash refunds) and, if it can be sold again, puts it back in stock.
+model ReturnRequest {
+  id            String       @id @default(uuid())
+  orderId       String
+  order         Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  lineId        String
+  line          OrderLine    @relation(fields: [lineId], references: [id], onDelete: Cascade)
+  qty           Int
+  amount        Int // naira credited if approved (unit price × qty)
+  reason        String
+  resellable    Boolean      @default(true) // false = damaged: not put back in stock
+  status        ReturnStatus @default(PENDING)
+  recordedById  String
+  recordedBy    String
+  decidedById   String?
+  decidedBy     String?
+  decidedAt     DateTime?
+  decisionNote  String?
+  createdAt     DateTime     @default(now())
+
+  @@index([status, createdAt])
+  @@index([orderId])
+  @@index([lineId])
 }

@@ -42,7 +42,6 @@ export default async function PupilPage() {
             <div className="row">
               <Avatar id={pupil.id} first={pupil.firstName} last={pupil.lastName} size="lg" />
               <div className="grow"><h1>Hello, {pupil.firstName}!</h1><p>{d.cls.name} · <span className="mono">{pupil.regNumber}</span></p></div>
-              <div className="kpi text-right"><span className="l">My wallet</span><span className="v">{naira(d.wallet)}</span></div>
             </div>
           </section>
 

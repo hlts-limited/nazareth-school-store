@@ -29,6 +29,7 @@ export default async function SettingsPage() {
           <h3>Orders and payments</h3>
           <div className="grid g3">
             <div className="field"><label htmlFor="st-ac">Cancel unpaid orders after</label><select className="input" id="st-ac" name="autoCancelHours" defaultValue={String(s.autoCancelHours)}>{[24, 48, 72, 96].map((h) => <option key={h} value={h}>{h} hours</option>)}</select></div>
+            <div className="field"><label htmlFor="st-rw">Items can be returned for wallet credit within</label><select className="input" id="st-rw" name="returnWindowDays" defaultValue={String(s.returnWindowDays)}>{[0, 7, 14, 21, 30].map((d) => <option key={d} value={d}>{d === 0 ? "No returns" : `${d} days of collection`}</option>)}</select></div>
             <div className="field"><label htmlFor="st-fee">Paystack fees paid by</label><select className="input" id="st-fee" name="feeBearer" defaultValue={s.feeBearer}><option value="school">School</option><option value="parent">Parent (set this in your Paystack dashboard too)</option></select></div>
             <div className="field"><label htmlFor="st-term">Current term</label><input className="input" id="st-term" name="currentTerm" defaultValue={s.currentTerm} /><FieldError name="currentTerm" /></div>
           </div>

@@ -1,6 +1,6 @@
 import { db } from "@/shared/lib/db";
 import { UserError } from "@/shared/lib/action";
-import { balance, balances } from "@/modules/wallet";
+import { balance } from "@/modules/wallet";
 
 const cartInclude = {
   pupil: { include: { class: true } },
@@ -19,13 +19,15 @@ export async function assertGuardian(parentId: string, pupilId: string) {
 export async function getCart(parentId: string) {
   const lines = await db.cartItem.findMany({ where: { parentId }, include: cartInclude, orderBy: { createdAt: "asc" } });
   const pupilIds = [...new Set(lines.map((l) => l.pupilId))];
-  const bal = await balances(pupilIds);
   const groups = pupilIds.map((pid) => {
     const ls = lines.filter((l) => l.pupilId === pid);
     const subtotal = ls.reduce((a, l) => a + (l.variant.priceOverride ?? l.variant.item.price) * l.qty, 0);
-    return { pupil: ls[0].pupil, lines: ls, subtotal, walletBalance: bal[pid] ?? 0 };
+    return { pupil: ls[0].pupil, lines: ls, subtotal };
   });
-  return { lines, groups, count: lines.reduce((a, l) => a + l.qty, 0), subtotal: groups.reduce((a, g) => a + g.subtotal, 0) };
+  const subtotal = groups.reduce((a, g) => a + g.subtotal, 0);
+  // The parent's wallet is used first at checkout
+  const wallet = await balance(parentId);
+  return { lines, groups, count: lines.reduce((a, l) => a + l.qty, 0), subtotal, wallet, fromWallet: Math.min(wallet, subtotal) };
 }
 export type Cart = Awaited<ReturnType<typeof getCart>>;
 
@@ -65,10 +67,10 @@ export async function setQty(parentId: string, cartItemId: string, qty: number) 
 export async function boughtItemIds(pupilId: string) {
   const lines = await db.orderLine.findMany({
     where: { pupilId, status: { not: "CANCELLED" }, order: { status: { notIn: ["CANCELLED"] } } },
-    select: { pileItemId: true, variant: { select: { itemId: true } } },
+    select: { pileItemId: true, qty: true, returnedQty: true, variant: { select: { itemId: true } } },
   });
-  // A pile counts as bought once its books are ordered
-  return new Set(lines.flatMap((l) => (l.pileItemId ? [l.variant.itemId, l.pileItemId] : [l.variant.itemId])));
+  // A pile counts as bought once its books are ordered; an item brought back in full counts as not bought again
+  return new Set(lines.filter((l) => l.returnedQty < l.qty).flatMap((l) => (l.pileItemId ? [l.variant.itemId, l.pileItemId] : [l.variant.itemId])));
 }
 
 /** Add every required booklist item the child doesn't have yet. Sized items need a size, so they're listed instead. */
@@ -118,10 +120,10 @@ export async function clearWish(pupilId: string, itemId: string) {
 
 /**
  * Everything on a pupil's own page: class, booklist progress, wishlist, other items they could wish for,
- * their orders and wallet. Pupils can't pay; their wishlist shows on their parents' home page.
+ * and their orders. Pupils can't pay; their wishlist shows on their parents' home page.
  */
 export async function pupilDashboard(pupil: { id: string; classId: string }) {
-  const [cls, progress, wish, extras, orders, wallet] = await Promise.all([
+  const [cls, progress, wish, extras, orders] = await Promise.all([
     db.class.findUniqueOrThrow({ where: { id: pupil.classId } }),
     booklistProgress(pupil.id, pupil.classId),
     db.wishlistItem.findMany({ where: { pupilId: pupil.id }, include: { item: true }, orderBy: { createdAt: "desc" } }),
@@ -130,11 +132,10 @@ export async function pupilDashboard(pupil: { id: string; classId: string }) {
       orderBy: { name: "asc" }, take: 12,
     }),
     db.order.findMany({ where: { lines: { some: { pupilId: pupil.id } } }, include: { lines: { where: { pupilId: pupil.id } } }, orderBy: { createdAt: "desc" }, take: 10 }),
-    balance(pupil.id),
   ]);
   const required = await db.item.findMany({ where: { id: { in: progress.required.map((r) => r.id) } }, include: { category: { include: { parent: true } } }, orderBy: { name: "asc" } });
   const wishIds = new Set(wish.map((w) => w.itemId));
-  return { cls, progress, required, wish, suggestions: extras.filter((i) => !wishIds.has(i.id) && !progress.bought.has(i.id)).slice(0, 8), orders, wallet };
+  return { cls, progress, required, wish, suggestions: extras.filter((i) => !wishIds.has(i.id) && !progress.bought.has(i.id)).slice(0, 8), orders };
 }
 
 export async function wishlistForParent(parentId: string) {

@@ -73,7 +73,7 @@ export default async function CartPage({ searchParams }: { searchParams: Promise
   if (step === "pay") {
     return (
       <>
-        <PageHeader title="Payment" sub="Choose whether to use your children's wallets, then pay the rest securely on Paystack." />
+        <PageHeader title="Payment" sub="Your wallet is used first. Anything left is paid securely on Paystack." />
         <Steps at={2} />
         <div className="cart-layout">
           <Card className="stack">
@@ -88,8 +88,7 @@ export default async function CartPage({ searchParams }: { searchParams: Promise
             <p className="tiny muted">Each child&apos;s items are packed and tracked separately. You&apos;ll get a WhatsApp message when they are ready for pick-up.</p>
           </Card>
           <aside className="cart-aside">
-            <CheckoutBox action={checkoutAction} subtotal={cart.subtotal} autoCancelHours={settings.autoCancelHours} readOnly={readOnly} paystack={paystackReady()}
-              wallets={cart.groups.map((g) => ({ pupilId: g.pupil.id, name: g.pupil.firstName, balance: g.walletBalance, groupTotal: g.subtotal }))} />
+            <CheckoutBox action={checkoutAction} subtotal={cart.subtotal} autoCancelHours={settings.autoCancelHours} readOnly={readOnly} paystack={paystackReady()} wallet={cart.wallet} />
           </aside>
         </div>
       </>
@@ -111,7 +110,8 @@ export default async function CartPage({ searchParams }: { searchParams: Promise
             <h3>Summary</h3>
             <div className="sum-row"><span className="muted">{cart.count} item{cart.count === 1 ? "" : "s"}</span><span className="tnum">{naira(cart.subtotal)}</span></div>
             <LinkButton href="/cart?step=pay" variant="primary" size="lg" block>Continue to payment</LinkButton>
-            <p className="tiny muted">You can use your children&apos;s wallets on the next step.</p>
+            {cart.fromWallet > 0 && <div className="sum-row"><span className="muted">From your wallet</span><span className="tnum c-ok">−{naira(cart.fromWallet)}</span></div>}
+            {cart.fromWallet > 0 && <div className="sum-row total"><span>To pay</span><span className="tnum">{naira(cart.subtotal - cart.fromWallet)}</span></div>}
           </Card>
         </aside>
       </div>

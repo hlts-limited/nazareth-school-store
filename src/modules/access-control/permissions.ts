@@ -51,12 +51,19 @@ export const PERMISSIONS = {
   PAYROLL_APPROVE: "payroll.approve",
   /** Press Pay (the Super Admin) */
   PAYROLL_PAY: "payroll.pay",
+  /** Delete a staff member for good (Alpha Admin only) */
+  STAFF_DELETE: "staff.delete",
+  /** Delete a store item or pile for good (Alpha Admin only) */
+  ITEMS_DELETE: "catalogue.delete",
   /** Alpha Admin only: raw data editing, SQL console. Never part of a role; see ALPHA_ADMIN_EMAIL. */
   ALPHA: "system.alpha",
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 const P = PERMISSIONS;
+
+/** Only the Alpha Admin may do these: never part of any role, not even Super Admin */
+export const ALPHA_ONLY: Permission[] = [P.ALPHA, P.PUPILS_DELETE, P.PUPILS_EMPTY_BIN, P.STAFF_DELETE, P.ITEMS_DELETE];
 
 export const ROLE_DEFS: { id: string; name: string; permissions: Permission[]; requires2fa: boolean }[] = [
   {
@@ -73,7 +80,7 @@ export const ROLE_DEFS: { id: string; name: string; permissions: Permission[]; r
   },
   {
     id: "secretary", name: "Secretary", requires2fa: false,
-    permissions: [P.PUPILS_VIEW, P.PUPILS_MANAGE, P.PUPILS_DELETE, P.ADMISSIONS_VIEW, P.ADMISSIONS_MANAGE, P.ADMISSIONS_PUBLISH, P.WEBSITE_MANAGE],
+    permissions: [P.PUPILS_VIEW, P.PUPILS_MANAGE, P.ADMISSIONS_VIEW, P.ADMISSIONS_MANAGE, P.ADMISSIONS_PUBLISH, P.WEBSITE_MANAGE],
   },
   {
     id: "hr", name: "Admin / HR", requires2fa: true,
@@ -89,8 +96,8 @@ export const ROLE_DEFS: { id: string; name: string; permissions: Permission[]; r
   },
   {
     id: "admin", name: "Super Admin", requires2fa: true,
-    // Everything except Alpha, including approving and paying payroll (never a run they prepared)
-    permissions: (Object.values(P) as Permission[]).filter((p) => p !== P.ALPHA),
+    // Everything except Alpha's, including approving and paying payroll (never a run they prepared)
+    permissions: (Object.values(P) as Permission[]).filter((p) => !ALPHA_ONLY.includes(p)),
   },
 ];
 
@@ -102,7 +109,7 @@ export const ALL_PERMISSIONS = Object.values(P) as Permission[];
 export const roleName = (id: string) => (id === ALPHA_ROLE ? "Alpha Admin" : ROLE_DEFS.find((r) => r.id === id)?.name ?? id);
 
 /** A menu badge: the number of things waiting in that list */
-export type NavBadge = "review" | "pack" | "bin" | "apps" | "enq" | "hr" | "leave" | "payroll" | "blocked";
+export type NavBadge = "review" | "pack" | "bin" | "apps" | "enq" | "hr" | "leave" | "payroll" | "blocked" | "returns";
 export type NavItem = { href: string; label: string; icon: string; badge?: NavBadge; perm?: Permission };
 /** A menu area. `perm` (any one of them) decides who sees it; each item can need its own permission too. No `perm` = all staff. */
 export type NavSection = { id: string; label: string; perm?: Permission | Permission[]; items: NavItem[] };
@@ -139,6 +146,7 @@ export const STAFF_SECTIONS: NavSection[] = [
       { href: "/admin/store", label: "Overview", icon: "chart", perm: P.CATALOGUE_MANAGE },
       { href: "/admin/store/packing", label: "Orders to pack", icon: "list", badge: "pack", perm: P.FULFILMENT_MANAGE },
       { href: "/admin/store/pickup", label: "Pick-up desk", icon: "qr", perm: P.FULFILMENT_MANAGE },
+      { href: "/admin/store/returns", label: "Returns", icon: "refresh", perm: P.FULFILMENT_MANAGE },
       { href: "/admin/store/items", label: "Items", icon: "tag", perm: P.CATALOGUE_MANAGE },
       { href: "/admin/store/piles", label: "Core-textbook piles", icon: "layers", perm: P.CATALOGUE_MANAGE },
       { href: "/admin/store/categories", label: "Categories", icon: "layers", perm: P.CATALOGUE_MANAGE },
@@ -150,8 +158,9 @@ export const STAFF_SECTIONS: NavSection[] = [
     items: [
       { href: "/admin/accounts", label: "Overview", icon: "chart", perm: P.PAYMENTS_REVIEW },
       { href: "/admin/accounts/review", label: "Payments to review", icon: "receipt", badge: "review", perm: P.PAYMENTS_REVIEW },
+      { href: "/admin/accounts/returns", label: "Returns to approve", icon: "refresh", badge: "returns", perm: P.PAYMENTS_REVIEW },
       { href: "/admin/accounts/invoices", label: "Invoices", icon: "file", perm: P.INVOICES_MANAGE },
-      { href: "/admin/accounts/wallets", label: "Pupil wallets", icon: "wallet", perm: P.WALLETS_ADJUST },
+      { href: "/admin/accounts/wallets", label: "Parent wallets", icon: "wallet", perm: P.WALLETS_ADJUST },
     ],
   },
   {

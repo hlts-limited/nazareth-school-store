@@ -2,14 +2,16 @@ import Link from "next/link";
 import { naira } from "@/shared/lib/format";
 import { Card, CardHeader, Empty, LinkButton, PageHeader, Pill } from "@/shared/ui/primitives";
 import { requireStaff } from "@/modules/auth";
-import { listClasses, listPiles, pileStock, variantAvailable } from "@/modules/catalogue";
+import { deleteItemAction, listClasses, listPiles, pileStock, variantAvailable } from "@/modules/catalogue";
+import { AlphaDelete } from "@/shared/ui/alpha-delete";
 import { awaitingByVariant, recordStockMovement } from "@/modules/inventory";
 import { StockDialog } from "../_widgets";
 
 export const metadata = { title: "Core-textbook piles" };
 
 export default async function PilesPage() {
-  await requireStaff("catalogue.manage");
+  const v = await requireStaff("catalogue.manage");
+  const canDelete = v.permissions.has("catalogue.delete"); // Alpha Admin only
   const [piles, classes] = await Promise.all([listPiles(), listClasses()]);
   const waiting = await awaitingByVariant(piles.flatMap((p) => p.pileParts.map((pt) => pt.book.variants[0]?.id).filter(Boolean) as string[]));
   return (
@@ -34,7 +36,8 @@ export default async function PilesPage() {
                   </span></span>}
                 right={<div className="row tight"><b className="tnum">{naira(p.price)}</b>
                   {s.inStock === s.total ? <Pill tone="ok">All in stock</Pill> : <Pill tone="warn">{s.total - s.inStock} of {s.total} short</Pill>}
-                  <Link className="btn sm" href={`/admin/store/piles/${p.id}`}>Edit</Link></div>} />
+                  <Link className="btn sm" href={`/admin/store/piles/${p.id}`}>Edit</Link>
+                  {canDelete && <AlphaDelete action={deleteItemAction} field="itemId" id={p.id} what={p.name} />}</div>} />
               <div className="tbl-wrap"><table className="t rt">
                 <thead><tr><th>Book</th><th>SKU</th><th className="r">Per pile</th><th className="r">Price</th><th className="r">On hand</th><th className="r">Reserved</th><th className="r">Available</th><th className="r">Waiting for stock</th><th /></tr></thead>
                 <tbody>

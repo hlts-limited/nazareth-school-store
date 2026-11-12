@@ -3,14 +3,16 @@ import { naira } from "@/shared/lib/format";
 import { Card, Empty, LinkButton, PageHeader, Pager, Pill } from "@/shared/ui/primitives";
 import { SearchParamInput } from "@/shared/ui/client";
 import { requireStaff } from "@/modules/auth";
-import { categoryTree, ItemArt, itemAvailable, itemLook, listClasses, pageItems, pileStock } from "@/modules/catalogue";
+import { categoryTree, deleteItemAction, ItemArt, itemAvailable, itemLook, listClasses, pageItems, pileStock } from "@/modules/catalogue";
+import { AlphaDelete } from "@/shared/ui/alpha-delete";
 import { recordStockMovement } from "@/modules/inventory";
 import { StockDialog } from "../_widgets";
 
 export const metadata = { title: "Items" };
 
 export default async function ItemsPage({ searchParams }: { searchParams: Promise<{ cat?: string; q?: string; page?: string }> }) {
-  await requireStaff("catalogue.manage");
+  const v = await requireStaff("catalogue.manage");
+  const canDelete = v.permissions.has("catalogue.delete"); // Alpha Admin only
   const sp = await searchParams;
   const [cats, res, classes] = await Promise.all([categoryTree(), pageItems({ categoryId: sp.cat, q: sp.q, page: Number(sp.page) || 1 }), listClasses()]);
   const items = res.rows;
@@ -48,6 +50,7 @@ export default async function ItemsPage({ searchParams }: { searchParams: Promis
                       <td data-label="" className="r"><div className="row tight justify-end">
                         {!it.isPile && <StockDialog action={recordStockMovement} item={it.name} variants={it.variants.map((v) => ({ id: v.id, label: v.label, onHand: v.onHand, reserved: v.reserved }))} />}
                         <Link className="btn sm ghost" href={href}>Edit</Link>
+                        {canDelete && <AlphaDelete action={deleteItemAction} field="itemId" id={it.id} what={it.name} />}
                       </div></td>
                     </tr>
                   );

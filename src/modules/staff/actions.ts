@@ -5,7 +5,7 @@ import { fail, ok, parseForm, runAction, zOptText, zText, type ActionResult } fr
 import { auditActor, staffFor } from "@/modules/auth";
 import { audit } from "@/modules/audit";
 import { env } from "@/shared/config/env";
-import { inviteStaff, resetStaff, setRoles, setStatus } from "./service";
+import { deleteStaffMember, inviteStaff, resetStaff, setRoles, setStatus } from "./service";
 
 /** Until RESEND_API_KEY is set, emails are only logged — say so instead of claiming they were sent. */
 const sentNote = (who: string) => env().RESEND_API_KEY
@@ -53,5 +53,16 @@ export async function resetStaffAction(_: ActionResult, form: FormData): Promise
     await resetStaff(id);
     await audit(await auditActor(v), "Reset staff password", "User", id);
     return ok(env().RESEND_API_KEY ? "A new set-up link has been emailed." : `New set-up link created. Email isn't set up yet, so use "Copy invite link" and send it to them directly.`);
+  });
+}
+
+/** Alpha Admin only: delete a staff member for good (not possible once they've been on a payroll) */
+export async function deleteStaffAction(_: ActionResult, form: FormData): Promise<ActionResult> {
+  return runAction(async () => {
+    const v = await staffFor("staff.delete");
+    const d = parseForm(z.object({ userId: zText(100) }), form);
+    const r = await deleteStaffMember(d.userId, v.user.id);
+    await audit(await auditActor(v), "Alpha: deleted staff member", "User", d.userId, { name: r.name, staffCode: r.staffCode, files: r.files });
+    return ok(`${r.name} was deleted.`);
   });
 }

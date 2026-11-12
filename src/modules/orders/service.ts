@@ -3,7 +3,7 @@ import { db, type Tx } from "@/shared/lib/db";
 import { UserError } from "@/shared/lib/action";
 import { naira, orderNo, parseOrderNo } from "@/shared/lib/format";
 import { reserve, release } from "@/modules/inventory";
-import { balance, credit, debit } from "@/modules/wallet";
+import { credit, spendUpTo } from "@/modules/wallet";
 import { notify } from "@/modules/notifications";
 import { getSettings } from "@/modules/settings";
 import { amountDue, UNPAID_STATUSES } from "./status";
@@ -37,10 +37,10 @@ export async function ordersForPupil(pupilId: string) {
 }
 
 /**
- * Turn the parent's cart into one order.
- * Stock is reserved atomically; wallet balances are used for the children ticked at checkout.
+ * Turn the parent's cart into one order. The parent's wallet is always used first; only what it doesn't cover
+ * goes to Paystack.
  */
-export async function checkout(parentId: string, method: "PAYSTACK" | "TRANSFER", useWalletFor: string[], actorName: string) {
+export async function checkout(parentId: string, method: "PAYSTACK" | "TRANSFER", actorName: string) {
   const order = await db.$transaction(async (tx) => {
     const cart = await tx.cartItem.findMany({
       where: { parentId },
@@ -72,13 +72,8 @@ export async function checkout(parentId: string, method: "PAYSTACK" | "TRANSFER"
     const o = await tx.order.create({
       data: { parentId, method, subtotal, lines: { create: lines }, invoice: { create: {} }, events: { create: { message: "Order placed", actorName } } },
     });
-    // Wallet balances
-    let walletUsed = 0;
-    for (const pid of [...new Set(useWalletFor)]) {
-      const groupTotal = lines.filter((l) => l.pupilId === pid).reduce((a, l) => a + l.unitPrice * l.qty, 0);
-      const use = Math.min(await balance(pid, tx), groupTotal);
-      if (use > 0) { await debit(tx, pid, "CHECKOUT_DEBIT", use, { orderId: o.id, actorName }); walletUsed += use; }
-    }
+    // The wallet first, always
+    const walletUsed = await spendUpTo(tx, parentId, subtotal, { orderId: o.id, actorName, reason: `Used for ${orderNo(o.number)}` });
     await tx.cartItem.deleteMany({ where: { parentId } });
     if (walletUsed === subtotal) {
       await addEvent(tx, o.id, "Paid in full from wallet");
@@ -87,11 +82,11 @@ export async function checkout(parentId: string, method: "PAYSTACK" | "TRANSFER"
     }
     return tx.order.update({ where: { id: o.id }, data: { walletUsed } });
   });
-  if (order.status === "PAYMENT_APPROVED") await notify(parentId, `Order ${orderNo(order.number)} paid`, `Order ${orderNo(order.number)} was paid from your children's wallets. We'll message you on WhatsApp when it's ready for pick-up.`);
+  if (order.status === "PAYMENT_APPROVED") await notify(parentId, `Order ${orderNo(order.number)} paid`, `Order ${orderNo(order.number)} was paid from your wallet. We'll message you on WhatsApp when it's ready for pick-up.`);
   return order;
 }
 
-/** Cancel an order: release reserved stock and put any money already paid into the child's wallet. */
+/** Cancel an order: release reserved stock and put any money already paid into the parent's wallet. */
 export async function cancelOrder(tx: Tx, orderId: string, reason: string, actorName: string) {
   const o = await tx.order.findUnique({ where: { id: orderId }, include: { lines: true } });
   if (!o || o.status === "CANCELLED" || o.status === "HANDED_OUT") return null;
@@ -99,10 +94,7 @@ export async function cancelOrder(tx: Tx, orderId: string, reason: string, actor
   for (const l of o.lines) if (l.reserved && l.status !== "HANDED_OUT" && l.status !== "CANCELLED") await release(tx, l.variantId, l.qty);
   await tx.orderLine.updateMany({ where: { orderId, status: { notIn: ["HANDED_OUT"] } }, data: { status: "CANCELLED" } });
   const refund = o.amountReceived + o.walletUsed;
-  const firstPupil = o.lines[0]?.pupilId;
-  if (refund > 0 && firstPupil) {
-    await credit(tx, firstPupil, "CANCELLED_ORDER_CREDIT", refund, { orderId, reason, actorName, movable: new Set(o.lines.map((l) => l.pupilId)).size > 1 });
-  }
+  if (refund > 0) await credit(tx, o.parentId, "CANCELLED_ORDER_CREDIT", refund, { orderId, reason, actorName });
   await tx.invoice.updateMany({ where: { orderId }, data: { status: "VOID" } });
   await addEvent(tx, orderId, `Cancelled: ${reason}${refund ? ` · ${naira(refund)} returned to wallet` : ""}`, actorName);
   return tx.order.update({ where: { id: orderId }, data: { status: "CANCELLED", cancelledAt: new Date() } });
@@ -133,7 +125,7 @@ export async function expireUnpaidOrders() {
     if (r) {
       cancelled++;
       const refund = o.amountReceived + o.walletUsed;
-      await notify(o.parentId, `Order ${orderNo(o.number)} cancelled`, `Order ${orderNo(o.number)} was cancelled because it wasn't paid within ${s.autoCancelHours} hours.${refund ? ` ${naira(refund)} you already paid is in your child's wallet.` : ""}`);
+      await notify(o.parentId, `Order ${orderNo(o.number)} cancelled`, `Order ${orderNo(o.number)} was cancelled because it wasn't paid within ${s.autoCancelHours} hours.${refund ? ` ${naira(refund)} you already paid is in your wallet for your next order.` : ""}`);
     }
   }
   // Balance reminders after 24 hours

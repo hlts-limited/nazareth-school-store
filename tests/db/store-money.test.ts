@@ -53,7 +53,7 @@ test("checkout reserves stock; Paystack approves once; packing and pick-up take 
   const f = await family();
   const { variant } = await item(5, 3_000);
   await addToCart(f.parentId, f.pupilId, variant.id, 2);
-  const order = await checkout(f.parentId, "PAYSTACK", [], "Test parent");
+  const order = await checkout(f.parentId, "PAYSTACK", "Test parent");
   assert.equal(order.status, "PENDING_PAYMENT");
   assert.equal(order.subtotal, 6_000);
   assert.deepEqual(await stock(variant.id), { onHand: 5, reserved: 2 }, "two held for the order, none taken yet");
@@ -85,28 +85,28 @@ test("the last one in stock can't be sold twice", async () => {
   const { variant } = await item(1);
   await addToCart(a.parentId, a.pupilId, variant.id, 1);
   await addToCart(b.parentId, b.pupilId, variant.id, 1); // both carts hold it; only one checkout can win
-  await checkout(a.parentId, "PAYSTACK", [], "A");
-  await assert.rejects(checkout(b.parentId, "PAYSTACK", [], "B"), /just sold out/);
+  await checkout(a.parentId, "PAYSTACK", "A");
+  await assert.rejects(checkout(b.parentId, "PAYSTACK", "B"), /just sold out/);
   assert.deepEqual(await stock(variant.id), { onHand: 1, reserved: 1 });
   assert.equal(await db.cartItem.count({ where: { parentId: b.parentId } }), 1, "the losing cart is left as it was");
 });
 
-test("wallet: pays the whole order at once, or part of it before Paystack", async () => {
+test("wallet (one per parent): always used first, for the whole order or before Paystack", async () => {
   const f = await family();
-  await db.$transaction((tx) => credit(tx, f.pupilId, "ADJUSTMENT", 5_000, { reason: "Test credit", actorName: "Accounts" }));
+  await db.$transaction((tx) => credit(tx, f.parentId, "ADJUSTMENT", 5_000, { reason: "Test credit", actorName: "Accounts" }));
   const cheap = await item(10, 2_000);
   await addToCart(f.parentId, f.pupilId, cheap.variant.id, 1);
-  const whole = await checkout(f.parentId, "PAYSTACK", [f.pupilId], "Parent");
+  const whole = await checkout(f.parentId, "PAYSTACK", "Parent");
   assert.equal(whole.status, "PAYMENT_APPROVED");
   assert.equal(whole.method, "WALLET");
-  assert.equal(await balance(f.pupilId), 3_000);
+  assert.equal(await balance(f.parentId), 3_000);
 
   const dear = await item(10, 7_000);
   await addToCart(f.parentId, f.pupilId, dear.variant.id, 1);
-  const part = await checkout(f.parentId, "PAYSTACK", [f.pupilId], "Parent");
+  const part = await checkout(f.parentId, "PAYSTACK", "Parent");
   assert.equal(part.status, "PENDING_PAYMENT");
   assert.equal(part.walletUsed, 3_000);
-  assert.equal(await balance(f.pupilId), 0, "wallet emptied into the order");
+  assert.equal(await balance(f.parentId), 0, "wallet emptied into the order");
   const { result } = await payOnline(part.id, f.parentId);
   assert.equal(result.status, "approved");
   const after = await db.order.findUniqueOrThrow({ where: { id: part.id } });
@@ -115,24 +115,32 @@ test("wallet: pays the whole order at once, or part of it before Paystack", asyn
   // Not enough in the wallet to pay an unpaid order from it
   const third = await item(10, 9_000);
   await addToCart(f.parentId, f.pupilId, third.variant.id, 1);
-  const unpaid = await checkout(f.parentId, "PAYSTACK", [], "Parent");
-  await assert.rejects(payFromWallet(f.parentId, unpaid.id, "Parent"), /wallets hold/);
+  const unpaid = await checkout(f.parentId, "PAYSTACK", "Parent");
+  await assert.rejects(payFromWallet(f.parentId, unpaid.id, "Parent"), /wallet holds/);
+
+  // Credit that arrives later is taken first when the parent pays that order
+  await db.$transaction((tx) => credit(tx, f.parentId, "ADJUSTMENT", 2_000, { reason: "Test credit", actorName: "Accounts" }));
+  await payOnline(unpaid.id, f.parentId);
+  const paid = await db.order.findUniqueOrThrow({ where: { id: unpaid.id } });
+  assert.equal(paid.walletUsed, 2_000, "the wallet went first");
+  assert.equal(paid.amountReceived, 7_000, "Paystack took only the rest");
+  assert.equal(await balance(f.parentId), 0);
 });
 
 test("cancelling: stock goes back, and money already paid goes to the child's wallet", async () => {
   const f = await family();
   const { variant } = await item(4, 2_500);
   await addToCart(f.parentId, f.pupilId, variant.id, 2);
-  const unpaid = await checkout(f.parentId, "PAYSTACK", [], "Parent");
+  const unpaid = await checkout(f.parentId, "PAYSTACK", "Parent");
   await db.$transaction((tx) => cancelOrder(tx, unpaid.id, "Not paid in time", "System"));
   assert.deepEqual(await stock(variant.id), { onHand: 4, reserved: 0 }, "reservation released");
-  assert.equal(await balance(f.pupilId), 0, "nothing was paid, nothing credited");
+  assert.equal(await balance(f.parentId), 0, "nothing was paid, nothing credited");
 
   await addToCart(f.parentId, f.pupilId, variant.id, 2);
-  const paid = await checkout(f.parentId, "PAYSTACK", [], "Parent");
+  const paid = await checkout(f.parentId, "PAYSTACK", "Parent");
   await payOnline(paid.id, f.parentId);
   await db.$transaction((tx) => cancelOrder(tx, paid.id, "Cancelled by the school", "Accounts"));
-  assert.equal(await balance(f.pupilId), 5_000, "the full payment is in the wallet");
+  assert.equal(await balance(f.parentId), 5_000, "the full payment is in the wallet");
   assert.equal((await db.invoice.findUniqueOrThrow({ where: { orderId: paid.id } })).status, "VOID");
   assert.deepEqual(await stock(variant.id), { onHand: 4, reserved: 0 });
 });
@@ -151,7 +159,7 @@ test("a pile with a book out of stock: sold now, packed in two goes, parent told
     include: { variants: true },
   });
   await addToCart(f.parentId, f.pupilId, pile.variants[0].id, 1);
-  const order = await checkout(f.parentId, "PAYSTACK", [], "Parent");
+  const order = await checkout(f.parentId, "PAYSTACK", "Parent");
   assert.equal(order.subtotal, 4_000);
   const lines = await db.orderLine.findMany({ where: { orderId: order.id }, orderBy: { itemName: "asc" } });
   assert.equal(lines.length, 2, "one line per book");

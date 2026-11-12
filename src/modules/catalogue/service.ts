@@ -251,3 +251,24 @@ export async function pileDescriptions(pileIds: string[]) {
 }
 
 export const classById = (id: string) => db.class.findUnique({ where: { id } });
+
+/**
+ * Alpha Admin only: delete an item or pile for good. Refused when it appears on any order (order history must
+ * stay complete: hide it instead) or when it's a book inside a pile (take it out of the pile first).
+ */
+export async function deleteItem(id: string) {
+  const item = await db.item.findUnique({ where: { id }, include: { variants: { select: { id: true } }, inPiles: { include: { pile: { select: { name: true } } } } } });
+  if (!item) throw new UserError("That item wasn't found.");
+  const ordered = await db.orderLine.count({ where: { OR: [{ variantId: { in: item.variants.map((v) => v.id) } }, { pileItemId: id }] } });
+  if (ordered) throw new UserError(`${item.name} is on ${ordered} order line${ordered === 1 ? "" : "s"}, so it has to stay for the records. Untick "Active" to hide it from the shop instead.`);
+  if (item.inPiles.length) throw new UserError(`${item.name} is in the pile "${item.inPiles[0].pile.name}". Take it out of the pile first.`);
+  await db.$transaction(async (tx) => {
+    await tx.pilePart.deleteMany({ where: { pileId: id } });
+    await tx.item.delete({ where: { id } }); // sizes, stock history, class links, carts and wishlists go with it
+  });
+  if (item.imageKey) {
+    const { storage } = await import("@/shared/lib/storage");
+    await storage().delete(item.imageKey).catch(() => undefined);
+  }
+  return { name: item.name, sku: item.sku, pile: item.isPile };
+}

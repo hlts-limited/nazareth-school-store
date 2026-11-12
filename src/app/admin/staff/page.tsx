@@ -6,15 +6,16 @@ import { DataTable } from "@/shared/ui/data-table";
 import { keyed } from "@/shared/ui/table-cells";
 import { ROLE_DEFS, roleName } from "@/modules/access-control";
 import { requireStaff } from "@/modules/auth";
-import { inviteStaffAction, listStaff, resetStaffAction, setRolesAction, setStaffStatusAction } from "@/modules/staff";
+import { deleteStaffAction, inviteStaffAction, listStaff, resetStaffAction, setRolesAction, setStaffStatusAction } from "@/modules/staff";
+import { AlphaDelete } from "@/shared/ui/alpha-delete";
 import { InviteStaff, RolesForm } from "./_widgets";
 
 export const metadata = { title: "Staff & roles" };
 
 const PERM_LABELS: [string, string][] = [
-  ["payments.review", "Approve payments & invoices"], ["invoices.export", "Export invoices"], ["wallets.adjust", "Adjust pupil wallets"],
+  ["payments.review", "Approve payments & invoices"], ["invoices.export", "Export invoices"], ["wallets.adjust", "Adjust parent wallets"],
   ["catalogue.manage", "Manage items & categories"], ["stock.manage", "Manage stock"], ["fulfilment.manage", "Pack & hand out orders"],
-  ["pupils.manage", "Add & import pupils"], ["pupils.delete", "Delete pupils"], ["pupils.empty_bin", "Empty the bin"],
+  ["pupils.manage", "Add & import pupils"], ["pupils.delete", "Delete pupils (Alpha only)"], ["pupils.empty_bin", "Empty the bin (Alpha only)"], ["staff.delete", "Delete staff (Alpha only)"], ["catalogue.delete", "Delete items (Alpha only)"],
   ["viewas.use", "View as parent / pupil"], ["backup.manage", "Backup & restore"], ["staff.manage", "Manage staff"], ["settings.manage", "School settings"], ["audit.view", "Audit log"],
   ["admissions.view", "See applications"], ["admissions.manage", "Handle applications & enrol"], ["admissions.publish", "Open admission & publish results"], ["website.manage", "Website notices, events, gallery & messages"],
   ["self.service", "Own staff page (profile, documents, clock-in, payslips)"], ["hr.view.section", "See own section's staff"], ["hr.view", "See all staff records"],
@@ -55,6 +56,7 @@ export default async function StaffPage() {
                       <CopyButton text={`${env().APP_URL}/invite/${s.inviteToken}`} label="Copy invite link" done={`Invite link for ${s.firstName} copied. Send it to them directly.`} />
                     )}
                     <ActionForm action={resetStaffAction}><input type="hidden" name="userId" value={s.id} /><SubmitButton size="sm" variant="default" confirmText={`Send ${s.firstName} a new set-up link? Their current password stops working.`}>Reset</SubmitButton></ActionForm>
+                    {s.id !== me.user.id && me.permissions.has("staff.delete") && <AlphaDelete action={deleteStaffAction} field="userId" id={s.id} what={`${s.firstName} ${s.lastName}`} />}
                     {s.id !== me.user.id && (
                       <ActionForm action={setStaffStatusAction}><input type="hidden" name="userId" value={s.id} /><input type="hidden" name="status" value={s.status === "DISABLED" ? "ACTIVE" : "DISABLED"} /><SubmitButton size="sm" variant={s.status === "DISABLED" ? "default" : "danger"}>{s.status === "DISABLED" ? "Enable" : "Disable"}</SubmitButton></ActionForm>
                     )}

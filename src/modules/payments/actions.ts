@@ -51,7 +51,7 @@ export async function payFromWalletAction(_: ActionResult, form: FormData): Prom
   return runAction(async () => {
     const parent = await parentForAction();
     await payFromWallet(parent.id, String(form.get("orderId")), `${parent.firstName} ${parent.lastName}`);
-    return ok("Paid from your children's wallets. Your order is approved.");
+    return ok("Paid from your wallet. Your order is approved.");
   });
 }
 
@@ -60,7 +60,8 @@ export async function startPaystackAction(_: ActionResult, form: FormData): Prom
     const parent = await parentForAction();
     const order = await db.order.findFirst({ where: { id: String(form.get("orderId")), parentId: parent.id } });
     if (!order) return fail("Order not found.");
+    // The wallet is used first; if it covered everything, there's nothing to pay on Paystack
     const url = await startPaystack(parent, order.id);
-    return ok(undefined, { redirect: url });
+    return url ? ok(undefined, { redirect: url }) : ok("Paid from your wallet. Your order is approved.", { redirect: `/orders/${orderNo(order.number)}` });
   });
 }
