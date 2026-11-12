@@ -51,7 +51,7 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
               <select className="input" id="f-st" name="status" defaultValue={f.status ?? ""}><option value="">All statuses</option>{INVOICE_LABELS.map((s) => <option key={s} value={s}>{s}</option>)}</select></div>
           </div>
           <div className="row">
-            <div className="search grow" style={{ minWidth: 220 }}><Icon name="search" size="sm" /><input className="input" name="q" defaultValue={f.q} placeholder="Invoice no, parent or pupil name, reg number" /></div>
+            <div className="search grow minw-220"><Icon name="search" size="sm" /><input className="input" name="q" defaultValue={f.q} placeholder="Invoice no, parent or pupil name, reg number" /></div>
             <button className="btn primary" type="submit">Apply filters</button>
             <Link className="btn ghost" href="/admin/accounts/invoices">Clear</Link>
           </div>
@@ -61,7 +61,7 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
             ))}
           </div>
         </form>
-        <div className="row between"><span><b className="tnum">{rows.length}</b> <span className="muted">invoice rows</span></span><span className="muted">Total <b className="tnum" style={{ color: "var(--ink)", fontSize: 16 }}>{naira(total)}</b></span></div>
+        <div className="row between"><span><b className="tnum">{rows.length}</b> <span className="muted">invoice rows</span></span><span className="muted">Total <b className="tnum c-ink fs-16">{naira(total)}</b></span></div>
         <Card pad={false}>
           {rows.length === 0 ? <Empty title="No invoices match">Widen the dates or clear the filters.</Empty> : (
             <div className="tbl-wrap">

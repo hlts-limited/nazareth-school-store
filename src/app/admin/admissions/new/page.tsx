@@ -22,7 +22,7 @@ export default async function RegisterChildPage() {
   const first = current.window?.id;
   const ordered = [...windows].sort((a, b) => (a.id === first ? -1 : b.id === first ? 1 : 0)).map((w) => ({ id: w.id, session: w.session, formFee: w.formFee }));
   return (
-    <div className="form-wrap" style={{ maxWidth: 920 }}>
+    <div className="form-wrap mw-920">
       <PageHeader title="Register a child" sub="For families who apply at the school office. The class is chosen by age; you can choose another class if needed."
         actions={<Link className="btn" href="/admin/admissions"><Icon name="back" size="sm" />Applications</Link>} />
       <ApplicationFields action={registerApplicationAction} mode="office" windows={ordered} classes={classes.map((c) => ({ id: c.id, name: c.name }))} submitLabel="Register child" cancelHref="/admin/admissions" />

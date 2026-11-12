@@ -20,7 +20,7 @@ export function RestoreFlow({ upload, prepare, restore, backups }: { upload: Act
         <button type="button" className="btn" onClick={() => setUploadOpen(true)}><Icon name="upload" size="sm" /> Upload backup</button>
         {backups.length > 0 && (
           <ActionForm action={prepare} className="row tight" onDone={onStaged}>
-            <select className="input sm" name="backupId" aria-label="Backup to restore" style={{ width: "auto", maxWidth: 260 }}>
+            <select className="input sm w-auto mw-260" name="backupId" aria-label="Backup to restore">
               {backups.map((b) => <option key={b.id} value={b.id}>{b.fileName}</option>)}
             </select>
             <SubmitButton size="sm" variant="default" icon="restore">Restore…</SubmitButton>
@@ -32,7 +32,7 @@ export function RestoreFlow({ upload, prepare, restore, backups }: { upload: Act
           <div className="field"><label htmlFor="bk-f">Backup file (.nzbak)</label><input className="input" id="bk-f" name="file" type="file" accept=".nzbak,application/octet-stream" /><FieldError name="file" /></div>
           <div className="field"><label htmlFor="bk-p">Backup password</label><input className="input" id="bk-p" name="password" type="password" autoComplete="off" /><span className="hint">The BACKUP_PASSWORD of the server that made the backup.</span><FieldError name="password" /></div>
           <p className="small muted">The file is checked first. Nothing changes until you confirm on the next step.</p>
-          <div className="row" style={{ justifyContent: "flex-end" }}><button type="button" className="btn ghost" onClick={() => setUploadOpen(false)}>Cancel</button><SubmitButton>Check backup</SubmitButton></div>
+          <div className="row justify-end"><button type="button" className="btn ghost" onClick={() => setUploadOpen(false)}>Cancel</button><SubmitButton>Check backup</SubmitButton></div>
         </ActionForm>
       </Dialog>
       <Dialog open={!!staged} onClose={() => setStaged(null)} title="Restore backup">
@@ -48,7 +48,7 @@ export function RestoreFlow({ upload, prepare, restore, backups }: { upload: Act
             <div className="note err"><Icon name="alert" /><span>This replaces <b>all current data</b>. A safety backup of today&apos;s data is taken first. Everyone, including you, will be signed out.</span></div>
             <div className="field"><label htmlFor="rs-c">Your 2FA code</label><input className="input mono" id="rs-c" name="code" inputMode="numeric" maxLength={6} autoComplete="one-time-code" /><FieldError name="code" /></div>
             <div className="field"><label htmlFor="rs-t">Type RESTORE to confirm</label><input className="input mono" id="rs-t" name="confirm" autoComplete="off" value={confirm} onChange={(e) => setConfirm(e.target.value)} /><FieldError name="confirm" /></div>
-            <div className="row" style={{ justifyContent: "flex-end" }}><button type="button" className="btn ghost" onClick={() => setStaged(null)}>Cancel</button><SubmitButton variant="danger" disabled={confirm !== "RESTORE"}>Restore now</SubmitButton></div>
+            <div className="row justify-end"><button type="button" className="btn ghost" onClick={() => setStaged(null)}>Cancel</button><SubmitButton variant="danger" disabled={confirm !== "RESTORE"}>Restore now</SubmitButton></div>
           </ActionForm>
         )}
       </Dialog>

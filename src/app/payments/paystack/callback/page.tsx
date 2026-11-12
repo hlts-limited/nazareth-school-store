@@ -12,12 +12,12 @@ export default async function PaystackCallback({ searchParams }: { searchParams:
   const no = r.order ? orderNo(r.order.number) : null;
   const good = r.status === "approved" || r.status === "already";
   return (
-    <main className="main" style={{ maxWidth: 520 }}>
+    <main className="main mw-520">
       <div className="card empty">
         <div style={{ width: 56, height: 56, borderRadius: "50%", background: good ? "var(--ok-soft)" : "var(--err-soft)", color: good ? "var(--ok)" : "var(--err)", display: "grid", placeItems: "center", margin: "0 auto 12px", fontSize: 26, fontWeight: 800 }}>{good ? "✓" : "!"}</div>
         <h3>{good ? "Payment successful" : r.status === "part" ? "Part payment received" : "Payment not completed"}</h3>
         <p>{good ? `Order ${no} is approved. We'll message you on WhatsApp when it's ready for pick-up.` : r.status === "part" ? `We received part of the amount for ${no}. The balance is shown on your order.` : "Your card was not charged, or the payment was cancelled. You can try again from your order."}</p>
-        <div style={{ marginTop: 14 }}>{no ? <Link className="btn primary" href={`/orders/${no}`}>View order</Link> : <Link className="btn primary" href="/orders">Your orders</Link>}</div>
+        <div className="mt-14">{no ? <Link className="btn primary" href={`/orders/${no}`}>View order</Link> : <Link className="btn primary" href="/orders">Your orders</Link>}</div>
       </div>
     </main>
   );

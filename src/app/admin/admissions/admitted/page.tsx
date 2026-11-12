@@ -32,7 +32,7 @@ export default async function AdmittedPage({ searchParams }: { searchParams: Pro
           {waiting.length === 0 ? <Empty title="No one waiting">Children appear here when you record &ldquo;Admitted&rdquo; on their application.</Empty> : (
             <ActionForm action={enrolManyAction} className="stack" id="enrol-form">
               <div className="tbl-wrap"><table className="t rt">
-                <thead><tr>{canMove && <th style={{ width: 36 }}><SelectAll form="enrol-form" /></th>}<th>Child</th><th>Class</th><th>Parent</th><th>Application</th></tr></thead>
+                <thead><tr>{canMove && <th className="w-36"><SelectAll form="enrol-form" /></th>}<th>Child</th><th>Class</th><th>Parent</th><th>Application</th></tr></thead>
                 <tbody>
                   {waiting.map((a) => (
                     <tr key={a.id}>

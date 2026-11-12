@@ -66,7 +66,7 @@ export function Empty({ title, children, action }: { title: string; children?: R
     <div className="empty">
       <h3>{title}</h3>
       {children && <p>{children}</p>}
-      {action && <div style={{ marginTop: 14 }}>{action}</div>}
+      {action && <div className="mt-14">{action}</div>}
     </div>
   );
 }
@@ -100,7 +100,7 @@ export function Bars({ rows, color }: { rows: [string, number, string][]; color?
         <div className="b" key={label}>
           <span>{label}</span>
           <span className="track"><span style={{ width: `${(v / max) * 100}%`, background: color }} /></span>
-          <b className="tnum" style={{ textAlign: "right" }}>{shown}</b>
+          <b className="tnum text-right">{shown}</b>
         </div>
       ))}
     </div>

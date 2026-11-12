@@ -13,7 +13,7 @@ export default async function SettingsPage() {
   const v = await requireStaff("settings.manage");
   const s = await getSettings();
   return (
-    <div style={{ maxWidth: 820 }}>
+    <div className="mw-820">
       <PageHeader title="Settings" sub="School details used at checkout, on invoices and in messages." />
       <SettingsTabs v={v} current="/admin/settings" />
       <div className="stack">

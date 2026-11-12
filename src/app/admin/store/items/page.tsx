@@ -37,15 +37,15 @@ export default async function ItemsPage({ searchParams }: { searchParams: Promis
                   const ps = it.isPile ? pileStock(it) : null;
                   return (
                     <tr key={it.id} style={it.isActive ? undefined : { opacity: 0.55 }}>
-                      <td className="cb" data-label=""><span className="cart-line" style={{ padding: 0, border: 0 }}><ItemArt {...itemLook(it)} size="thumb" /></span></td>
+                      <td className="cb" data-label=""><span className="cart-line p-0 b-0"><ItemArt {...itemLook(it)} size="thumb" /></span></td>
                       <td data-label="Item"><Link href={href} className="link-row"><b>{it.name}</b></Link>{it.isPile && <> <Pill tone="violet" dot={false}>Pile · {it.pileParts.length} books</Pill></>}{req && <> <Pill tone="ok" dot={false}>Required</Pill></>}{!it.isActive && <> <Pill>Hidden</Pill></>}{it.hasVariants && <div className="tiny muted">{it.variants.length} sizes</div>}
                         {it.inPiles[0] && <div className="tiny muted">Only sold in <Link href="/admin/store/piles">{it.inPiles[0].pile.name}</Link></div>}</td>
                       <td data-label="SKU" className="mono small">{it.sku}</td>
                       <td data-label="Category">{it.category.parent ? `${it.category.parent.name} › ` : ""}{it.category.name}</td>
                       <td data-label="Classes" className="small">{it.classes.length === classes.length ? "All classes" : it.classes.map((c) => c.class.name).join(", ")}</td>
                       <td data-label="Price" className="r tnum">{naira(it.price)}</td>
-                      <td data-label="Available" className="r tnum">{ps ? <span className="small">{ps.inStock}/{ps.total} books</span> : a <= 0 ? <Pill tone="err">Out</Pill> : a <= it.reorderLevel ? <b style={{ color: "var(--warn)" }}>{a}</b> : a}</td>
-                      <td data-label="" className="r"><div className="row tight" style={{ justifyContent: "flex-end" }}>
+                      <td data-label="Available" className="r tnum">{ps ? <span className="small">{ps.inStock}/{ps.total} books</span> : a <= 0 ? <Pill tone="err">Out</Pill> : a <= it.reorderLevel ? <b className="c-warn">{a}</b> : a}</td>
+                      <td data-label="" className="r"><div className="row tight justify-end">
                         {!it.isPile && <StockDialog action={recordStockMovement} item={it.name} variants={it.variants.map((v) => ({ id: v.id, label: v.label, onHand: v.onHand, reserved: v.reserved }))} />}
                         <Link className="btn sm ghost" href={href}>Edit</Link>
                       </div></td>

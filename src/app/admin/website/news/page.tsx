@@ -28,7 +28,7 @@ function NewsFields({ n }: { n?: N }) {
       <PhotoField id={`n-${id}`} current={n?.photoKey ? `/api/files/${n.photoKey}` : null} />
       <div className="grid g2">
         <div className="field"><label htmlFor={`nd-${id}`}>Date shown</label><input className="input" type="date" id={`nd-${id}`} name="publishedAt" defaultValue={localDay(n?.publishedAt ?? new Date())} /><span className="hint">A future date keeps the post hidden until that day.</span></div>
-        <label className="check" style={{ alignSelf: "end" }}><input type="checkbox" name="published" defaultChecked={n ? n.published : true} /> Show on the website</label>
+        <label className="check self-end"><input type="checkbox" name="published" defaultChecked={n ? n.published : true} /> Show on the website</label>
       </div>
     </>
   );
@@ -39,11 +39,11 @@ export default async function NewsAdminPage() {
   const posts = await listNews();
   const now = new Date();
   return (
-    <div style={{ maxWidth: 900 }}>
+    <div className="mw-900">
       <PageHeader title="News" sub="Results, awards, trips and other school news. The newest three show on the homepage." actions={<Link className="btn" href="/news" target="_blank">View on website</Link>} />
       <div className="stack loose">
         <details className="card stack" open={!posts.length}>
-          <summary className="row between" style={{ cursor: "pointer" }}><h3>Write a news post</h3></summary>
+          <summary className="row between cur-pointer"><h3>Write a news post</h3></summary>
           <PhotoForm action={saveNewsAction} resetOnSuccess>
             <NewsFields />
             <div><SubmitButton icon="plus">Publish</SubmitButton></div>
@@ -52,10 +52,10 @@ export default async function NewsAdminPage() {
         {posts.length === 0 ? <div className="card"><Empty title="No news yet">Share results, awards, visits and trips with parents.</Empty></div> : posts.map((n) => (
           <section key={n.id} className="card stack">
             <div className="row between">
-              <div className="row nowrap" style={{ gap: 12, minWidth: 0 }}>
+              <div className="row nowrap gap-12 minw-0">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 {n.photoKey && <img src={`/api/files/${n.photoKey}`} alt="" className="ev-thumb" loading="lazy" />}
-                <div className="stack tight" style={{ minWidth: 0 }}>
+                <div className="stack tight minw-0">
                   <h3>{n.title}</h3>
                   <span className="small muted">{fmtDate(n.publishedAt)}{n.published && n.publishedAt <= now && <> · <Link href={`/news/${n.slug}`} target="_blank">Open</Link></>}</span>
                 </div>
@@ -69,7 +69,7 @@ export default async function NewsAdminPage() {
               </div>
             </div>
             <details>
-              <summary className="small" style={{ cursor: "pointer" }}>Edit</summary>
+              <summary className="small cur-pointer">Edit</summary>
               <PhotoForm action={saveNewsAction}>
                 <NewsFields n={n} />
                 <div><SubmitButton variant="default">Save</SubmitButton></div>

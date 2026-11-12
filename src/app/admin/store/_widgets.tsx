@@ -26,7 +26,7 @@ export function StockDialog({ action, item, variants, label = "Stock" }: { actio
             <div className="field"><label htmlFor="st-q">Quantity</label><input className="input tnum" id="st-q" name="qty" inputMode="numeric" defaultValue={10} /><FieldError name="qty" /></div>
           </div>
           <div className="field"><label htmlFor="st-r">Reason / supplier reference</label><input className="input" id="st-r" name="reason" placeholder="e.g. Delivery note DN-2231" /></div>
-          <div className="row" style={{ justifyContent: "flex-end" }}><button type="button" className="btn ghost" onClick={() => setOpen(false)}>Cancel</button><SubmitButton>Save movement</SubmitButton></div>
+          <div className="row justify-end"><button type="button" className="btn ghost" onClick={() => setOpen(false)}>Cancel</button><SubmitButton>Save movement</SubmitButton></div>
         </ActionForm>
       </Dialog>
     </>

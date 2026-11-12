@@ -15,7 +15,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
   const qr = valid && user.type === "STAFF" && user.totpSecret && user.email ? await QRCode.toDataURL(totpUri(user.email, user.totpSecret), { margin: 1, width: 180 }) : null;
 
   return (
-    <main className="main" style={{ maxWidth: 520 }}>
+    <main className="main mw-520">
       <div className="stack loose">
         <Link className="brand login-crest" href="/" title={`${SCHOOL.name} website`}>
           <Image src="/logo.png" alt="" width={40} height={40} />
@@ -35,7 +35,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
                 <Note icon="shield">Your role needs two-factor sign-in. Scan this code with Google Authenticator or Microsoft Authenticator, then enter the 6-digit code it shows.</Note>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={qr} alt="Authenticator QR code" width={180} height={180} style={{ background: "#fff", padding: 6, borderRadius: 8 }} />
-                <div className="field"><label htmlFor="iv-code">6-digit code</label><input className="input mono" id="iv-code" name="code" inputMode="numeric" maxLength={6} style={{ maxWidth: 160 }} /><FieldError name="code" /></div>
+                <div className="field"><label htmlFor="iv-code">6-digit code</label><input className="input mono mw-160" id="iv-code" name="code" inputMode="numeric" maxLength={6} /><FieldError name="code" /></div>
               </div>
             )}
             {user.type === "PARENT" && (

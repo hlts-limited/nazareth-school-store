@@ -22,14 +22,14 @@ export function LoginShell({ heading = "Sign in", scene = <LoginScene />, lines,
     <div className="login">
       <section className="login-art">
         {scene}
-        <Link href="/" className="row nowrap rise login-crest" style={{ gap: 14, position: "relative", zIndex: 1 }}>
+        <Link href="/" className="row nowrap rise login-crest gap-14 rel z-1">
           <Image src="/logo.png" alt="Nazareth School crest" width={64} height={64} style={{ background: "#fff", borderRadius: 14, padding: 5 }} priority />
           <div>
             <div className="motto">{SCHOOL.motto}</div>
             <div style={{ fontFamily: "var(--disp)", fontWeight: 700, fontSize: 15, marginTop: 3 }}>{SCHOOL.name}</div>
           </div>
         </Link>
-        <div className="stack" style={{ position: "relative", zIndex: 1 }}>
+        <div className="stack rel z-1">
           <h1>{lines.map((l, i) => <span key={i} className={`rise d${i + 1}`}>{l}</span>).reduce<ReactNode[]>((a, s) => (a.length ? [...a, " ", s] : [s]), [])}</h1>
           <p className="rise d4">{text}</p>
         </div>
@@ -49,7 +49,7 @@ export function LoginShell({ heading = "Sign in", scene = <LoginScene />, lines,
             </Note>
           )}
           {children}
-          <p className="small muted" style={{ textAlign: "center" }}>{footer}</p>
+          <p className="small muted text-center">{footer}</p>
         </div>
       </main>
     </div>

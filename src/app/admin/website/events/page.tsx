@@ -40,11 +40,11 @@ export default async function EventsAdminPage() {
   const events = await listEvents();
   const now = new Date();
   return (
-    <div style={{ maxWidth: 900 }}>
+    <div className="mw-900">
       <PageHeader title="Events" sub="Upcoming events appear on the website's Events page. The next two also show on the homepage, with a countdown in the last 10 days." />
       <div className="stack loose">
         <details className="card stack" open={!events.length}>
-          <summary className="row between" style={{ cursor: "pointer" }}><h3>New event</h3></summary>
+          <summary className="row between cur-pointer"><h3>New event</h3></summary>
           <EventForm action={saveEventAction} resetOnSuccess>
             <EventFields />
             <div><SubmitButton icon="plus">Add event</SubmitButton></div>
@@ -53,7 +53,7 @@ export default async function EventsAdminPage() {
         {events.length === 0 ? <div className="card"><Empty title="No events yet">Add resumption dates, sports days, open days and more.</Empty></div> : events.map((e) => (
           <section key={e.id} className="card stack">
             <div className="row between">
-              <div className="row nowrap" style={{ gap: 12 }}>
+              <div className="row nowrap gap-12">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 {e.photoKey && <img src={`/api/files/${e.photoKey}`} alt="" className="ev-thumb" loading="lazy" />}
               <div className="stack tight">
@@ -70,7 +70,7 @@ export default async function EventsAdminPage() {
               </div>
             </div>
             <details>
-              <summary className="small" style={{ cursor: "pointer" }}>Edit</summary>
+              <summary className="small cur-pointer">Edit</summary>
               <EventForm action={saveEventAction}>
                 <EventFields e={e} />
                 <div><SubmitButton variant="default">Save event</SubmitButton></div>

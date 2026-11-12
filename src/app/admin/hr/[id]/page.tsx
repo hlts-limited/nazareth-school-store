@@ -29,7 +29,7 @@ export default async function StaffRecordPage({ params }: { params: Promise<{ id
   const wa = invite ? whatsAppTo(e.phone, staffInviteText(u.firstName, invite)) : null;
 
   return (
-    <div style={{ maxWidth: 1080 }}>
+    <div className="mw-1080">
       <PageHeader
         title={<span className="row tight">{u.firstName} {u.lastName} {e.status === "INACTIVE" ? <Pill tone="err">Left</Pill> : e.onboarding.complete ? <Pill tone="ok">Complete</Pill> : <Pill tone="warn">Incomplete</Pill>}</span>}
         sub={<><span className="mono">{e.staffCode}</span> · {e.position} · {sectionName(e.section)}{e.section !== e.branch && <> · {branchName(e.branch) ?? "Branch not set"}</>}</>}

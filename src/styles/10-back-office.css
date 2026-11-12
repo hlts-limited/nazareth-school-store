@@ -41,15 +41,15 @@ a.task:hover,a.hit:hover{background:var(--surface-2)}
 .dt-sort .dir{font-size:10px;opacity:.6}
 .dt-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 16px;border-top:1px solid var(--line-2)}
 
-/* Small helpers that replace one-off inline styles */
-.mb-8{margin-bottom:8px}.mb-10{margin-bottom:10px}.mb-16{margin-bottom:16px}.mt-8{margin-top:8px}.mt-16{margin-top:16px}
-.w-full{width:100%}.mw-460{max-width:460px}.mw-560{max-width:560px}.mw-720{max-width:720px}.mw-900{max-width:900px}
-.items-start{align-items:start}.self-end{align-self:end}.text-right{text-align:right}.nowrap{white-space:nowrap}
-.fs-18{font-size:18px}.fs-13{font-size:13px}.fw-600{font-weight:600}
-.details-cell{max-width:380px;overflow-wrap:anywhere}
-.c-ok{color:var(--ok)}.c-err{color:var(--err)}.c-warn{color:var(--warn)}.c-muted{color:var(--muted)}
-.rel{position:relative}.block{display:block}
-.price-col{min-width:78px;text-align:right}
+/* Small helpers that replace one-off inline styles (they win like inline styles did) */
+.mb-8{margin-bottom:8px !important}.mb-10{margin-bottom:10px !important}.mb-16{margin-bottom:16px !important}.mt-8{margin-top:8px !important}.mt-16{margin-top:16px !important}
+.w-full{width:100% !important}.mw-460{max-width:460px !important}.mw-560{max-width:560px !important}.mw-720{max-width:720px !important}.mw-900{max-width:900px !important}
+.items-start{align-items:start !important}.self-end{align-self:end !important}.text-right{text-align:right !important}.ws-nowrap{white-space:nowrap !important}
+.fs-18{font-size:18px !important}.fs-13{font-size:13px !important}.fw-600{font-weight:600 !important}
+.details-cell{max-width:380px !important;overflow-wrap:anywhere !important}
+.c-ok{color:var(--ok) !important}.c-err{color:var(--err) !important}.c-warn{color:var(--warn) !important}.c-muted{color:var(--muted) !important}
+.rel{position:relative !important}.d-block{display:block !important}
+.price-col{min-width:78px !important;text-align:right !important}
 
 /* Loading screens (loading.tsx): grey placeholders that pulse while a page loads */
 .skel{display:block;border-radius:10px;background:linear-gradient(90deg,var(--line-2) 25%,var(--line) 37%,var(--line-2) 63%);background-size:400% 100%;animation:skel 1.4s ease infinite}
@@ -68,3 +68,4 @@ a.task:hover,a.hit:hover{background:var(--surface-2)}
 .steps-mini span{font-size:12px;font-weight:600;color:var(--muted);padding:4px 10px;border-radius:999px;background:var(--line-2)}
 .steps-mini span.on{background:var(--ink);color:var(--surface)}
 .missing-box{display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:space-between}
+.justify-end{justify-content:flex-end !important}

@@ -12,12 +12,12 @@ export default async function CategoriesPage() {
   return (
     <>
       <PageHeader title="Categories" sub="Nested categories keep the store easy to browse. Books are grouped by class." />
-      <div className="grid g2" style={{ alignItems: "start" }}>
+      <div className="grid g2 items-start">
         <Card>
           <div className="tree">
             {cats.map((c) => (
               <div key={c.id}>
-                <div className="tree-node"><span className="chip" style={{ cursor: "default" }}><span className="dot" style={{ background: c.color }} />{c.name}</span><span className="ct small muted">{c.totalItems} items</span></div>
+                <div className="tree-node"><span className="chip cur-default"><span className="dot" style={{ background: c.color }} />{c.name}</span><span className="ct small muted">{c.totalItems} items</span></div>
                 {c.children.length > 0 && (
                   <div className="tree-children">
                     {c.children.map((s) => <div key={s.id} className="tree-node small"><Icon name="chev" size="sm" /><span>{s.name}</span><span className="ct muted">{s._count.items} items</span></div>)}

@@ -22,7 +22,7 @@ export default async function MyAttendancePage({ searchParams }: { searchParams:
   const count = (s: string) => rows.filter((r) => r.status === s).length;
   const label = new Date(`${m}-01T00:00:00Z`).toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
   return (
-    <div style={{ maxWidth: 1000 }}>
+    <div className="mw-1000">
       <PageHeader title="My attendance & leave" sub={label}
         actions={<div className="row tight"><Link className="btn sm" href={`?m=${shift(m, -1)}`}>Previous month</Link>{m < lagosDate().slice(0, 7) && <Link className="btn sm" href={`?m=${shift(m, 1)}`}>Next month</Link>}</div>} />
       <div className="detail-grid">

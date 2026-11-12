@@ -59,7 +59,7 @@ export function LoginForms({ initialTab, captcha, actions }: {
           {captcha && (
             <div className="field">
               <label htmlFor="lu-cap">{captcha.question}</label>
-              <input className="input" id="lu-cap" name="captcha" inputMode="numeric" required style={{ maxWidth: 120 }} />
+              <input className="input mw-120" id="lu-cap" name="captcha" inputMode="numeric" required />
               <input type="hidden" name="captchaToken" value={captcha.token} />
               <FieldError name="captcha" />
             </div>

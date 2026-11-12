@@ -30,7 +30,7 @@ export default async function SchoolOverview() {
           format="naira" empty="No paid orders in the last 30 days."
           summary={`Paid store sales in the last 30 days: ${naira(month)} across ${trend.series.length} classes. ${cancelled} orders cancelled.`}
         />
-        <div className="grid g2" style={{ alignItems: "start" }}>
+        <div className="grid g2 items-start">
           <Card className="stack"><h3>Orders by status</h3><Bars rows={o.byStatus.map(([l, n]) => [l, n, String(n)])} /></Card>
           <Card className="stack"><h3>Paid sales by class</h3><Bars color="var(--ink)" rows={o.byClass.map(([l, n]) => [l, n, naira(n)])} /></Card>
         </div>

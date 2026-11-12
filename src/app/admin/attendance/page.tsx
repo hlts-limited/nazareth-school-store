@@ -93,7 +93,7 @@ export default async function AttendanceTodayPage({ searchParams }: { searchPara
         </section>
 
         {manage && (
-          <div className="grid g2" style={{ alignItems: "start" }}>
+          <div className="grid g2 items-start">
             <ActionForm action={manualClockAction} className="card stack" resetOnSuccess>
               <h3>Clock someone in or out by hand</h3>
               <p className="small muted">For a phone problem or a staff member out on school duty. The reason is recorded and they see it on their page.</p>

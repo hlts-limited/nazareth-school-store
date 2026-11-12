@@ -14,14 +14,14 @@ export default async function StartFreshPage() {
   const p = await freshPreview();
   const r = p.remove;
   return (
-    <div style={{ maxWidth: 820 }}>
+    <div className="mw-820">
       <PageHeader title="Start fresh" sub="Clear the test and demo data so the school starts with an empty store and no pupils." />
       <div className="stack loose">
         <Note tone="warn" icon="alert">
           This deletes data for everyone. A full backup is saved first, so it can be put back from{" "}
           <Link href="/admin/backup">Backups &amp; restores</Link> if needed.
         </Note>
-        <div className="grid g2" style={{ alignItems: "start" }}>
+        <div className="grid g2 items-start">
           <Card className="stack tight">
             <h3>Deleted</h3>
             <ul className="fresh-list">

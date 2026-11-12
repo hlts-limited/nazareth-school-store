@@ -17,7 +17,7 @@ export default function HowToBuyPage() {
         <div className="htb">
           <div className="htb-player">
             <HowToBuyVideo />
-            <p className="small muted" style={{ textAlign: "center" }}>{HOW_TO_BUY_VIDEO.length} · with voice and captions</p>
+            <p className="small muted text-center">{HOW_TO_BUY_VIDEO.length} · with voice and captions</p>
           </div>
           <div className="stack">
             <ol className="htb-steps">

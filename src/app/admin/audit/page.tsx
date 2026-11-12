@@ -31,7 +31,7 @@ export default async function AuditLog({ searchParams }: { searchParams: Promise
             <label className="stack tight small">Anything<input className="input" name="q" defaultValue={sp.q} placeholder="Search all" /></label>
             <label className="stack tight small">From<input className="input" type="date" name="from" defaultValue={sp.from} /></label>
             <label className="stack tight small">To (inclusive)<input className="input" type="date" name="to" defaultValue={sp.to} /></label>
-            <div className="row" style={{ alignSelf: "end" }}><button className="btn primary" type="submit"><Icon name="search" size="sm" /> Filter</button><Link className="btn" href="/admin/audit">Clear</Link></div>
+            <div className="row self-end"><button className="btn primary" type="submit"><Icon name="search" size="sm" /> Filter</button><Link className="btn" href="/admin/audit">Clear</Link></div>
           </form>
         </Card>
         <p className="small muted">{total.toLocaleString()} entr{total === 1 ? "y" : "ies"}</p>
@@ -44,7 +44,7 @@ export default async function AuditLog({ searchParams }: { searchParams: Promise
                   <tr key={a.id}>
                     <td data-label="Time" className="tnum small">{fmtDateTime(a.createdAt)}</td><td data-label="Who"><b>{a.actorName}</b></td><td data-label="Role" className="small">{a.actorRole}</td>
                     <td data-label="Action">{a.action}</td><td data-label="Record" className="small">{a.entity}{a.entityId ? ` · ${a.entityId.slice(0, 24)}` : ""}</td>
-                    <td data-label="Details" className="small mono" style={{ maxWidth: 380, overflowWrap: "anywhere" }}>{a.details ? JSON.stringify(a.details) : ""}</td>
+                    <td data-label="Details" className="small mono mw-380 wrap-any">{a.details ? JSON.stringify(a.details) : ""}</td>
                     <td data-label="IP" className="small tnum">{a.ip ?? ""}</td>
                   </tr>
                 ))}

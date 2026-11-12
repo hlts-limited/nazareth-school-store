@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { DataTable } from "@/shared/ui/data-table";
+import { keyed } from "@/shared/ui/table-cells";
 import { branchName } from "@/shared/config/school";
 import { LinkButton, PageHeader, Pill } from "@/shared/ui/primitives";
 import { SearchParamInput, SearchParamSelect } from "@/shared/ui/client";
@@ -30,24 +32,24 @@ export default async function StaffListPage({ searchParams }: { searchParams: Pr
           <SearchParamSelect param="status" id="hr-st" label="Status" options={[["ACTIVE", "Active"], ["INACTIVE", "Left"], ["all", "All"]]} />
         </div></section>
         <section className="card pad-0">
-          <div className="tbl-wrap"><table className="t rt">
-            <thead><tr><th>Staff</th><th>Position</th><th>Section · branch</th><th>Onboarding</th><th>Bank</th></tr></thead>
-            <tbody>
-              {!rows.length && <tr><td colSpan={5} className="empty">No staff here yet.{canManage ? " Use Register staff to add the first one." : ""}</td></tr>}
-              {rows.map((e) => {
-                const done = e.onboarding.steps.filter((s) => s.done).length;
-                return (
-                  <tr key={e.id}>
-                    <td data-label="Staff"><Link href={`/admin/hr/${e.id}`}><b>{e.user.firstName} {e.user.lastName}</b></Link><div className="small muted mono">{e.staffCode}{e.status === "INACTIVE" ? " · left" : ""}</div></td>
-                    <td data-label="Position">{e.position}{e.isTeacher ? <span className="small muted"> · teacher</span> : null}</td>
-                    <td data-label="Section">{sectionName(e.section)}{e.branch !== e.section && <div className="small muted">{e.branch ? branchName(e.branch) : <Pill tone="warn">Branch not set</Pill>}</div>}</td>
-                    <td data-label="Onboarding">{e.onboarding.complete ? <Pill tone="ok">Complete</Pill> : <Pill tone="warn">{done} of {e.onboarding.steps.length} done</Pill>}</td>
-                    <td data-label="Bank"><Pill tone={BANK[e.bankStatus][1]}>{BANK[e.bankStatus][0]}</Pill></td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table></div>
+          <DataTable
+            empty="No staff here yet" emptyText={canManage ? "Use Register staff to add the first one." : undefined}
+            columns={[{ label: "Staff", sortable: true }, { label: "Position", sortable: true }, { label: "Section · branch", sortable: true }, { label: "Onboarding", sortable: true }, { label: "Bank", sortable: true }]}
+            rows={rows.map((e) => {
+              const done = e.onboarding.steps.filter((st) => st.done).length;
+              return {
+                id: e.id,
+                sort: [`${e.user.lastName} ${e.user.firstName}`, e.position, `${sectionName(e.section)} ${e.branch ?? ""}`, e.onboarding.complete ? 99 : done, BANK[e.bankStatus][0]],
+                cells: keyed([
+                  <><Link href={`/admin/hr/${e.id}`}><b>{e.user.firstName} {e.user.lastName}</b></Link><div className="small muted mono">{e.staffCode}{e.status === "INACTIVE" ? " · left" : ""}</div></>,
+                  <>{e.position}{e.isTeacher ? <span className="small muted"> · teacher</span> : null}</>,
+                  <>{sectionName(e.section)}{e.branch !== e.section && <div className="small muted">{e.branch ? branchName(e.branch) : <Pill tone="warn">Branch not set</Pill>}</div>}</>,
+                  e.onboarding.complete ? <Pill tone="ok">Complete</Pill> : <Pill tone="warn">{done} of {e.onboarding.steps.length} done</Pill>,
+                  <Pill key="bank" tone={BANK[e.bankStatus][1]}>{BANK[e.bankStatus][0]}</Pill>,
+                ]),
+              };
+            })}
+          />
         </section>
       </div>
     </>

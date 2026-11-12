@@ -48,7 +48,7 @@ export default async function ApplicationDetailPage({ params, searchParams }: { 
   const open = ["SUBMITTED", "EXAM_SCHEDULED", "ADMITTED", "WAITLISTED", "NOT_ADMITTED"].includes(app.status);
 
   return (
-    <div style={{ maxWidth: 1080 }}>
+    <div className="mw-1080">
       <PageHeader
         title={<span className="row tight">{app.surname}, {app.otherNames} <span className={`pill ${STATUS_TONE[app.status]}`}>{STATUS_LABEL[app.status]}</span></span>}
         sub={<><span className="mono">{app.number}</span> · {app.class.name}{divisionOf(app.class.name) ? ` (${divisionOf(app.class.name)!.name})` : ""} · {app.window.session} session</>}
@@ -119,7 +119,7 @@ export default async function ApplicationDetailPage({ params, searchParams }: { 
               <ActionForm action={changeParentPhoneAction} className="row tight" resetOnSuccess>
                 <input type="hidden" name="id" value={app.id} />
                 <label className="lbl" htmlFor="new-phone">Change phone number</label>
-                <input className="input sm" id="new-phone" name="phone" type="tel" inputMode="tel" placeholder="0803 123 4567" style={{ maxWidth: 180 }} />
+                <input className="input sm mw-180" id="new-phone" name="phone" type="tel" inputMode="tel" placeholder="0803 123 4567" />
                 <SubmitButton size="sm" variant="default">Save</SubmitButton>
                 <FieldError name="phone" />
               </ActionForm>

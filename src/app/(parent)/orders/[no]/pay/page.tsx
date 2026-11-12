@@ -16,10 +16,10 @@ export default async function PayPage({ params }: { params: Promise<{ no: string
   if (!o) notFound();
   if (!UNPAID_STATUSES.includes(o.status) || !paystackReady()) redirect(`/orders/${orderNo(o.number)}`);  // online payment off: the order page explains
   return (
-    <div style={{ maxWidth: 520 }}>
+    <div className="mw-520">
       <PageHeader title="Pay with Paystack" sub={`Order ${orderNo(o.number)}`} />
       <Card className="stack">
-        <div className="sum-row total" style={{ border: 0, paddingTop: 0 }}><span>Amount</span><span>{naira(amountDue(o))}</span></div>
+        <div className="sum-row total b-0 pt-0"><span>Amount</span><span>{naira(amountDue(o))}</span></div>
         <p className="muted">You&apos;ll go to Paystack&apos;s secure page to pay by card, bank app, USSD or transfer. Card details never reach the school&apos;s servers.</p>
         {paystackMock() && <Note tone="warn" icon="info"><b>Development mode:</b> no Paystack key is set, so this payment is simulated and approved automatically.</Note>}
         <ActionForm action={startPaystackAction} className="stack">

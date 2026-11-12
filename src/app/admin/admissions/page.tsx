@@ -69,7 +69,7 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
             {canManage && (
               <ActionForm action={bulkApplicationsAction} id="bulk-form" className="row bulk-bar" resetOnSuccess>
                 <span className="small muted">With ticked:</span>
-                <select className="input sm" name="op" defaultValue="" aria-label="What to do with ticked applications" style={{ width: "auto", maxWidth: 360 }}>
+                <select className="input sm w-auto mw-360" name="op" defaultValue="" aria-label="What to do with ticked applications">
                   <option value="" disabled>Choose…</option>
                   <optgroup label="Book the entrance exam">
                     {slots.length ? slots.map((s) => <option key={s.id} value={`slot:${s.id}`}>{fmtDateTime(s.startsAt)} · {s.venue} ({s._count.applications}/{s.capacity})</option>)
@@ -86,7 +86,7 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
               </ActionForm>
             )}
             <div className="tbl-wrap"><table className="t rt">
-              <thead><tr>{canManage && <th style={{ width: 36 }}><SelectAll form="bulk-form" /></th>}<th>Application</th><th>Child</th><th>Class</th><th>Parent</th><th>Documents</th><th>Status</th><th>Applied</th></tr></thead>
+              <thead><tr>{canManage && <th className="w-36"><SelectAll form="bulk-form" /></th>}<th>Application</th><th>Child</th><th>Class</th><th>Parent</th><th>Documents</th><th>Status</th><th>Applied</th></tr></thead>
               <tbody>
                 {res.rows.map((a) => {
                   const have = required.filter((k) => a.documents.some((d) => d.kind === k)).length;

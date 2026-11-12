@@ -31,7 +31,7 @@ export default async function NewsPostPage({ params }: Props) {
           )}
           {n.summary && <p className="news-lead">{n.summary}</p>}
           {n.body.split(/\n\s*\n/).map((para, i) => <p key={i}>{para}</p>)}
-          <div className="row" style={{ marginTop: 8 }}>
+          <div className="row mt-8">
             <a className="btn wa" href={share} target="_blank" rel="noopener noreferrer"><Icon name="whatsapp" size="sm" />Share on WhatsApp</a>
             <Link className="btn" href="/news"><Icon name="back" size="sm" />All news</Link>
           </div>

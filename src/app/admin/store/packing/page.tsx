@@ -28,7 +28,7 @@ export default async function PackingPage() {
                   ? <ActionForm action={startPackingAction}><input type="hidden" name="orderId" value={o.id} /><SubmitButton size="sm" variant="default">Start packing</SubmitButton></ActionForm>
                   : <ActionForm action={markReadyAction}><input type="hidden" name="orderId" value={o.id} /><SubmitButton size="sm" icon="check">Mark ready for pick-up</SubmitButton></ActionForm>}
               </div>
-              <div className="grid g3" style={{ padding: "14px 18px" }}>
+              <div className="grid g3 pad-14-18">
                 {[...byKid.entries()].map(([pid, ls]) => (
                   <div key={pid} className="stack tight">
                     <div className="row tight"><Avatar id={pid} first={ls[0].pupil.firstName} last={ls[0].pupil.lastName} size="sm" /><b className="small">{ls[0].pupil.firstName} {ls[0].pupil.lastName} · {ls[0].pupil.class.name}</b></div>
@@ -39,7 +39,7 @@ export default async function PackingPage() {
                   </div>
                 ))}
               </div>
-              {o.status === "PACKING" && <div className="card-b small muted" style={{ borderTop: "1px solid var(--line-2)" }}>Untick anything you can&apos;t supply yet. It stays reserved and the parent sees &ldquo;Awaiting stock&rdquo;.</div>}
+              {o.status === "PACKING" && <div className="card-b small muted bt-line">Untick anything you can&apos;t supply yet. It stays reserved and the parent sees &ldquo;Awaiting stock&rdquo;.</div>}
             </Card>
           );
         })}
@@ -50,7 +50,7 @@ export default async function PackingPage() {
               // A book with no stock held yet needs free stock (not promised to other orders)
               const short = l.reserved ? l.variant.onHand < l.qty : l.variant.onHand - l.variant.reserved < l.qty;
               return (
-                <div key={l.id} className="order-row" style={{ cursor: "default" }}>
+                <div key={l.id} className="order-row cur-default">
                   <div className="grow"><b className="mono small">{orderNo(o.number)}</b> · {l.qty} × {l.itemName}{l.variantLabel !== "Standard" ? ` (${l.variantLabel})` : ""}{l.pileName && <span className="muted small"> · {l.pileName}</span>} <span className="muted small">for {l.pupil.firstName}</span></div>
                   <ActionForm action={lineReadyAction}><input type="hidden" name="lineId" value={l.id} /><SubmitButton size="sm" variant="default" disabled={short}>{short ? "Restock first" : "Mark ready"}</SubmitButton></ActionForm>
                 </div>

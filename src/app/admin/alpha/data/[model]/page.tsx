@@ -27,7 +27,7 @@ export default async function TableRows({ params, searchParams }: { params: Prom
         actions={!m.readOnly && <Link className="btn primary" href={`/admin/alpha/data/${m.name}/row?new=1`}><Icon name="plus" size="sm" /> Add row</Link>} />
       <div className="stack">
         {m.readOnly && <Note icon="shield">{m.readOnly}</Note>}
-        <div className="row" style={{ maxWidth: 460 }}><SearchParamInput param="q" id="al-q" placeholder="Search text columns" /></div>
+        <div className="row mw-460"><SearchParamInput param="q" id="al-q" placeholder="Search text columns" /></div>
         <Card pad={false}>
           {rows.length === 0 ? <Empty title="No rows" /> : (
             <div className="tbl-wrap"><table className="t rt">
@@ -37,7 +37,7 @@ export default async function TableRows({ params, searchParams }: { params: Prom
                   const k = rowKey(m, r);
                   return (
                     <tr key={k}>
-                      {cols.map((c) => <td key={c} data-label={c} className="small" style={{ maxWidth: 240, overflowWrap: "anywhere" }}>{show(c, r[c]).slice(0, 80)}</td>)}
+                      {cols.map((c) => <td key={c} data-label={c} className="small mw-240 wrap-any">{show(c, r[c]).slice(0, 80)}</td>)}
                       <td data-label="" className="r"><Link className="btn sm" href={`/admin/alpha/data/${m.name}/row?k=${encodeURIComponent(k)}`}>Open</Link></td>
                     </tr>
                   );

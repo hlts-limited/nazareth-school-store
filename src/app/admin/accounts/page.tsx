@@ -20,7 +20,7 @@ export default async function AccountsHome({ searchParams }: { searchParams: Pro
   const total = sums.paystack + sums.transfer + sums.wallet;
   return (
     <>
-      {denied && <div style={{ marginBottom: 16 }}><Note tone="warn">You don&apos;t have permission for that page.</Note></div>}
+      {denied && <div className="mb-16"><Note tone="warn">You don&apos;t have permission for that page.</Note></div>}
       <PageHeader title="Overview" sub={settings.currentTerm} />
       <div className="stack loose">
         <div className="ov-tiles">

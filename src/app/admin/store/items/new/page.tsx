@@ -9,7 +9,7 @@ export default async function NewItemPage() {
   await requireStaff("catalogue.manage");
   const [cats, classes] = await Promise.all([categoryTree(), listClasses()]);
   return (
-    <div style={{ maxWidth: 860 }}>
+    <div className="mw-860">
       <PageHeader title="Add item" sub="Items appear in the store for the classes you choose." />
       <ItemForm action={createItemAction} cats={cats} classes={classes} />
     </div>

@@ -80,10 +80,10 @@ export function CheckoutBox({ action, subtotal, wallets, autoCancelHours, readOn
         <Icon name="card" size="sm" />
         <span><b>Pay online with Paystack</b><br /><span className="small muted">Card, bank app, transfer or USSD. Approved instantly.</span></span>
       </div>
-      {!paystack && toPay > 0 && <p className="small" style={{ color: "var(--err)" }}>Online payment isn&apos;t switched on yet. Please try again later.</p>}
+      {!paystack && toPay > 0 && <p className="small c-err">Online payment isn&apos;t switched on yet. Please try again later.</p>}
       <div className="stack tight">
         <div className="sum-row"><span className="muted">Items</span><span>{n(subtotal)}</span></div>
-        {walletTotal > 0 && <div className="sum-row"><span className="muted">Wallet</span><span style={{ color: "var(--ok)" }}>−{n(walletTotal)}</span></div>}
+        {walletTotal > 0 && <div className="sum-row"><span className="muted">Wallet</span><span className="c-ok">−{n(walletTotal)}</span></div>}
         <div className="sum-row total"><span>To pay</span><span>{n(toPay)}</span></div>
       </div>
       <SubmitButton size="lg" block disabled={readOnly || (!paystack && toPay > 0)}>
@@ -146,7 +146,7 @@ export function AutoSubmitSelect({ action, name, options, defaultValue, hidden, 
   return (
     <ActionForm action={action} className="inline-form">
       {Object.entries(hidden).map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
-      <select className="input sm" style={{ width: "auto" }} name={name} aria-label={label} defaultValue={defaultValue}
+      <select className="input sm w-auto" name={name} aria-label={label} defaultValue={defaultValue}
         onChange={(e) => e.currentTarget.form?.requestSubmit()}>
         {options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
       </select>

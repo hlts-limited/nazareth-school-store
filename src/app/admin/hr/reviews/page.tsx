@@ -28,9 +28,9 @@ export default async function ReviewsPage() {
                     <td data-label="Document"><a href={`/api/files/${d.fileKey}`} target="_blank" rel="noreferrer">{staffDocLabel(d.kind)}</a></td>
                     <td data-label="Uploaded">{fmtDate(d.uploadedAt)}</td>
                     <td data-label="" className="r">{d.employee.userId === v.user.id ? <span className="small muted">Your own</span> : (
-                      <div className="row tight" style={{ justifyContent: "flex-end" }}>
+                      <div className="row tight justify-end">
                         <ActionForm action={reviewStaffDocAction}><input type="hidden" name="id" value={d.id} /><input type="hidden" name="decision" value="approve" /><SubmitButton size="sm" variant="success" icon="check">Approve</SubmitButton></ActionForm>
-                        <ActionForm action={reviewStaffDocAction} className="row tight"><input type="hidden" name="id" value={d.id} /><input type="hidden" name="decision" value="reject" /><input className="input sm" name="note" placeholder="What's wrong?" aria-label="Reason" style={{ width: 140 }} /><SubmitButton size="sm" variant="ghost">Reject</SubmitButton></ActionForm>
+                        <ActionForm action={reviewStaffDocAction} className="row tight"><input type="hidden" name="id" value={d.id} /><input type="hidden" name="decision" value="reject" /><input className="input sm w-140" name="note" placeholder="What's wrong?" aria-label="Reason" /><SubmitButton size="sm" variant="ghost">Reject</SubmitButton></ActionForm>
                       </div>
                     )}</td>
                   </tr>

@@ -78,7 +78,7 @@ export default async function ApplicationPage({ params, searchParams }: { params
 
             {outcome?.tone === "ok" && (
               <div className="card stack letter-card">
-                <div className="row nowrap" style={{ gap: 14 }}>
+                <div className="row nowrap gap-14">
                   <span className="doc-ic done"><Icon name="file" /></span>
                   <div className="grow">
                     <h2>Admission letter</h2>
@@ -124,7 +124,7 @@ export default async function ApplicationPage({ params, searchParams }: { params
                     const label = docLabel(d.kind, (app.details as Record<string, string> | null)?.religion);
                     return (
                       <li key={d.kind}>
-                        <div className="row nowrap" style={{ gap: 10 }}>
+                        <div className="row nowrap gap-10">
                           <span className={`doc-ic ${doc ? "done" : ""}`}><Icon name={doc ? "check" : "file"} size="sm" /></span>
                           <div className="grow">
                             <b>{label}</b>{d.required ? "" : <span className="muted"> (if any)</span>}

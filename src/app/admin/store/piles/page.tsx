@@ -50,8 +50,8 @@ export default async function PilesPage() {
                         <td data-label="Price" className="r tnum">{naira(pt.book.price * pt.qty)}</td>
                         <td data-label="On hand" className="r tnum">{v?.onHand ?? 0}</td>
                         <td data-label="Reserved" className="r tnum">{v?.reserved ?? 0}</td>
-                        <td data-label="Available" className="r tnum">{avail < pt.qty ? <Pill tone="err">{avail}</Pill> : avail <= pt.book.reorderLevel ? <b style={{ color: "var(--warn)" }}>{avail}</b> : avail}</td>
-                        <td data-label="Waiting" className="r tnum">{wait ? <b style={{ color: "var(--warn)" }}>{wait}</b> : <span className="muted">0</span>}</td>
+                        <td data-label="Available" className="r tnum">{avail < pt.qty ? <Pill tone="err">{avail}</Pill> : avail <= pt.book.reorderLevel ? <b className="c-warn">{avail}</b> : avail}</td>
+                        <td data-label="Waiting" className="r tnum">{wait ? <b className="c-warn">{wait}</b> : <span className="muted">0</span>}</td>
                         <td data-label="" className="r">{v && <StockDialog action={recordStockMovement} item={pt.book.name} variants={[{ id: v.id, label: v.label, onHand: v.onHand, reserved: v.reserved }]} />}</td>
                       </tr>
                     );

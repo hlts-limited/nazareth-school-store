@@ -11,7 +11,7 @@ export default async function GalleryAdminPage() {
   await requireStaff("website.manage");
   const albums = await galleryAlbums();
   return (
-    <div style={{ maxWidth: 1080 }}>
+    <div className="mw-1080">
       <PageHeader title="Gallery" sub="Albums appear on the website's Gallery page, newest album first." actions={<Link className="btn" href="/gallery" target="_blank">View on website</Link>} />
       <div className="stack loose">
         <PhotoUploader action={uploadPhotoAction} albums={albums.map((a) => a.name)} />

@@ -31,9 +31,9 @@ export default async function LeavePage() {
                   <td data-label="Days">{days(l.fromDate, l.toDate)}</td>
                   <td data-label="Reason">{l.reason ?? "—"}</td>
                   <td data-label="" className="r">{manage && l.employee.userId !== v.user.id ? (
-                    <div className="row tight" style={{ justifyContent: "flex-end" }}>
+                    <div className="row tight justify-end">
                       <ActionForm action={decideLeaveAction}><input type="hidden" name="id" value={l.id} /><input type="hidden" name="decision" value="approve" /><SubmitButton size="sm" variant="success" icon="check">Approve</SubmitButton></ActionForm>
-                      <ActionForm action={decideLeaveAction} className="row tight"><input type="hidden" name="id" value={l.id} /><input type="hidden" name="decision" value="reject" /><input className="input sm" name="note" placeholder="Reason" aria-label="Reason" style={{ width: 130 }} /><SubmitButton size="sm" variant="ghost">Decline</SubmitButton></ActionForm>
+                      <ActionForm action={decideLeaveAction} className="row tight"><input type="hidden" name="id" value={l.id} /><input type="hidden" name="decision" value="reject" /><input className="input sm w-130" name="note" placeholder="Reason" aria-label="Reason" /><SubmitButton size="sm" variant="ghost">Decline</SubmitButton></ActionForm>
                     </div>
                   ) : <span className="small muted">{manage ? "Your own" : "HR decides"}</span>}</td>
                 </tr>

@@ -16,6 +16,7 @@ import "@/styles/07-staff.css";
 import "@/styles/08-charts.css";
 import "@/styles/09-features.css";
 import "@/styles/10-back-office.css";
+import "@/styles/11-utilities.css";
 
 const display = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["600", "700", "800"], variable: "--font-display", display: "swap" });
 const body = Inter({ subsets: ["latin"], variable: "--font-body", display: "swap" });

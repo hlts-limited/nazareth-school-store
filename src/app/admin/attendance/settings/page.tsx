@@ -18,7 +18,7 @@ export default async function AttendanceSettingsPage() {
   const holidays = await holidaysFrom(new Date(`${Number(year) - 1}-09-01T00:00:00Z`));
   const printed = s.qrMode === "static" ? await QRCode.toDataURL((await currentGateCode()).code, { margin: 1, width: 600 }) : null;
   return (
-    <div style={{ maxWidth: 980 }}>
+    <div className="mw-980">
       <PageHeader title="Attendance settings" sub="These apply to every clock-in. The open questions for the school (cutoff, location, photo spot) are set here." />
       <SettingsTabs v={v} current="/admin/attendance/settings" />
       <div className="stack">
@@ -99,8 +99,8 @@ export default async function AttendanceSettingsPage() {
           <h3>Public holidays and school closures</h3>
           <p className="small muted">On these days nobody is marked absent.</p>
           <ActionForm action={addHolidayAction} className="row tight" resetOnSuccess>
-            <input className="input" type="date" name="day" aria-label="Date" style={{ maxWidth: 170 }} />
-            <input className="input" name="name" placeholder="e.g. Independence Day" aria-label="Holiday name" style={{ maxWidth: 260 }} />
+            <input className="input mw-170" type="date" name="day" aria-label="Date" />
+            <input className="input mw-260" name="name" placeholder="e.g. Independence Day" aria-label="Holiday name" />
             <SubmitButton size="sm" icon="plus">Add</SubmitButton>
             <FieldError name="day" /><FieldError name="name" />
           </ActionForm>

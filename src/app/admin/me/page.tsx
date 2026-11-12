@@ -21,7 +21,7 @@ export default async function MyProfilePage() {
     </>
   );
   return (
-    <div style={{ maxWidth: 1080 }}>
+    <div className="mw-1080">
       <PageHeader title={`${v.user.firstName} ${v.user.lastName}`} sub={<><span className="mono">{e.staffCode}</span> · {e.position} · {sectionName(e.section)} · since {fmtDate(e.hireDate)}</>}
         actions={<a className="btn" href={`/api/staff-form/${e.id}`}><Icon name="download" size="sm" />Download my form</a>} />
       <div className="detail-grid">

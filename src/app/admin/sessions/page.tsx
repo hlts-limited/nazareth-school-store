@@ -44,14 +44,14 @@ export default async function SessionsPage() {
               {rows.map(([k, label, idle, max, dev, note]) => (
                 <tr key={k}>
                   <td data-label="Account"><b>{label}</b>{note && <div className="tiny muted">{note}</div>}</td>
-                  <td data-label="Idle (min)"><input className="input sm tnum" style={{ width: 90 }} name={`${k}.idle`} defaultValue={idle} inputMode="numeric" aria-label={`${label} idle minutes`} /></td>
-                  <td data-label="Max (hours)"><input className="input sm tnum" style={{ width: 90 }} name={`${k}.max`} defaultValue={max} inputMode="numeric" aria-label={`${label} max hours`} /></td>
-                  <td data-label="Devices"><input className="input sm tnum" style={{ width: 70 }} name={`${k}.devices`} defaultValue={dev} inputMode="numeric" aria-label={`${label} devices`} /></td>
+                  <td data-label="Idle (min)"><input className="input sm tnum w-90" name={`${k}.idle`} defaultValue={idle} inputMode="numeric" aria-label={`${label} idle minutes`} /></td>
+                  <td data-label="Max (hours)"><input className="input sm tnum w-90" name={`${k}.max`} defaultValue={max} inputMode="numeric" aria-label={`${label} max hours`} /></td>
+                  <td data-label="Devices"><input className="input sm tnum w-70" name={`${k}.devices`} defaultValue={dev} inputMode="numeric" aria-label={`${label} devices`} /></td>
                 </tr>
               ))}
             </tbody>
           </table></div>
-          <div className="card-b small muted" style={{ borderTop: "1px solid var(--line-2)" }}>A warning appears 2 minutes before an idle timeout. Signing in on one device too many ends the oldest session. Changing a password or role ends all of that person&apos;s sessions. View-as sessions last {L.VIEW_AS.maxMinutes} minutes.</div>
+          <div className="card-b small muted bt-line">A warning appears 2 minutes before an idle timeout. Signing in on one device too many ends the oldest session. Changing a password or role ends all of that person&apos;s sessions. View-as sessions last {L.VIEW_AS.maxMinutes} minutes.</div>
         </ActionForm>
       </div>
     </>

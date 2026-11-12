@@ -56,7 +56,7 @@ export default async function OrderPage({ params }: { params: Promise<{ no: stri
 
   return (
     <>
-      <Link href="/orders" className="btn ghost sm" style={{ marginBottom: 10 }}><Icon name="back" size="sm" /> Orders</Link>
+      <Link href="/orders" className="btn ghost sm mb-10"><Icon name="back" size="sm" /> Orders</Link>
       <PageHeader
         title={<span className="row tight"><span className="mono" style={{ fontFamily: "var(--mono)" }}>{orderNo(o.number)}</span><Pill tone={st.tone}>{st.label}</Pill></span>}
         sub={`Placed ${fmtDate(o.createdAt)} · ${o.method === "PAYSTACK" ? "Paystack" : o.method === "WALLET" ? "Wallet" : "Bank transfer"}`}
@@ -106,11 +106,11 @@ export default async function OrderPage({ params }: { params: Promise<{ no: stri
           )}
         </Card>
 
-        <div className="grid g2" style={{ alignItems: "start" }}>
+        <div className="grid g2 items-start">
           <Card pad={false}>
             <CardHeader title="Items by child" />
             {[...byKid.entries()].map(([pid, ls]) => (
-              <div key={pid} className="card-b stack tight" style={{ borderTop: "1px solid var(--line-2)" }}>
+              <div key={pid} className="card-b stack tight bt-line">
                 <div className="row"><Avatar id={pid} first={ls[0].pupil.firstName} last={ls[0].pupil.lastName} size="sm" /><b>{ls[0].pupil.firstName} {ls[0].pupil.lastName}</b><span className="small muted">{ls[0].pupil.class.name}</span></div>
                 {ls.filter((l) => !l.pileItemId).map((l) => (
                   <div key={l.id} className="row between small">
@@ -125,7 +125,7 @@ export default async function OrderPage({ params }: { params: Promise<{ no: stri
                   return (
                     <div key={pileId} className="pile-group">
                       <div className="row between small">
-                        <span className="grow"><b>{books[0].pileName}</b>{pileDesc.get(pileId) && <span className="muted" style={{ display: "block" }}>{pileDesc.get(pileId)}</span>}</span>
+                        <span className="grow"><b>{books[0].pileName}</b>{pileDesc.get(pileId) && <span className="muted d-block">{pileDesc.get(pileId)}</span>}</span>
                         <span className="tnum">{naira(books.reduce((a, l) => a + l.unitPrice * l.qty, 0))}</span>
                         <Pill tone={st.tone}>{st.label}</Pill>
                       </div>
@@ -140,14 +140,14 @@ export default async function OrderPage({ params }: { params: Promise<{ no: stri
             <div className="sum-row"><span className="muted">Order total</span><span>{naira(o.subtotal)}</span></div>
             {o.walletUsed > 0 && <div className="sum-row"><span className="muted">Paid from wallet</span><span>{naira(o.walletUsed)}</span></div>}
             {o.amountReceived > 0 && <div className="sum-row"><span className="muted">Received</span><span>{naira(o.amountReceived)}</span></div>}
-            {o.excess > 0 && <div className="sum-row"><span className="muted">Extra, credited to wallet</span><span style={{ color: "var(--ok)" }}>{naira(o.excess)}</span></div>}
+            {o.excess > 0 && <div className="sum-row"><span className="muted">Extra, credited to wallet</span><span className="c-ok">{naira(o.excess)}</span></div>}
             <div className="sum-row total"><span>{unpaid || o.status === "AWAITING_VERIFICATION" ? "Due" : "Paid"}</span><span>{naira(unpaid || o.status === "AWAITING_VERIFICATION" ? due : o.subtotal)}</span></div>
             <div className="divider" />
             <h3>History</h3>
             <div className="stack tight">
               {[...o.events].reverse().map((e) => (
-                <div key={e.id} className="row nowrap small" style={{ alignItems: "flex-start" }}>
-                  <span className="muted tnum" style={{ width: 130, flex: "none" }}>{fmtDateTime(e.createdAt)}</span><span>{e.message}</span>
+                <div key={e.id} className="row nowrap small items-start">
+                  <span className="muted tnum w-130 flex-none">{fmtDateTime(e.createdAt)}</span><span>{e.message}</span>
                 </div>
               ))}
             </div>

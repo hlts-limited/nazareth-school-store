@@ -23,9 +23,9 @@ export default async function BackupPage() {
         actions={<ActionForm action={createBackupAction}><SubmitButton icon="db">Create backup now</SubmitButton></ActionForm>} />
       <div className="stack loose">
         <div className="grid g3">
-          <Kpi label="Last backup" value={<span style={{ fontSize: 18 }}>{last ? fmtDateTime(last.createdAt) : "None yet"}</span>} sub={last?.createdBy} />
-          <Kpi label="Automatic backups" value={<span style={{ fontSize: 18 }}>Nightly, 2am</span>} sub="Via the daily scheduled job" />
-          <Kpi label="Kept" value={<span style={{ fontSize: 18 }}>30 daily · 12 monthly</span>} sub="Plus every manual backup" />
+          <Kpi label="Last backup" value={<span className="fs-18">{last ? fmtDateTime(last.createdAt) : "None yet"}</span>} sub={last?.createdBy} />
+          <Kpi label="Automatic backups" value={<span className="fs-18">Nightly, 2am</span>} sub="Via the daily scheduled job" />
+          <Kpi label="Kept" value={<span className="fs-18">30 daily · 12 monthly</span>} sub="Plus every manual backup" />
         </div>
         <Note icon="shield">Backups are encrypted with the server&apos;s BACKUP_PASSWORD. Download a copy regularly and keep it somewhere other than the server, together with that password.</Note>
         <Card className="stack">

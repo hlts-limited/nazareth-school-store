@@ -32,7 +32,7 @@ export default async function AlphaOverview() {
           right={<Link className="btn sm" href="/admin/backup">Backups</Link>}
         />
         <Note icon="shield">The audit log stays append-only and the SQL console is read-only, even for the Alpha Admin. Change data through the Data explorer, where each change is logged with its old and new values.</Note>
-        <div className="grid g2" style={{ alignItems: "start" }}>
+        <div className="grid g2 items-start">
           <Card pad={false}>
             <CardHeader title="Tables" right={<Link className="btn sm" href="/admin/alpha/data">Data explorer</Link>} />
             <div className="tbl-wrap"><table className="t rt">

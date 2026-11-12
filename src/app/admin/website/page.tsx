@@ -16,7 +16,7 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
   const show = sp.show === "handled" || sp.show === "all" ? sp.show : "open";
   const rows = await listEnquiries(show);
   return (
-    <div style={{ maxWidth: 900 }}>
+    <div className="mw-900">
       <PageHeader title="Website messages" sub="Messages sent from the Contact page. Reply by email, phone or WhatsApp, then mark them handled." />
       <div className="stack">
         <div className="chips">

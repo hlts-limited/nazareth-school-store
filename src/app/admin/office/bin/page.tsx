@@ -30,7 +30,7 @@ export default async function BinPage() {
           </table></div>
         )}
       </Card>
-      {!canEmpty && list.length > 0 && <p className="small muted" style={{ marginTop: 10 }}>Only the Super Admin can empty the bin.</p>}
+      {!canEmpty && list.length > 0 && <p className="small muted mt-10">Only the Super Admin can empty the bin.</p>}
     </>
   );
 }

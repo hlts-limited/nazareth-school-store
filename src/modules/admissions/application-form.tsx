@@ -104,7 +104,7 @@ export function ApplicationFields({ action, mode, windows, classes = [], submitL
                   : <span>{byAge.problem}</span>}
             </div>
             {office && (
-              <select className="input" id="af-classId" name="classId" defaultValue="" aria-label="Class override" style={{ marginTop: 8 }}>
+              <select className="input mt-8" id="af-classId" name="classId" defaultValue="" aria-label="Class override">
                 <option value="">Use the class by age</option>
                 {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>

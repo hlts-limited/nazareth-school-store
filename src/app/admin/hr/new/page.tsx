@@ -16,7 +16,7 @@ export default async function RegisterStaffPage() {
   const v = await requireStaff("hr.manage");
   const canGiveHigh = v.permissions.has("staff.manage");
   return (
-    <div style={{ maxWidth: 900 }}>
+    <div className="mw-900">
       <PageHeader title="Register staff" sub="Creates the staff record and a one-time set-up link. Send the link to them on WhatsApp from their record; they then set a password, upload their documents and enter their bank details." />
       <ActionForm action={registerStaffAction} className="stack">
         <RecordFields salary={v.permissions.has("hr.salary")} email v={{ employmentType: "FULL_TIME" }} />

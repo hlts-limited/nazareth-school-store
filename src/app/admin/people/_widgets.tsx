@@ -19,7 +19,7 @@ export function ViewAsButton({ action, target, name }: { action: Action; target:
           <input type="hidden" name="target" value={target} />
           <div className="field"><label htmlFor="va-r">Reason (logged)</label><select className="input" id="va-r" name="reason"><option>Parent called about an order</option><option>Checking a reported problem</option><option>Helping a parent over the phone</option></select></div>
           <div className="field"><label htmlFor="va-c">Your 2FA code</label><input className="input mono" id="va-c" name="code" inputMode="numeric" maxLength={6} autoComplete="one-time-code" /><FieldError name="code" /></div>
-          <div className="row" style={{ justifyContent: "flex-end" }}><button type="button" className="btn ghost" onClick={() => setOpen(false)}>Cancel</button><SubmitButton icon="eye">Start viewing</SubmitButton></div>
+          <div className="row justify-end"><button type="button" className="btn ghost" onClick={() => setOpen(false)}>Cancel</button><SubmitButton icon="eye">Start viewing</SubmitButton></div>
         </ActionForm>
       </Dialog>
     </>

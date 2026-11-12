@@ -27,13 +27,13 @@ export default async function ReviewPage({ searchParams }: { searchParams: Promi
             <Link key={q.order.id} href={`/admin/accounts/review?o=${orderNo(q.order.number)}`} className={`queue-item link-row ${q.order.id === o.id ? "on" : ""}`}>
               <div className="row between"><b className="mono">{orderNo(q.order.number)}</b><span className="small muted">{q.receipt ? fmtDate(q.receipt.uploadedAt) : ""}</span></div>
               <div className="row between small"><span>{q.order.parent.firstName} {q.order.parent.lastName}</span><span className="tnum">{naira(q.receipt?.amountClaimed ?? 0)} / {naira(q.due)}</span></div>
-              {q.duplicateOf && <span className="pill err" style={{ alignSelf: "flex-start" }}>Possible duplicate</span>}
+              {q.duplicateOf && <span className="pill err self-start">Possible duplicate</span>}
             </Link>
           ))}
         </Card>
         <div className="stack">
           {cur.duplicateOf && <Note tone="err" icon="alert"><b>Possible duplicate receipt.</b> The same file was uploaded for {cur.duplicateOf.orderNo} on {fmtDate(cur.duplicateOf.uploadedAt)}. Check the bank statement before approving.</Note>}
-          <div className="grid g2" style={{ alignItems: "start" }}>
+          <div className="grid g2 items-start">
             <section className="stack tight">
               {cur.receipt ? <ReceiptViewer src={`/api/files/${cur.receipt.fileKey}`} mime={cur.receipt.mimeType} /> : <Card><Empty title="No receipt file" /></Card>}
               {cur.receipt && <div className="small muted">{cur.receipt.bankName} · transfer date {fmtDate(cur.receipt.transferDate)} · uploaded {fmtDateTime(cur.receipt.uploadedAt)}</div>}
@@ -41,7 +41,7 @@ export default async function ReviewPage({ searchParams }: { searchParams: Promi
             <Card className="stack">
               <div>
                 <div className="eyebrow">Order</div>
-                <div className="row tight"><b className="mono" style={{ fontSize: 18 }}>{orderNo(o.number)}</b><Pill tone={st.tone}>{st.label}</Pill></div>
+                <div className="row tight"><b className="mono fs-18">{orderNo(o.number)}</b><Pill tone={st.tone}>{st.label}</Pill></div>
                 <div className="small muted">{o.parent.firstName} {o.parent.lastName} · {maskPhone(o.parent.phone)} · for {pupils.map((p) => `${p.firstName} (${p.class.name})`).join(", ")}</div>
               </div>
               {cur.payment && (

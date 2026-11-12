@@ -31,9 +31,9 @@ export function SqlConsole({ action, limit }: { action: (s: ActionResult, f: For
         <div className="stack tight">
           <p className="small muted">{result.total.toLocaleString()} row{result.total === 1 ? "" : "s"} in {result.ms} ms{result.total > limit ? ` · showing the first ${limit}` : ""}</p>
           {result.columns.length > 0 && (
-            <div className="tbl-wrap card" style={{ padding: 0 }}><table className="t">
+            <div className="tbl-wrap card p-0"><table className="t">
               <thead><tr>{result.columns.map((c) => <th key={c}>{c}</th>)}</tr></thead>
-              <tbody>{result.rows.map((r, i) => <tr key={i}>{r.map((v, j) => <td key={j} className="small mono" style={{ maxWidth: 320, overflowWrap: "anywhere" }}>{v}</td>)}</tr>)}</tbody>
+              <tbody>{result.rows.map((r, i) => <tr key={i}>{r.map((v, j) => <td key={j} className="small mono mw-320 wrap-any">{v}</td>)}</tr>)}</tbody>
             </table></div>
           )}
         </div>

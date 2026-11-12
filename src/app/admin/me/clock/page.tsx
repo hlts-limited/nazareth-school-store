@@ -18,7 +18,7 @@ export default async function ClockPage() {
   const gps = s.gpsRequired !== false && clockInPlaces(s).length > 0;
   const done = today?.status === "LEAVE" ? "You're on leave today." : today?.status === "HOLIDAY" ? "Today is a holiday." : "You've clocked in and out today. See you tomorrow.";
   return (
-    <div style={{ maxWidth: 520 }}>
+    <div className="mw-520">
       <PageHeader title="Clock in / out" sub={new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "Africa/Lagos" })} />
       <div className="stack">
         {!e.attendanceConsentAt ? (

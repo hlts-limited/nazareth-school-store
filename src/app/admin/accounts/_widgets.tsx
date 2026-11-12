@@ -67,7 +67,7 @@ export function ApproveForm({ approve, reject, paymentId, due, claimed, firstChi
               <option>Transfer went to the wrong account</option>
             </select></div>
           <div className="field"><label htmlFor="rj-n">Note (optional)</label><input className="input" id="rj-n" name="note" /></div>
-          <div className="row" style={{ justifyContent: "flex-end" }}><button type="button" className="btn ghost" onClick={() => setRejectOpen(false)}>Cancel</button><SubmitButton variant="danger">Reject and notify parent</SubmitButton></div>
+          <div className="row justify-end"><button type="button" className="btn ghost" onClick={() => setRejectOpen(false)}>Cancel</button><SubmitButton variant="danger">Reject and notify parent</SubmitButton></div>
         </ActionForm>
       </Dialog>
     </>
@@ -87,7 +87,7 @@ export function WalletAdjust({ action, pupilId, name, balance }: { action: Actio
             <div className="field"><label htmlFor="aj-a">Amount (₦)</label><input className="input tnum" id="aj-a" name="amount" inputMode="numeric" /><FieldError name="amount" /></div>
           </div>
           <div className="field"><label htmlFor="aj-r">Reason (required, logged)</label><input className="input" id="aj-r" name="reason" placeholder="e.g. Refund for wrong shoe size on NZ-24801" /><FieldError name="reason" /></div>
-          <div className="row" style={{ justifyContent: "flex-end" }}><button type="button" className="btn ghost" onClick={() => setOpen(false)}>Cancel</button><SubmitButton>Save and log</SubmitButton></div>
+          <div className="row justify-end"><button type="button" className="btn ghost" onClick={() => setOpen(false)}>Cancel</button><SubmitButton>Save and log</SubmitButton></div>
         </ActionForm>
       </Dialog>
     </>

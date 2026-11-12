@@ -115,7 +115,7 @@ export function SubmitButton({ children, variant = "primary", size, block, icon,
       disabled={pending || disabled}
       onClick={(e) => { if (confirmText && !window.confirm(confirmText)) e.preventDefault(); }}
     >
-      {pending ? <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} /> : icon ? <Icon name={icon} size="sm" /> : null}
+      {pending ? <span className="spinner w-16 h-16 bw-2" /> : icon ? <Icon name={icon} size="sm" /> : null}
       {children}
     </button>
   );
@@ -187,7 +187,7 @@ export function SearchParamSelect({ param, options, id, label }: { param: string
   const sp = useSearchParams();
   return (
     <select
-      className="input" id={id} aria-label={label} style={{ width: "auto" }}
+      className="input w-auto" id={id} aria-label={label}
       value={sp.get(param) ?? options[0][0]}
       onChange={(e) => {
         const next = new URLSearchParams(sp.toString());

@@ -17,7 +17,7 @@ export default async function PickupPage({ searchParams }: { searchParams: Promi
   return (
     <>
       <PageHeader title="Pick-up desk" sub="Type the 4-digit code from the parent's phone (or scan the QR code with a barcode scanner)." />
-      <div className="grid g2" style={{ alignItems: "start" }}>
+      <div className="grid g2 items-start">
         <Card className="stack">
           <div className="field"><label htmlFor="pk">Pick-up code</label><PickupCodeInput initial={code} /></div>
           {code && !o && <div className="field-error">No order is waiting with code {code}.</div>}

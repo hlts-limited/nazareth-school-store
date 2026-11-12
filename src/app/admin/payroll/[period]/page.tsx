@@ -48,14 +48,14 @@ export default async function PayrollRunPage({ params }: { params: Promise<{ per
         )}
         {canRun && pos > n - 1 && pos < 4 && <p className="pad small muted">To change this stage, press Calculate again on it: every later stage is reset.</p>}
         {canRun && pos > n - 1 && pos < 4 && (
-          <div className="pad" style={{ paddingTop: 0 }}><ActionForm action={calculateAction}><input type="hidden" name="runId" value={run.id} /><input type="hidden" name="stage" value={n} /><SubmitButton size="sm" variant="ghost" icon="refresh" confirmText={`Calculate stage ${n} again? Every later stage will need calculating and reviewing again.`}>Calculate again</SubmitButton></ActionForm></div>
+          <div className="pad pt-0"><ActionForm action={calculateAction}><input type="hidden" name="runId" value={run.id} /><input type="hidden" name="stage" value={n} /><SubmitButton size="sm" variant="ghost" icon="refresh" confirmText={`Calculate stage ${n} again? Every later stage will need calculating and reviewing again.`}>Calculate again</SubmitButton></ActionForm></div>
         )}
       </section>
     );
   };
 
   return (
-    <div style={{ maxWidth: 1200 }}>
+    <div className="mw-1200">
       <PageHeader title={`Payroll: ${periodLabel(run.period)}`} sub={<RunStatus s={run.status} />}
         actions={<><PaystackStatus /><Link className="btn" href="/admin/payroll"><Icon name="back" size="sm" />All runs</Link></>} />
       <div className="stack">

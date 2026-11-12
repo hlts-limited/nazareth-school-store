@@ -45,13 +45,13 @@ export function PupilTable({ rows, classes, total, query, deleteAction, moveActi
         <div className="tbl-wrap">
           <table className="t rt">
             <thead><tr>
-              <th style={{ width: 44 }}><input type="checkbox" aria-label="Select all on this page" checked={allOnPage} onChange={(e) => pageToggle(e.target.checked)} style={{ width: 18, height: 18, accentColor: "var(--red)" }} /></th>
+              <th className="w-44"><input type="checkbox" aria-label="Select all on this page" checked={allOnPage} onChange={(e) => pageToggle(e.target.checked)} style={{ width: 18, height: 18, accentColor: "var(--red)" }} /></th>
               <th>Pupil</th><th>Reg no.</th><th>Class</th><th>Parent / guardian</th><th>Phone</th><th>Status</th><th />
             </tr></thead>
             <tbody>
               {rows.map((p) => (
                 <tr key={p.id} className={sel.has(p.id) ? "sel" : ""}>
-                  <td className="cb" data-label=""><label className="check"><input type="checkbox" checked={sel.has(p.id)} onChange={(e) => toggle(p.id, e.target.checked)} aria-label={`Select ${p.name}`} /><span className="show-md" style={{ fontWeight: 600 }}>{p.name}</span></label></td>
+                  <td className="cb" data-label=""><label className="check"><input type="checkbox" checked={sel.has(p.id)} onChange={(e) => toggle(p.id, e.target.checked)} aria-label={`Select ${p.name}`} /><span className="show-md fw-600">{p.name}</span></label></td>
                   <td data-label="Pupil"><b>{hl(p.sortName)}</b></td>
                   <td data-label="Reg no." className="mono">{hl(p.reg)}</td>
                   <td data-label="Class">{p.className}</td>
@@ -59,7 +59,7 @@ export function PupilTable({ rows, classes, total, query, deleteAction, moveActi
                   <td data-label="Phone" className="tnum">{p.phone}</td>
                   <td data-label="Status">{p.status === "ACTIVE" ? <span className="pill ok">Active</span> : <span className="pill plain">Archived</span>}</td>
                   <td data-label="" className="r">{p.parentId && (
-                    <div className="row tight" style={{ justifyContent: "flex-end" }}>
+                    <div className="row tight justify-end">
                       {p.whatsApp && <a className="btn sm wa" href={p.whatsApp} target="_blank" rel="noopener noreferrer" title={`Opens WhatsApp with ${p.parent}'s invite typed out. Press Send.`}><Icon name="chat" size="sm" /> WhatsApp invite</a>}
                       <ActionForm action={inviteAction} className="inline-form"><input type="hidden" name="parentId" value={p.parentId} /><SubmitButton size="sm" variant="ghost">{p.parentInvited ? "New invite link" : "Send login link"}</SubmitButton></ActionForm>
                     </div>
@@ -74,7 +74,7 @@ export function PupilTable({ rows, classes, total, query, deleteAction, moveActi
       {sel.size > 0 && (
         <div className="bulkbar">
           <b>{sel.size} selected</b>
-          <button type="button" className="btn sm ghost" style={{ color: "inherit" }} onClick={() => setSel(new Set())}>Clear</button>
+          <button type="button" className="btn sm ghost c-inherit" onClick={() => setSel(new Set())}>Clear</button>
           <div className="grow" />
           <ActionForm action={moveAction} className="row tight" onDone={(r) => r.ok && setSel(new Set())}>
             {ids.map((id) => <input key={id} type="hidden" name="ids" value={id} />)}
@@ -97,7 +97,7 @@ export function PupilTable({ rows, classes, total, query, deleteAction, moveActi
           )}
           <div className="note warn"><Icon name="info" /><span>Pupils with orders, payments or a wallet balance are <b>archived</b> instead of deleted, so financial records stay complete. Deleted pupils can be restored from “Recently deleted” for 30 days.</span></div>
           {sel.size > 5 && <div className="field"><label htmlFor="del-conf">Type DELETE to confirm</label><input className="input mono" id="del-conf" name="confirm" autoComplete="off" value={confirmText} onChange={(e) => setConfirmText(e.target.value)} /><FieldError name="confirm" /></div>}
-          <div className="row" style={{ justifyContent: "flex-end" }}>
+          <div className="row justify-end">
             <button type="button" className="btn ghost" onClick={() => setConfirmOpen(false)}>Cancel</button>
             <SubmitButton icon="trash" disabled={sel.size > 5 && confirmText !== "DELETE"}>Delete {sel.size}</SubmitButton>
           </div>
@@ -128,7 +128,7 @@ export function ImportTool({ preview, commit, sample, header, classes }: { previ
   useEffect(() => { if (!state.ok && state.message) toast(state.message, false); }, [state, toast]);
   const good = rows?.filter((r) => !r.error).length ?? 0;
   return (
-    <div className="grid g2" style={{ alignItems: "start" }}>
+    <div className="grid g2 items-start">
       <form action={formAction} className="card stack">
         <div className="row">
           <button type="button" className="btn" onClick={downloadTemplate}><Icon name="download" size="sm" /> Download CSV template</button>

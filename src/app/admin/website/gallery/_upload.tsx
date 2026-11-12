@@ -62,7 +62,7 @@ export function PhotoUploader({ action, albums }: { action: Action; albums: stri
       </div>
       <div className="row">
         <button type="button" className="btn primary" onClick={upload} disabled={busy || !files.length}>
-          {busy ? <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} /> : <Icon name="upload" size="sm" />}
+          {busy ? <span className="spinner w-16 h-16 bw-2" /> : <Icon name="upload" size="sm" />}
           {busy ? `Uploading ${progress!.done + progress!.failed + 1} of ${files.length}…` : `Upload ${files.length || ""} photo${files.length === 1 ? "" : "s"}`}
         </button>
         {progress && !busy && <span className="small muted">{progress.done} added{progress.failed ? `, ${progress.failed} failed` : ""}</span>}

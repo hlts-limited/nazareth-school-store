@@ -54,9 +54,9 @@ export default async function RowPage({ params, searchParams }: { params: Promis
           <Card className="stack tight">
             <h3>Fixed fields</h3>
             {locked.map((f) => (
-              <div key={f.name} className="row between nowrap" style={{ gap: 12 }}>
+              <div key={f.name} className="row between nowrap gap-12">
                 <span className="small muted">{f.name}</span>
-                <span className="small mono" style={{ overflowWrap: "anywhere", textAlign: "right" }}>{show(f.name, row![f.name]) || "—"}</span>
+                <span className="small mono wrap-any text-right">{show(f.name, row![f.name]) || "—"}</span>
               </div>
             ))}
             <p className="tiny muted">The row&apos;s key and automatic timestamps can&apos;t be edited. Secrets are hidden{m.name === "User" ? "; use Set password below" : ""}.</p>
@@ -80,16 +80,16 @@ export default async function RowPage({ params, searchParams }: { params: Promis
         ) : (
           <Card className="stack tight">
             {fields.map((f) => (
-              <div key={f.name} className="row between nowrap" style={{ gap: 12 }}>
+              <div key={f.name} className="row between nowrap gap-12">
                 <span className="small muted">{f.name}</span>
-                <span className="small mono" style={{ overflowWrap: "anywhere", textAlign: "right" }}>{show(f.name, row![f.name]) || "—"}</span>
+                <span className="small mono wrap-any text-right">{show(f.name, row![f.name]) || "—"}</span>
               </div>
             ))}
           </Card>
         )}
 
         {!creating && m.name === "User" && (
-          <div className="grid g2" style={{ alignItems: "start" }}>
+          <div className="grid g2 items-start">
             <Card>
               <ActionForm action={setPasswordAction} className="stack" resetOnSuccess>
                 <h3>Set password</h3>
@@ -120,7 +120,7 @@ export default async function RowPage({ params, searchParams }: { params: Promis
               <p className="small muted">This can&apos;t be undone (except by restoring a backup). Rows that other rows depend on can&apos;t be deleted until those are removed.</p>
               <input type="hidden" name="model" value={m.name} />
               <input type="hidden" name="key" value={sp.k} />
-              <Field label="Type DELETE to confirm" htmlFor="del-confirm"><input className="input" id="del-confirm" name="confirm" autoComplete="off" style={{ maxWidth: 220 }} /></Field>
+              <Field label="Type DELETE to confirm" htmlFor="del-confirm"><input className="input mw-220" id="del-confirm" name="confirm" autoComplete="off" /></Field>
               <div className="row"><SubmitButton icon="trash" variant="danger">Delete row</SubmitButton></div>
             </ActionForm>
           </Card>

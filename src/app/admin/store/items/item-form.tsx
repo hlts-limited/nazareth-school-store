@@ -28,7 +28,7 @@ export function ItemForm({ action, cats, classes, item }: { action: Action; cats
       <div className="field">
         <span className="lbl">Classes it&apos;s for</span>
         <div className="row tight">
-          {classes.map((c) => <label key={c.id} className="chip"><input type="checkbox" name="classIds" value={c.id} defaultChecked={chosen.has(c.id)} style={{ accentColor: "var(--red)" }} /> {c.name}</label>)}
+          {classes.map((c) => <label key={c.id} className="chip"><input className="accent-red" type="checkbox" name="classIds" value={c.id} defaultChecked={chosen.has(c.id)} /> {c.name}</label>)}
         </div>
         <FieldError name="classIds" />
       </div>

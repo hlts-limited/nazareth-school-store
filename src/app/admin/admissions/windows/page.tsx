@@ -35,12 +35,12 @@ export default async function WindowsPage() {
   const now = new Date();
 
   return (
-    <div style={{ maxWidth: 1000 }}>
+    <div className="mw-1000">
       <PageHeader title="Admission windows & exams" sub="The website's Apply online page opens and closes on these dates automatically." actions={<Link className="btn" href="/admin/admissions"><Icon name="file" size="sm" />Applications</Link>} />
       <div className="stack loose">
         {canPublish && (
           <details className="card stack" open={!windows.length}>
-            <summary className="row between" style={{ cursor: "pointer" }}><h3>New admission window</h3><Icon name="plus" size="sm" /></summary>
+            <summary className="row between cur-pointer"><h3>New admission window</h3><Icon name="plus" size="sm" /></summary>
             <ActionForm action={saveWindowAction} className="stack" resetOnSuccess>
               <WindowFields />
               <div><SubmitButton icon="plus">Create window</SubmitButton></div>
@@ -102,7 +102,7 @@ export default async function WindowsPage() {
                     <input type="hidden" name="windowId" value={w.id} />
                     <div className="field"><label htmlFor={`ss-${w.id}`}>Date and time</label><input className="input" type="datetime-local" id={`ss-${w.id}`} name="startsAt" /><FieldError name="startsAt" /></div>
                     <div className="field"><label htmlFor={`sv-${w.id}`}>Venue</label><input className="input" id={`sv-${w.id}`} name="venue" placeholder="School hall" /><FieldError name="venue" /></div>
-                    <div className="field"><label htmlFor={`sc-${w.id}`}>Places</label><input className="input tnum" id={`sc-${w.id}`} name="capacity" inputMode="numeric" defaultValue={40} style={{ width: 90 }} /><FieldError name="capacity" /></div>
+                    <div className="field"><label htmlFor={`sc-${w.id}`}>Places</label><input className="input tnum w-90" id={`sc-${w.id}`} name="capacity" inputMode="numeric" defaultValue={40} /><FieldError name="capacity" /></div>
                     <div className="field"><label htmlFor={`sn-${w.id}`}>Note (shown to families)</label><input className="input" id={`sn-${w.id}`} name="note" placeholder="Bring a pencil and eraser" /></div>
                     <SubmitButton variant="default" icon="plus">Add slot</SubmitButton>
                   </ActionForm>
@@ -111,7 +111,7 @@ export default async function WindowsPage() {
 
               {canPublish && (
                 <details>
-                  <summary className="small" style={{ cursor: "pointer" }}>Edit dates and fee</summary>
+                  <summary className="small cur-pointer">Edit dates and fee</summary>
                   <ActionForm action={saveWindowAction} className="stack" >
                     <WindowFields w={w} />
                     <div><SubmitButton variant="default">Save changes</SubmitButton></div>

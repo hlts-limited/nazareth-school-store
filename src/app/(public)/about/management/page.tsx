@@ -28,7 +28,7 @@ export default function ManagementPage() {
             </article>
           ))}
         </div>
-        <p className="muted" style={{ marginTop: 16 }}>More members of our management team will be introduced here soon.</p>
+        <p className="muted mt-16">More members of our management team will be introduced here soon.</p>
       </Section>
       <SectionLinks group="About" current="/about/management" />
       <AdmissionCta />

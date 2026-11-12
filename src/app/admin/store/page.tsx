@@ -41,7 +41,7 @@ export default async function StoreHome() {
               {low.map((v) => (
                 <tr key={v.id}>
                   <td data-label="Item">{v.item.name}</td><td data-label="Size">{v.label === "Standard" ? "—" : v.label}</td>
-                  <td data-label="Available" className="r tnum">{v.available <= 0 ? <Pill tone="err">Out</Pill> : <b style={{ color: "var(--warn)" }}>{v.available}</b>}</td>
+                  <td data-label="Available" className="r tnum">{v.available <= 0 ? <Pill tone="err">Out</Pill> : <b className="c-warn">{v.available}</b>}</td>
                   <td data-label="Reorder at" className="r tnum">{v.item.reorderLevel}</td>
                   <td data-label="" className="r"><StockDialog action={recordStockMovement} item={v.item.name} label="Restock" variants={[{ id: v.id, label: v.label, onHand: v.onHand, reserved: v.reserved }]} /></td>
                 </tr>

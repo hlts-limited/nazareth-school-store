@@ -18,7 +18,7 @@ const when = (d: Date) => new Date(d).toLocaleString("en-GB", { weekday: "long",
 
 function Check() {
   const { pending } = useFormStatus();
-  return <button className="btn primary" type="submit" disabled={pending}>{pending ? <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} /> : <Icon name="search" size="sm" />}Check result</button>;
+  return <button className="btn primary" type="submit" disabled={pending}>{pending ? <span className="spinner w-16 h-16 bw-2" /> : <Icon name="search" size="sm" />}Check result</button>;
 }
 
 export function ResultLookupForm({ action }: { action: Action }) {
@@ -36,7 +36,7 @@ export function ResultLookupForm({ action }: { action: Action }) {
           </div>
           <div className="field">
             <label htmlFor="rl-i">First letter of surname</label>
-            <input className="input" id="rl-i" name="initial" maxLength={1} defaultValue={state.values?.initial} autoComplete="off" autoCapitalize="characters" style={{ maxWidth: 90 }} />
+            <input className="input mw-90" id="rl-i" name="initial" maxLength={1} defaultValue={state.values?.initial} autoComplete="off" autoCapitalize="characters" />
             {state.fieldErrors?.initial && <span className="field-error">{state.fieldErrors.initial}</span>}
           </div>
         </div>

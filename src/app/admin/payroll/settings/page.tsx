@@ -16,7 +16,7 @@ export default async function PayrollSettingsPage() {
   const r = await payrollRates();
   const can = v.permissions.has("payroll.run");
   return (
-    <div style={{ maxWidth: 900 }}>
+    <div className="mw-900">
       <PageHeader title="Rates & tax bands" sub="Each run copies these when stage 1 is calculated, so changing them never alters a run already approved or paid." />
       <SettingsTabs v={v} current="/admin/payroll/settings" />
       <ActionForm action={saveRatesAction} className="stack">
@@ -40,7 +40,7 @@ export default async function PayrollSettingsPage() {
               <tr key={i}>
                 <td>{i + 1}</td>
                 <td>{b.upToNaira === null ? <span className="muted">No upper limit<input type="hidden" name="bandTop" value="" /></span> : <input className="input sm" name="bandTop" inputMode="numeric" defaultValue={b.upToNaira} aria-label={`Band ${i + 1} upper limit`} />}</td>
-                <td><input className="input sm" name="bandRate" inputMode="decimal" defaultValue={b.ratePct} aria-label={`Band ${i + 1} rate`} style={{ maxWidth: 90 }} /></td>
+                <td><input className="input sm mw-90" name="bandRate" inputMode="decimal" defaultValue={b.ratePct} aria-label={`Band ${i + 1} rate`} /></td>
               </tr>
             ))}</tbody>
           </table></div>

@@ -24,7 +24,7 @@ export default async function PenaltiesPage({ searchParams }: { searchParams: Pr
   ]);
   const closed = run && !["DRAFT", "STATUTORY_REVIEWED", "TAX_REVIEWED", "DEFAULTS_REVIEWED"].includes(run.status);
   return (
-    <div style={{ maxWidth: 1000 }}>
+    <div className="mw-1000">
       <PageHeader title="Penalties & waivers" sub={periodLabel(m)}
         actions={<div className="row tight"><Link className="btn sm" href={`?m=${shift(m, -1)}`}>Previous month</Link>{m < thisMonth && <Link className="btn sm" href={`?m=${shift(m, 1)}`}>Next month</Link>}</div>} />
       <div className="stack">

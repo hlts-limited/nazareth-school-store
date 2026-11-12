@@ -9,7 +9,7 @@ export function ItemArt({ imageKey, name, color, kind, size = "card" }: { imageK
   if (imageKey) {
     return (
       <span className={box} style={style}>
-        <img src={`/api/files/${imageKey}`} alt={name} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        <img className="w-full h-full fit-cover" src={`/api/files/${imageKey}`} alt={name} loading="lazy" />
       </span>
     );
   }

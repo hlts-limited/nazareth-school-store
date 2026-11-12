@@ -13,7 +13,7 @@ export default async function AccountPage() {
   return (
     <>
       <PageHeader title="Account" />
-      <div className="grid g2" style={{ alignItems: "start" }}>
+      <div className="grid g2 items-start">
         <Card className="stack">
           <div className="row"><Avatar id={parent.id} first={parent.firstName} last={parent.lastName} size="lg" dark /><div><b>{displayName(parent)}</b><div className="small muted">{parent.phone} · {parent.email ?? "no email"}</div></div></div>
           <Note icon="shield">You can be signed in on {lim.devices === 1 ? "one device at a time" : `up to ${lim.devices} devices`}. Without &ldquo;Remember this device&rdquo;, you&apos;re signed out after {lim.idleMinutes} minutes of inactivity.</Note>
@@ -33,7 +33,7 @@ export default async function AccountPage() {
             <ActionForm key={k.id} action={setPupilPinAction} className="row" resetOnSuccess>
               <input type="hidden" name="pupilId" value={k.id} />
               <span className="grow"><b>{k.firstName}</b> <span className="small muted">{k.pinHash ? "PIN set" : "No PIN"}</span></span>
-              <input className="input sm mono" name="pin" type="password" inputMode="numeric" maxLength={6} placeholder="New PIN" aria-label={`PIN for ${k.firstName}`} style={{ width: 120 }} />
+              <input className="input sm mono w-120" name="pin" type="password" inputMode="numeric" maxLength={6} placeholder="New PIN" aria-label={`PIN for ${k.firstName}`} />
               <SubmitButton size="sm" variant="default" disabled={readOnly}>Save</SubmitButton>
               <FieldError name="pin" />
             </ActionForm>

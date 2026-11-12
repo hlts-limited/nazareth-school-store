@@ -8,7 +8,7 @@ export default async function StaffAccountPage() {
   const v = await requireStaff();
   const viewingAs = !!(await getViewAs());
   return (
-    <div style={{ maxWidth: 720 }}>
+    <div className="mw-720">
       <PageHeader title="My account" sub="Your sign-in details for the back office." />
       <div className="stack loose">
         <Card className="stack tight">

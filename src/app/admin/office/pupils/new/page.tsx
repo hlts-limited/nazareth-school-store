@@ -10,7 +10,7 @@ export default async function NewPupilPage() {
   await requireStaff("pupils.manage");
   const [classes, reg] = await Promise.all([listClasses(), suggestRegNumber()]);
   return (
-    <div style={{ maxWidth: 820 }}>
+    <div className="mw-820">
       <PageHeader title="Add pupil" sub="The parent gets a WhatsApp invite. If the phone number already exists, the pupil is linked to that parent automatically." />
       <ActionForm action={addPupilAction} className="card stack">
         <h3>Pupil</h3>

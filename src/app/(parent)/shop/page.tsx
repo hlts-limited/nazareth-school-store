@@ -70,10 +70,10 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
                   const ps = it.isPile ? pileStock(it) : null;
                   return (
                     <article key={it.id} className={`pcard${ps ? " pile" : ""}`}>
-                      <span style={{ position: "relative", display: "block" }}>
+                      <span className="rel d-block">
                         <ItemArt {...itemLook(it)} />
-                        {it.compulsory && <span className="pill ok plain" style={{ position: "absolute", top: 8, left: 8 }}>Required</span>}
-                        {ps && <span className="pill violet plain" style={{ position: "absolute", top: 8, right: 8 }}>Pile</span>}
+                        {it.compulsory && <span className="pill ok plain abs top-8 left-8">Required</span>}
+                        {ps && <span className="pill violet plain abs top-8 right-8">Pile</span>}
                       </span>
                       <div className="pbody">
                         <div className="nm">{it.name}</div>

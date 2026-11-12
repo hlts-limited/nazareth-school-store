@@ -51,7 +51,7 @@ export function Documents({ e, as, viewerId }: { e: Emp; as: "hr" | "self" | "vi
                 {!docs.length && <span className="small muted">{isReq ? "Not uploaded" : "—"}</span>}
               </div>
               {docs.map((d) => (
-                <div key={d.id} className="row between" style={{ gap: 8 }}>
+                <div key={d.id} className="row between gap-8">
                   <span className="row tight nowrap">
                     <Icon name="file" size="sm" />
                     {as === "view" ? <span>{d.fileName}</span> : <a href={`/api/files/${d.fileKey}`} target="_blank" rel="noreferrer">{d.fileName}</a>}
@@ -64,7 +64,7 @@ export function Documents({ e, as, viewerId }: { e: Emp; as: "hr" | "self" | "vi
                         <ActionForm action={reviewStaffDocAction}><input type="hidden" name="id" value={d.id} /><input type="hidden" name="decision" value="approve" /><SubmitButton size="sm" variant="success" icon="check">Approve</SubmitButton></ActionForm>
                         <ActionForm action={reviewStaffDocAction} className="row tight">
                           <input type="hidden" name="id" value={d.id} /><input type="hidden" name="decision" value="reject" />
-                          <input className="input sm" name="note" placeholder="What's wrong?" aria-label="Reason for rejecting" style={{ width: 150 }} />
+                          <input className="input sm w-150" name="note" placeholder="What's wrong?" aria-label="Reason for rejecting" />
                           <SubmitButton size="sm" variant="ghost">Reject</SubmitButton>
                         </ActionForm>
                       </>
@@ -114,7 +114,7 @@ export async function Bank({ e, canEdit, canApprove, viewerId }: { e: Emp; canEd
           <ActionForm action={reviewBankAction}><input type="hidden" name="id" value={e.id} /><input type="hidden" name="decision" value="approve" /><SubmitButton size="sm" variant="success" icon="check">Verify for payment</SubmitButton></ActionForm>
           <ActionForm action={reviewBankAction} className="row tight">
             <input type="hidden" name="id" value={e.id} /><input type="hidden" name="decision" value="reject" />
-            <input className="input sm" name="note" placeholder="What's wrong?" aria-label="Reason for rejecting" style={{ width: 160 }} />
+            <input className="input sm w-160" name="note" placeholder="What's wrong?" aria-label="Reason for rejecting" />
             <SubmitButton size="sm" variant="ghost">Reject</SubmitButton>
             <FieldError name="note" />
           </ActionForm>

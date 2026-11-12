@@ -30,7 +30,7 @@ export default async function NoticesPage() {
   const now = new Date();
   const state = (n: N) => n.startsAt > now ? ["info", "Scheduled"] : n.endsAt && n.endsAt <= now ? ["plain", "Ended"] : ["ok", "Showing"];
   return (
-    <div style={{ maxWidth: 900 }}>
+    <div className="mw-900">
       <PageHeader title="Website notices" sub="Short messages in the bar at the top of every website page. The admission status is added automatically." />
       <div className="stack loose">
         <ActionForm action={saveNoticeAction} className="card stack" resetOnSuccess>
@@ -59,7 +59,7 @@ export default async function NoticesPage() {
                     </div>
                   </div>
                   <details>
-                    <summary className="small" style={{ cursor: "pointer" }}><Icon name="cog" size="sm" /> Edit</summary>
+                    <summary className="small cur-pointer"><Icon name="cog" size="sm" /> Edit</summary>
                     <ActionForm action={saveNoticeAction} className="stack">
                       <NoticeFields n={n} />
                       <div><SubmitButton variant="default">Save notice</SubmitButton></div>

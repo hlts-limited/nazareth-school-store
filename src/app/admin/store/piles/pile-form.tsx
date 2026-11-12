@@ -48,7 +48,7 @@ export function PileForm({ action, cats, classes, books, pile }: {
       <div className="field">
         <span className="lbl">Classes it&apos;s for</span>
         <div className="row tight">
-          {classes.map((c) => <label key={c.id} className="chip"><input type="checkbox" name="classIds" value={c.id} defaultChecked={chosenClasses.has(c.id)} style={{ accentColor: "var(--red)" }} /> {c.name}</label>)}
+          {classes.map((c) => <label key={c.id} className="chip"><input className="accent-red" type="checkbox" name="classIds" value={c.id} defaultChecked={chosenClasses.has(c.id)} /> {c.name}</label>)}
         </div>
         <FieldError name="classIds" />
       </div>
@@ -59,7 +59,7 @@ export function PileForm({ action, cats, classes, books, pile }: {
         <input className="input" type="search" placeholder="Search books by name or SKU" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search books" />
         <div className="tbl-wrap" style={{ maxHeight: 420, overflow: "auto", border: "1px solid var(--line)", borderRadius: 10 }}>
           <table className="t">
-            <thead><tr><th style={{ width: 44 }} /><th>Book</th><th className="r">Price</th><th className="r">In stock</th><th className="r" style={{ width: 90 }}>Qty</th></tr></thead>
+            <thead><tr><th className="w-44" /><th>Book</th><th className="r">Price</th><th className="r">In stock</th><th className="r w-90">Qty</th></tr></thead>
             <tbody>
               {shown.map((b) => {
                 const on = b.id in picked;

@@ -44,7 +44,7 @@ export function PreciseLocation({ branch }: { branch: string }) {
   return (
     <div className="row tight precise-loc">
       <button type="button" className="btn sm" onClick={start} disabled={state.busy}>
-        {state.busy ? <span className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} /> : <Icon name="pin" size="sm" />}
+        {state.busy ? <span className="spinner w-14 h-14 bw-2" /> : <Icon name="pin" size="sm" />}
         {state.busy ? "Finding location…" : "Get precise location"}
       </button>
       {state.msg && <span className={`small ${state.best && state.best.accuracy > 30 ? "warn-text" : "muted"}`}>{state.msg}{state.best && state.best.accuracy > 30 ? " That's not very precise: try again outside, away from buildings." : ""}</span>}
@@ -66,7 +66,7 @@ export function KioskLink({ action }: { action: () => Promise<ActionResult> }) {
       {link && (
         <div className="note ok"><Icon name="check" /><div className="stack tight grow">
           <span className="small">Open this on the gate tablet or phone at each branch (the same link works on all three) and leave it on screen:</span>
-          <code className="small" style={{ wordBreak: "break-all" }}>{link}</code>
+          <code className="small break-all">{link}</code>
           <div><CopyButton text={link} label="Copy link" done="Gate link copied." /></div>
         </div></div>
       )}

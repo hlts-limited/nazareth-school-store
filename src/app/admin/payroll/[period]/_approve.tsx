@@ -20,7 +20,7 @@ export async function ApproveAndPay({ runId, v }: { runId: string; v: StaffViewe
   const preview = (run.status === "APPROVED" || run.status === "PAID") && canPay ? await payPreview(runId) : null;
   const payments = run.items.flatMap((i) => i.payments.map((p) => ({ p, name: `${i.employee.user.firstName} ${i.employee.user.lastName}` }))).sort((a, b) => b.p.createdAt.getTime() - a.p.createdAt.getTime());
   const Code = () => recent ? null : (
-    <div className="field"><label htmlFor={`code-${runId}`}>Your 6-digit 2FA code</label><input className="input mono" id={`code-${runId}`} name="code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} style={{ maxWidth: 140 }} /><span className="hint">You signed in more than 15 minutes ago.</span><FieldError name="code" /></div>
+    <div className="field"><label htmlFor={`code-${runId}`}>Your 6-digit 2FA code</label><input className="input mono mw-140" id={`code-${runId}`} name="code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} /><span className="hint">You signed in more than 15 minutes ago.</span><FieldError name="code" /></div>
   );
 
   return (
@@ -35,7 +35,7 @@ export async function ApproveAndPay({ runId, v }: { runId: string; v: StaffViewe
       {t.held > 0 && <Note tone="warn" icon="alert">Held, not paid: {run.items.filter((i) => i.held).map((i) => `${i.employee.user.firstName} ${i.employee.user.lastName} (${i.heldReason})`).join("; ")}.</Note>}
 
       {run.status === "DEFAULTS_REVIEWED" && (canApprove ? (prepared ? <Note tone="warn" icon="alert">You worked on this run, so someone else must approve it.</Note> : (
-        <div className="grid g2" style={{ alignItems: "start" }}>
+        <div className="grid g2 items-start">
           <ActionForm action={approveRunAction} className="stack tight">
             <input type="hidden" name="runId" value={runId} />
             <p className="small muted">An encrypted backup is taken before approving. Approving doesn&apos;t send money: you press Pay next.</p>
@@ -66,7 +66,7 @@ export async function ApproveAndPay({ runId, v }: { runId: string; v: StaffViewe
           </dl>
           {preview.balance !== null && preview.balance < preview.total + preview.fees && <Note tone="err" icon="alert">The balance is short by {money(preview.total + preview.fees - preview.balance)}. Top up the Paystack balance first; nothing will be sent until it covers the total and fees.</Note>}
           {preview.mode === "live" && <Note tone="warn" icon="alert">LIVE: real money will be sent to staff bank accounts.</Note>}
-          <div className="field"><label htmlFor={`cf-${runId}`}>Type the total to confirm ({money(preview.total)})</label><input className="input mono" id={`cf-${runId}`} name="confirm" inputMode="decimal" autoComplete="off" style={{ maxWidth: 200 }} /><FieldError name="confirm" /></div>
+          <div className="field"><label htmlFor={`cf-${runId}`}>Type the total to confirm ({money(preview.total)})</label><input className="input mono mw-200" id={`cf-${runId}`} name="confirm" inputMode="decimal" autoComplete="off" /><FieldError name="confirm" /></div>
           <Code />
           <div><SubmitButton icon="wallet" confirmText={`Send ${money(preview.total)} to ${preview.count} staff now?`}>Pay</SubmitButton></div>
         </ActionForm>
@@ -95,7 +95,7 @@ export async function ApproveAndPay({ runId, v }: { runId: string; v: StaffViewe
               <tr key={p.id}>
                 <td data-label="Staff">{name}{p.attempt > 1 ? <span className="small muted"> (try {p.attempt})</span> : null}</td>
                 <td data-label="Amount" className="r">{money(p.amountKobo)}</td>
-                <td data-label="Status"><Pill tone={PAY_TONE[p.status]}>{PAY_WORD[p.status]}</Pill>{p.failReason ? <div className="small" style={{ color: "var(--err)" }}>{p.failReason}</div> : null}{!p.live ? <span className="small muted"> test</span> : null}</td>
+                <td data-label="Status"><Pill tone={PAY_TONE[p.status]}>{PAY_WORD[p.status]}</Pill>{p.failReason ? <div className="small c-err">{p.failReason}</div> : null}{!p.live ? <span className="small muted"> test</span> : null}</td>
                 <td data-label="Reference" className="mono small">{p.reference}</td>
               </tr>
             ))}</tbody>
