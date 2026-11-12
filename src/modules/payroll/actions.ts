@@ -5,9 +5,9 @@ import { fail, ok, parseForm, runAction, zText, type ActionResult } from "@/shar
 import { db } from "@/shared/lib/db";
 import { auditActor, staffFor, verifyTotp, type StaffViewer } from "@/modules/auth";
 import { audit } from "@/modules/audit";
-import type { TaxBand } from "./engine";
+import type { BonusType, PayComponent, PenaltyCategory, TaxBand } from "./engine";
 import {
-  addAdjustment, calcDefaults, calcStatutory, calcTax, markReviewed, periodLabel, removeAdjustment, runTotals, savePayrollRates, setStatutoryOverride, startRun,
+  addAdjustment, calcDefaults, calcStatutory, calcTax, markReviewed, payrollRates, periodLabel, removeAdjustment, runTotals, savePayrollRates, setSalaryComponents, setStatutoryOverride, startRun,
   type Stage,
 } from "./service";
 import { approveRun, payRun, refreshPending, sendBack } from "./pay";
@@ -15,6 +15,26 @@ import { approveRun, payRun, refreshPending, sendBack } from "./pay";
 const actor = (v: StaffViewer) => ({ id: v.user.id, name: `${v.user.firstName} ${v.user.lastName}` });
 const naira = (k: number) => `₦${(k / 100).toLocaleString("en-NG", { maximumFractionDigits: 2 })}`;
 const zMoney = (msg: string) => z.preprocess((x) => (typeof x === "string" ? x.replace(/[,\s₦]/g, "") : x), z.coerce.number({ invalid_type_error: msg }).min(0, msg).max(1e10));
+/** The rows of an editable list on the rates form: `${prefix}.${key}`, one value per row, in order */
+function readRows(form: FormData, prefix: string, keys: string[]) {
+  const ids = form.getAll(`${prefix}.id`).map(String);
+  const cols = Object.fromEntries(keys.map((k) => [k, form.getAll(`${prefix}.${k}`).map(String)]));
+  return ids.map((id, i) => ({ id, ...Object.fromEntries(keys.map((k) => [k, cols[k][i] ?? ""])) }) as Record<string, string> & { id: string });
+}
+const num = (v: string) => Number(String(v).replace(/[,\s₦%]/g, ""));
+const slug = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 30) || "item";
+/** New rows get an id from their name; saved rows keep theirs (past payslips refer to it) */
+function ids<T extends { id: string; name: string }>(rows: T[]) {
+  const taken = new Set(rows.filter((r) => !r.id.startsWith("new-")).map((r) => r.id));
+  return rows.map((r) => {
+    if (!r.id.startsWith("new-")) return r;
+    let id = slug(r.name), n = 2;
+    while (taken.has(id)) id = `${slug(r.name)}-${n++}`;
+    taken.add(id);
+    return { ...r, id };
+  });
+}
+
 const zPct = z.preprocess((x) => (typeof x === "string" ? x.replace(/[%\s]/g, "") : x), z.coerce.number({ invalid_type_error: "Enter a percentage" }).min(0).max(100));
 
 export async function startRunAction(_: ActionResult, form: FormData): Promise<ActionResult> {
@@ -69,14 +89,15 @@ export async function addAdjustmentAction(_: ActionResult, form: FormData): Prom
   return runAction(async () => {
     const v = await staffFor("payroll.penalties");
     const d = parseForm(z.object({
-      employeeId: zText(100, "Choose the staff member"), period: z.string().regex(/^\d{4}-\d{2}$/, "Choose the month"), kind: z.enum(["penalty", "waiver"]),
-      amount: zMoney("Enter an amount"), reason: zText(200, "Give the reason"),
+      employeeId: zText(100, "Choose the staff member"), period: z.string().regex(/^\d{4}-\d{2}$/, "Choose the month"), kind: z.enum(["penalty", "waiver", "bonus"]),
+      category: z.string().optional(), amount: zMoney("Enter an amount"), reason: zText(200, "Give the reason"),
     }), form);
     const target = await db.employee.findUniqueOrThrow({ where: { id: d.employeeId } });
-    if (target.userId === v.user.id) return fail("You can't enter a penalty or waiver for yourself.");
-    const a = await addAdjustment({ employeeId: d.employeeId, period: d.period, kind: d.kind, amountNaira: d.amount, reason: d.reason }, actor(v));
-    await audit(await auditActor(v), d.kind === "penalty" ? "Entered penalty" : "Entered waiver", "PayrollAdjustment", a.id, { staffCode: target.staffCode, period: d.period, amount: d.amount, reason: d.reason });
-    return ok(`${d.kind === "penalty" ? "Penalty" : "Waiver"} saved for ${periodLabel(d.period)}. If that month's payroll is open, stage 3 needs calculating again.`);
+    if (target.userId === v.user.id) return fail("You can't enter a penalty, waiver or bonus for yourself.");
+    const a = await addAdjustment({ employeeId: d.employeeId, period: d.period, kind: d.kind, category: d.category, amountNaira: d.amount, reason: d.reason }, actor(v));
+    const word = d.kind === "penalty" ? "Penalty" : d.kind === "bonus" ? "Bonus" : "Waiver";
+    await audit(await auditActor(v), `Entered ${word.toLowerCase()}`, "PayrollAdjustment", a.id, { staffCode: target.staffCode, period: d.period, category: a.category, amount: d.amount, reason: d.reason });
+    return ok(`${word} saved for ${periodLabel(d.period)}. If that month's payroll is open, stage 3 needs calculating again.`);
   });
 }
 
@@ -84,7 +105,7 @@ export async function removeAdjustmentAction(_: ActionResult, form: FormData): P
   return runAction(async () => {
     const v = await staffFor("payroll.penalties");
     const a = await removeAdjustment(String(form.get("id")));
-    await audit(await auditActor(v), "Removed penalty or waiver", "PayrollAdjustment", a.id, { period: a.period, kind: a.kind, amount: a.amountKobo / 100, reason: a.reason });
+    await audit(await auditActor(v), `Removed ${a.kind}`, "PayrollAdjustment", a.id, { period: a.period, kind: a.kind, category: a.category, amount: a.amountKobo / 100, reason: a.reason });
     return ok("Removed.");
   });
 }
@@ -100,9 +121,22 @@ export async function saveRatesAction(_: ActionResult, form: FormData): Promise<
     const tops = form.getAll("bandTop").map(String), ratesIn = form.getAll("bandRate").map(String);
     const bands: TaxBand[] = ratesIn.map((r, i) => ({ upToNaira: i === ratesIn.length - 1 ? null : Number(tops[i]?.replace(/[,\s₦]/g, "")), ratePct: Number(r) }));
     if (bands.some((b, i) => !Number.isFinite(b.ratePct) || b.ratePct < 0 || b.ratePct > 100 || (i < bands.length - 1 && !(Number(b.upToNaira) > 0)))) return fail("Check the tax bands: each needs an upper limit (except the last) and a rate.");
-    const saved = await savePayrollRates({ ...d, taxBands: bands });
+    // Salary components, penalty categories and bonus types (rows added on the form get an id from their name)
+    const components: PayComponent[] = ids(readRows(form, "comp", ["name", "pct", "pension", "nhf", "active"]).filter((r) => r.name.trim()).map((r) => ({
+      id: r.id, name: r.name.trim(), pct: num(r.pct), pension: r.pension === "1", nhf: r.nhf === "1", active: r.active === "1",
+    })));
+    if (components.some((c) => !Number.isFinite(c.pct) || c.pct < 0 || c.pct > 100)) return fail("Each component's share must be between 0% and 100%.");
+    const penaltyCategories: PenaltyCategory[] = ids(readRows(form, "pen", ["name", "defaultNaira", "active"]).filter((r) => r.name.trim()).map((r) => ({
+      id: r.id, name: r.name.trim(), defaultNaira: Math.max(0, num(r.defaultNaira) || 0), active: r.active === "1",
+    })));
+    const bonusTypes: BonusType[] = ids(readRows(form, "bonus", ["name", "active"]).filter((r) => r.name.trim()).map((r) => ({ id: r.id, name: r.name.trim(), active: r.active === "1" })));
+    if (!penaltyCategories.some((c) => c.active)) penaltyCategories.push({ id: "other", name: "Other", defaultNaira: 0, active: true });
+    const statutoryBase = form.get("statutoryBase") === "components" ? "components" as const : "gross" as const;
+    const before = await payrollRates();
+    const saved = await savePayrollRates({ ...d, taxBands: bands, components, penaltyCategories, bonusTypes, statutoryBase });
     await audit(await auditActor(v), "Changed payroll rates", "Setting", "payroll", JSON.parse(JSON.stringify(saved)));
-    return ok("Rates saved. They apply the next time stage 1 is calculated; runs already calculated keep the rates they used.");
+    const switched = before.statutoryBase !== statutoryBase;
+    return ok(`Rates saved.${switched ? ` Pension and NHF are now worked out on ${statutoryBase === "components" ? "the ticked components" : "the whole gross"}.` : ""} They apply the next time stage 1 is calculated; runs already calculated keep the rates they used.`);
   });
 }
 
@@ -154,5 +188,19 @@ export async function refreshPaymentsAction(_: ActionResult, form: FormData): Pr
     await staffFor("payroll.view");
     const r = await refreshPending(String(form.get("runId")));
     return ok(r.checked ? `Checked ${r.checked} waiting payment${r.checked === 1 ? "" : "s"} with Paystack: ${r.changed} updated.` : "Nothing is waiting for Paystack.");
+  });
+}
+
+/** A staff member's split of gross into components (or back to the school's default shares) */
+export async function saveSalarySplitAction(_: ActionResult, form: FormData): Promise<ActionResult> {
+  return runAction(async () => {
+    const v = await staffFor("hr.salary");
+    const employeeId = String(form.get("employeeId") ?? "");
+    const useDefault = form.get("reset") === "1";
+    const rates = await payrollRates();
+    const amounts = useDefault ? null : Object.fromEntries(rates.components.filter((c) => c.active).map((c) => [c.id, num(String(form.get(`part.${c.id}`) ?? "0")) || 0]));
+    const e = await setSalaryComponents(employeeId, amounts);
+    await audit(await auditActor(v), useDefault ? "Reset salary breakdown" : "Changed salary breakdown", "Employee", e.id, { staffCode: e.staffCode, ...(amounts ?? {}) });
+    return ok(useDefault ? "Back to the school's default shares." : "Salary breakdown saved. Open payroll runs go back to stage 1.");
   });
 }

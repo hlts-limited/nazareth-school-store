@@ -3,6 +3,7 @@ import { Note, PageHeader } from "@/shared/ui/primitives";
 import { requireStaff } from "@/modules/auth";
 import { SettingsTabs } from "@/app/admin/_settings-tabs";
 import { payrollRates, saveRatesAction } from "@/modules/payroll";
+import { EditableRows } from "./_rows";
 
 export const metadata = { title: "Rates & tax bands" };
 
@@ -22,11 +23,32 @@ export default async function PayrollSettingsPage() {
       <ActionForm action={saveRatesAction} className="stack">
         <Note tone="info" icon="info">The defaults follow the plan. The school&apos;s tax adviser should confirm the pension base, the NHIS rate, NHF on basic, and the penalty amounts before the first live payroll.</Note>
         <fieldset className="card stack" disabled={!can}>
+          <legend>Salary breakdown: what makes up gross pay</legend>
+          <p className="small muted">Each staff member&apos;s gross (entered by HR) is split into these parts. The shares are the default; a person&apos;s own amounts can be changed on their staff record. Switch a part off instead of removing it once it has been used.</p>
+          <EditableRows name="comp" disabled={!can} addLabel="Add component"
+            columns={[
+              { key: "name", label: "Component", type: "text" }, { key: "pct", label: "Share of gross", type: "number", width: "mw-90", suffix: "%" },
+              { key: "pension", label: "Pension", type: "check", hint: "Counts toward pension when pension is worked out on components" },
+              { key: "nhf", label: "NHF", type: "check", hint: "Counts toward NHF when NHF is worked out on components" },
+              { key: "active", label: "On", type: "check" },
+            ]}
+            rows={r.components.map((c) => ({ id: c.id, values: { name: c.name, pct: c.pct, pension: c.pension, nhf: c.nhf, active: c.active } }))}
+            total={{ key: "pct", mustBe: 100, label: "Total" }} />
+          <div className="field">
+            <label htmlFor="rt-base">Work out pension and NHF on</label>
+            <select className="input" id="rt-base" name="statutoryBase" defaultValue={r.statutoryBase}>
+              <option value="gross">The whole gross (pension) and basic % below (NHF), as now</option>
+              <option value="components">The ticked components above (Pension Reform Act: basic + housing + transport)</option>
+            </select>
+            <span className="hint">Switching changes everyone&apos;s pension and NHF from the next stage 1 calculation.</span>
+          </div>
+        </fieldset>
+        <fieldset className="card stack" disabled={!can}>
           <legend>Statutory deductions (stage 1)</legend>
           <div className="grid g3">
-            <Pct id="pensionPct" label="Pension (employee)" value={r.pensionPct} hint="% of annual gross" />
-            <Pct id="nhfPct" label="NHF" value={r.nhfPct} hint="% of basic salary" />
-            <Pct id="basicPctOfGross" label="Basic salary" value={r.basicPctOfGross} hint="% of gross (100 = gross is basic)" />
+            <Pct id="pensionPct" label="Pension (employee)" value={r.pensionPct} hint={r.statutoryBase === "components" ? "% of the pension components" : "% of annual gross"} />
+            <Pct id="nhfPct" label="NHF" value={r.nhfPct} hint={r.statutoryBase === "components" ? "% of the NHF components" : "% of basic salary"} />
+            <Pct id="basicPctOfGross" label="Basic salary (for NHF on gross)" value={r.basicPctOfGross} hint="% of gross; used only when NHF is worked out on the whole gross" />
             <Pct id="nhisPct" label="NHIS / NHIA (employee)" value={r.nhisPct} hint="% of annual gross; 0 = not deducted" />
             <Pct id="rentReliefPct" label="Rent relief" value={r.rentReliefPct} hint="% of declared yearly rent" />
             <div className="field"><label htmlFor="rt-cap">Rent relief cap (₦ a year)</label><input className="input" id="rt-cap" name="rentReliefCapNaira" inputMode="decimal" defaultValue={r.rentReliefCapNaira} /></div>
@@ -56,6 +78,18 @@ export default async function PayrollSettingsPage() {
             <div className="field"><label htmlFor="rt-absn">Fixed amount per absent day (₦)</label><input className="input" id="rt-absn" name="absencePenaltyNaira" inputMode="decimal" defaultValue={r.absencePenaltyNaira} /></div>
             <Pct id="maxPenaltyPct" label="Most a month's penalties may take" value={r.maxPenaltyPct} hint="% of pay after tax; the rest carries to next month" />
           </div>
+          <h4>Other penalty categories</h4>
+          <p className="small muted">Lateness and absence come from attendance. These are the other kinds Accounts can enter; the amount is a default that can be changed each time.</p>
+          <EditableRows name="pen" disabled={!can} addLabel="Add penalty category"
+            columns={[{ key: "name", label: "Category", type: "text" }, { key: "defaultNaira", label: "Default amount", type: "number", width: "mw-120", suffix: "₦" }, { key: "active", label: "On", type: "check" }]}
+            rows={r.penaltyCategories.map((c) => ({ id: c.id, values: { name: c.name, defaultNaira: c.defaultNaira, active: c.active } }))} />
+        </fieldset>
+        <fieldset className="card stack" disabled={!can}>
+          <legend>Bonus types</legend>
+          <p className="small muted">Bonuses are added after tax and penalties, so they aren&apos;t taxed and penalties can&apos;t take them. Each needs a reason when entered.</p>
+          <EditableRows name="bonus" disabled={!can} addLabel="Add bonus type"
+            columns={[{ key: "name", label: "Bonus type", type: "text" }, { key: "active", label: "On", type: "check" }]}
+            rows={r.bonusTypes.map((c) => ({ id: c.id, values: { name: c.name, active: c.active } }))} />
         </fieldset>
         {can && <div><SubmitButton icon="check">Save rates</SubmitButton></div>}
       </ActionForm>

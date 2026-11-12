@@ -45,7 +45,7 @@ export const PERMISSIONS = {
   PAYROLL_VIEW: "payroll.view",
   /** Calculate and mark reviewed the three stages; set rates and tax bands */
   PAYROLL_RUN: "payroll.run",
-  /** Enter penalties and waivers */
+  /** Enter penalties, waivers and bonuses (Accounts) */
   PAYROLL_PENALTIES: "payroll.penalties",
   /** Approve a run (the Super Admin; never someone who prepared it) */
   PAYROLL_APPROVE: "payroll.approve",
@@ -71,7 +71,7 @@ export const ROLE_DEFS: { id: string; name: string; permissions: Permission[]; r
     id: "accountant", name: "Accounts", requires2fa: true,
     permissions: [
       P.SELF_SERVICE, P.PAYMENTS_REVIEW, P.INVOICES_MANAGE, P.INVOICES_EXPORT, P.WALLETS_ADJUST, P.PUPILS_VIEW, P.REPORTS_VIEW,
-      P.HR_VIEW_SECTION, P.HR_VIEW, P.HR_SALARY, P.HR_BANK_APPROVE, P.ATTENDANCE_VIEW_SECTION, P.PAYROLL_VIEW, P.PAYROLL_RUN,
+      P.HR_VIEW_SECTION, P.HR_VIEW, P.HR_SALARY, P.HR_BANK_APPROVE, P.ATTENDANCE_VIEW_SECTION, P.PAYROLL_VIEW, P.PAYROLL_RUN, P.PAYROLL_PENALTIES,
     ],
   },
   {
@@ -84,7 +84,7 @@ export const ROLE_DEFS: { id: string; name: string; permissions: Permission[]; r
   },
   {
     id: "hr", name: "Admin / HR", requires2fa: true,
-    permissions: [P.SELF_SERVICE, P.HR_VIEW_SECTION, P.HR_VIEW, P.HR_MANAGE, P.HR_SALARY, P.ATTENDANCE_VIEW_SECTION, P.ATTENDANCE_MANAGE, P.ATTENDANCE_PHOTOS, P.PAYROLL_VIEW, P.PAYROLL_PENALTIES],
+    permissions: [P.SELF_SERVICE, P.HR_VIEW_SECTION, P.HR_VIEW, P.HR_MANAGE, P.HR_SALARY, P.ATTENDANCE_VIEW_SECTION, P.ATTENDANCE_MANAGE, P.ATTENDANCE_PHOTOS, P.PAYROLL_VIEW],
   },
   {
     id: "head", name: "Head teacher", requires2fa: false,
@@ -212,7 +212,7 @@ export const STAFF_SECTIONS: NavSection[] = [
     id: "payroll", label: "Payroll", perm: P.PAYROLL_VIEW,
     items: [
       { href: "/admin/payroll", label: "Payroll runs", icon: "wallet", badge: "payroll" },
-      { href: "/admin/payroll/penalties", label: "Penalties & waivers", icon: "alert" },
+      { href: "/admin/payroll/penalties", label: "Penalties & bonuses", icon: "alert" },
     ],
   },
   {

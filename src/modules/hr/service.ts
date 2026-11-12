@@ -1,4 +1,4 @@
-import type { EmploymentType, Prisma } from "@prisma/client";
+import { Prisma, type EmploymentType } from "@prisma/client";
 import { db } from "@/shared/lib/db";
 import { UserError } from "@/shared/lib/action";
 import { decryptField, encryptField, randomToken } from "@/shared/lib/crypto";
@@ -100,7 +100,8 @@ export async function updateEmployee(id: string, input: Omit<EmployeeInput, "ema
       hireDate: input.hireDate, employmentType: input.employmentType,
       tin: input.tin ?? null, pfaName: input.pfaName ?? null, rsaPin: input.rsaPin ?? null, nhfNumber: input.nhfNumber ?? null, nhisNumber: input.nhisNumber ?? null,
       annualRentNaira: input.annualRentNaira,
-      ...(opts.salary ? { monthlyGrossKobo: input.monthlyGrossKobo } : {}),
+      // A new gross clears a custom split (it would no longer add up); the school's default shares apply until it's set again
+      ...(opts.salary ? { monthlyGrossKobo: input.monthlyGrossKobo, ...(input.monthlyGrossKobo !== emp.monthlyGrossKobo ? { salaryComponents: Prisma.DbNull } : {}) } : {}),
     },
   });
 }

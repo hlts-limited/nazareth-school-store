@@ -75,3 +75,37 @@ test("school days in a month skip weekends and holidays", () => {
   assert.equal(schoolDaysIn("2026-10", [1, 2, 3, 4, 5]), 22);
   assert.equal(schoolDaysIn("2026-10", [1, 2, 3, 4, 5], ["2026-10-01"]), 21);
 });
+
+test("gross is split into components that add up exactly; a person's own split is used only if it still adds up", async () => {
+  const { DEFAULT_COMPONENTS, splitGross } = await import("../src/modules/payroll/engine");
+  const parts = splitGross(N(100_001), DEFAULT_COMPONENTS);
+  assert.deepEqual(parts.map((p) => p.name), ["Basic", "Housing", "Transport", "Utility"]);
+  assert.equal(parts.reduce((a, p) => a + p.monthly, 0), N(100_001), "no kobo lost to rounding");
+  assert.equal(parts.find((p) => p.id === "housing")!.monthly, N(100_001) * 0.25);
+  const own = { basic: N(60_000), housing: N(20_000), transport: N(15_000), utility: N(5_000) };
+  assert.equal(splitGross(N(100_000), DEFAULT_COMPONENTS, own).find((p) => p.id === "basic")!.monthly, N(60_000));
+  assert.ok(splitGross(N(120_000), DEFAULT_COMPONENTS, own).every((p) => !p.custom), "an own split that no longer adds up falls back to the shares");
+});
+
+test("pension and NHF: on the whole gross (as before) or on the ticked components, by the switch", () => {
+  const r = { ...DEFAULT_RATES, nhisPct: 0, pensionPct: 8, nhfPct: 2.5 };
+  const gross = statutory(N(100_000), 0, r);
+  assert.equal(gross.base?.mode, "gross");
+  assert.equal(gross.pension, N(96_000), "8% of ₦1.2m");
+  assert.equal(gross.nhf, N(30_000), "2.5% of ₦1.2m (basic = 100% of gross)");
+  const comp = statutory(N(100_000), 0, { ...r, statutoryBase: "components" });
+  // Pension on basic + housing + transport (90% of gross); NHF on basic (50%)
+  assert.equal(comp.base?.pension, N(1_080_000));
+  assert.equal(comp.pension, N(86_400));
+  assert.equal(comp.nhf, N(15_000));
+  assert.ok(comp.taxable > gross.taxable, "smaller deductions leave more taxable income");
+});
+
+test("penalties add up by category", () => {
+  const p = penalties(N(100_000), N(80_000), {
+    lateDays: 0, absentDays: 0, schoolDays: 20, carriedKobo: 0, waivers: [],
+    manual: [{ amountKobo: N(2_000), reason: "a", category: "Lost property" }, { amountKobo: N(500), reason: "b", category: "Dress code" }, { amountKobo: N(1_000), reason: "c", category: "Lost property" }],
+  }, DEFAULT_RATES);
+  assert.deepEqual(p.byCategory, [{ name: "Lost property", amount: N(3_000) }, { name: "Dress code", amount: N(500) }]);
+  assert.equal(p.manual, N(3_500));
+});

@@ -1,8 +1,8 @@
-import type { PayrollStatus, Prisma } from "@prisma/client";
+import { Prisma, type PayrollStatus } from "@prisma/client";
 import { db } from "@/shared/lib/db";
 import { UserError } from "@/shared/lib/action";
 import { attendanceSettings, monthTotals } from "@/modules/attendance";
-import { DEFAULT_RATES, payAfterTax, penalties, schoolDaysIn, statutory, tax, type Overrides, type PayrollRates, type Statutory, type TaxResult } from "./engine";
+import { bonusTotal, DEFAULT_RATES, payAfterTax, penalties, schoolDaysIn, splitGross, statutory, tax, type Overrides, type PayrollRates, type Statutory, type TaxResult } from "./engine";
 
 // ---------- Rates (settings) ----------
 
@@ -15,6 +15,11 @@ export async function payrollRates(): Promise<PayrollRates> {
 
 export async function savePayrollRates(patch: Partial<PayrollRates>) {
   const value = { ...(await payrollRates()), ...patch };
+  const comps = value.components.filter((c) => c.active);
+  if (!comps.length) throw new UserError("Keep at least one salary component switched on.");
+  const share = Math.round(comps.reduce((a, c) => a + c.pct, 0) * 100) / 100;
+  if (share !== 100) throw new UserError(`The salary components' shares add up to ${share}%. They must add up to 100%.`);
+  if (new Set(value.components.map((c) => c.name.trim().toLowerCase())).size !== value.components.length) throw new UserError("Two salary components have the same name.");
   if (value.taxBands.length < 1 || value.taxBands.at(-1)!.upToNaira !== null) throw new UserError("The last tax band must have no upper limit.");
   for (let i = 1; i < value.taxBands.length - 1; i++) {
     if ((value.taxBands[i].upToNaira ?? 0) <= (value.taxBands[i - 1].upToNaira ?? 0)) throw new UserError("Each tax band must end above the one before it.");
@@ -76,7 +81,7 @@ async function computeStatutory(period: string, rates: PayrollRates) {
   const staff = await db.employee.findMany({ where: { status: "ACTIVE", hireDate: { lte: monthEnd(period) } }, orderBy: { staffCode: "asc" } });
   return staff.map((e) => {
     const o = (e.statutoryOverrides ?? {}) as Overrides;
-    const s = statutory(e.monthlyGrossKobo, e.annualRentNaira, rates, o);
+    const s = statutory(e.monthlyGrossKobo, e.annualRentNaira, rates, o, e.salaryComponents as Record<string, number> | null);
     const held = e.bankStatus !== "VERIFIED" ? (e.bankStatus === "NONE" ? "No bank details" : e.bankStatus === "PENDING" ? "Bank details not yet verified" : "Bank details rejected") : null;
     return { e, s, o, held };
   });
@@ -91,7 +96,7 @@ export async function calcStatutory(runId: string, by: Actor) {
     await tx.payrollItem.deleteMany({ where: { runId, employeeId: { notIn: rows.map((r) => r.e.id) } } });
     for (const { e, s, o, held } of rows) {
       const data = {
-        grossKobo: s.monthly.gross, pensionKobo: s.monthly.pension, nhfKobo: s.monthly.nhf, nhisKobo: s.monthly.nhis, taxKobo: 0, penaltiesKobo: 0, carryKobo: 0, netKobo: 0,
+        grossKobo: s.monthly.gross, pensionKobo: s.monthly.pension, nhfKobo: s.monthly.nhf, nhisKobo: s.monthly.nhis, taxKobo: 0, penaltiesKobo: 0, bonusKobo: 0, carryKobo: 0, netKobo: 0,
         held: !!held, heldReason: held, lines: { statutory: s, overrides: o } as unknown as Prisma.InputJsonValue,
       };
       await tx.payrollItem.upsert({ where: { runId_employeeId: { runId, employeeId: e.id } }, create: { runId, employeeId: e.id, ...data }, update: data });
@@ -118,7 +123,7 @@ export async function calcTax(runId: string, by: Actor) {
     for (const it of items) {
       const l = it.lines as unknown as StatLines;
       const t = tax(l.statutory.taxable, bands);
-      await tx.payrollItem.update({ where: { id: it.id }, data: { taxKobo: t.monthly, penaltiesKobo: 0, carryKobo: 0, netKobo: 0, lines: { statutory: l.statutory, overrides: l.overrides, tax: t } as unknown as Prisma.InputJsonValue } });
+      await tx.payrollItem.update({ where: { id: it.id }, data: { taxKobo: t.monthly, penaltiesKobo: 0, bonusKobo: 0, carryKobo: 0, netKobo: 0, lines: { statutory: l.statutory, overrides: l.overrides, tax: t } as unknown as Prisma.InputJsonValue } });
     }
     await tx.payrollRun.update({ where: { id: runId }, data: {
       status: "STATUTORY_REVIEWED", taxCalcBy: by.name, taxCalcAt: new Date(), taxRevBy: null, taxRevAt: null,
@@ -146,12 +151,15 @@ async function computeDefaults(run: { id: string; period: string; rates: Prisma.
     const mine = adjustments.filter((a) => a.employeeId === it.employeeId);
     const p = penalties(it.grossKobo, payAfterTax(l.statutory, l.tax), {
       lateDays: t?.LATE ?? 0, absentDays: t?.ABSENT ?? 0, schoolDays,
-      manual: mine.filter((a) => a.kind === "penalty").map((a) => ({ amountKobo: a.amountKobo, reason: a.reason })),
+      manual: mine.filter((a) => a.kind === "penalty").map((a) => ({ amountKobo: a.amountKobo, reason: a.reason, category: a.category ?? "Other" })),
       waivers: mine.filter((a) => a.kind === "waiver").map((a) => ({ amountKobo: a.amountKobo, reason: a.reason })),
       carriedKobo: prev?.items.find((x) => x.employeeId === it.employeeId)?.carryKobo ?? 0,
     }, rates);
-    const net = payAfterTax(l.statutory, l.tax) - p.applied;
-    return { it, l, p, net, days: { late: t?.LATE ?? 0, absent: t?.ABSENT ?? 0, schoolDays }, adjustments: mine.map((a) => ({ kind: a.kind, amountKobo: a.amountKobo, reason: a.reason })) };
+    // Bonuses are added after tax and penalties: not taxed, and penalties can't take them
+    const bonuses = mine.filter((a) => a.kind === "bonus").map((a) => ({ amountKobo: a.amountKobo, reason: a.reason, type: a.category ?? "Other" }));
+    const bonus = bonusTotal(bonuses);
+    const net = payAfterTax(l.statutory, l.tax) - p.applied + bonus;
+    return { it, l, p, net, bonus, bonuses, days: { late: t?.LATE ?? 0, absent: t?.ABSENT ?? 0, schoolDays }, adjustments: mine.map((a) => ({ kind: a.kind, category: a.category, amountKobo: a.amountKobo, reason: a.reason })) };
   });
 }
 
@@ -162,8 +170,8 @@ export async function calcDefaults(runId: string, by: Actor) {
   await db.$transaction(async (tx) => {
     for (const r of rows) {
       await tx.payrollItem.update({ where: { id: r.it.id }, data: {
-        penaltiesKobo: r.p.applied, carryKobo: r.p.carryForward, netKobo: r.net,
-        lines: { ...r.l, defaults: { ...r.p, days: r.days, adjustments: r.adjustments } } as unknown as Prisma.InputJsonValue,
+        penaltiesKobo: r.p.applied, bonusKobo: r.bonus, carryKobo: r.p.carryForward, netKobo: r.net,
+        lines: { ...r.l, defaults: { ...r.p, days: r.days, adjustments: r.adjustments, bonuses: r.bonuses, bonus: r.bonus } } as unknown as Prisma.InputJsonValue,
       } });
     }
     await tx.payrollRun.update({ where: { id: runId }, data: { status: "TAX_REVIEWED", defaultsCalcBy: by.name, defaultsCalcAt: new Date(), defaultsRevBy: null, defaultsRevAt: null, preparerIds: addPreparer(run.preparerIds, by.id) } });
@@ -218,14 +226,48 @@ export async function setStatutoryOverride(employeeId: string, item: keyof Overr
   return e;
 }
 
-export async function addAdjustment(input: { employeeId: string; period: string; kind: "penalty" | "waiver"; amountNaira: number; reason: string }, by: Actor) {
+/**
+ * A penalty (in one of the school's categories), a waiver, or a bonus (paid after tax) for one person's month.
+ * Whoever enters one counts as having prepared that month's payroll, so they can't approve it.
+ */
+export async function addAdjustment(input: { employeeId: string; period: string; kind: "penalty" | "waiver" | "bonus"; category?: string; amountNaira: number; reason: string }, by: Actor) {
   if (!(input.amountNaira > 0)) throw new UserError("Enter an amount.", { amount: "Required" });
   if (!input.reason.trim()) throw new UserError("Give the reason.", { reason: "Required" });
+  const rates = await payrollRates();
+  const list = input.kind === "penalty" ? rates.penaltyCategories : input.kind === "bonus" ? rates.bonusTypes : [];
+  // A penalty with no category goes under the first one (normally "Other"); a bonus must say its type
+  const chosen = list.find((c) => c.active && c.name === input.category) ?? (input.kind === "penalty" && !input.category ? list.find((c) => c.active) : undefined);
+  const category = input.kind === "waiver" ? null : chosen?.name;
+  if (input.kind !== "waiver" && !category) throw new UserError(input.kind === "bonus" ? "Choose the type of bonus." : "Choose the penalty category.", { category: "Required" });
   const run = await db.payrollRun.findUnique({ where: { period: input.period } });
   if (run && !OPEN.includes(run.status)) throw new UserError(`Payroll for ${periodLabel(input.period)} is already approved. Enter it for next month.`);
-  const a = await db.payrollAdjustment.create({ data: { employeeId: input.employeeId, period: input.period, kind: input.kind, amountKobo: Math.round(input.amountNaira * 100), reason: input.reason.trim(), by: by.name, byId: by.id } });
+  const a = await db.payrollAdjustment.create({ data: { employeeId: input.employeeId, period: input.period, kind: input.kind, category, amountKobo: Math.round(input.amountNaira * 100), reason: input.reason.trim(), by: by.name, byId: by.id } });
+  if (run) await db.payrollRun.update({ where: { id: run.id }, data: { preparerIds: addPreparer(run.preparerIds, by.id) } });
   await resetOpenRuns("TAX_REVIEWED", [input.period]);
   return a;
+}
+
+/** A staff member's split of gross into the school's components (kobo). Must add up to their gross exactly. */
+export async function setSalaryComponents(employeeId: string, amountsNaira: Record<string, number> | null) {
+  const e = await db.employee.findUniqueOrThrow({ where: { id: employeeId } });
+  const rates = await payrollRates();
+  const active = rates.components.filter((c) => c.active);
+  let value: Record<string, number> | null = null;
+  if (amountsNaira) {
+    value = Object.fromEntries(active.map((c) => [c.id, Math.round((amountsNaira[c.id] ?? 0) * 100)]));
+    if (Object.values(value).some((v) => v < 0)) throw new UserError("Amounts can't be negative.");
+    const total = Object.values(value).reduce((a, b) => a + b, 0);
+    if (total !== e.monthlyGrossKobo) throw new UserError(`The parts add up to ₦${(total / 100).toLocaleString("en-NG")}, but the gross is ₦${(e.monthlyGrossKobo / 100).toLocaleString("en-NG")}. They must match.`);
+  }
+  await db.employee.update({ where: { id: employeeId }, data: { salaryComponents: value ?? Prisma.DbNull } });
+  await resetOpenRuns("DRAFT");
+  return e;
+}
+
+/** A person's split as shown on their record: their own amounts, or the school's default shares */
+export async function salaryBreakdown(e: { monthlyGrossKobo: number; salaryComponents: Prisma.JsonValue }) {
+  const rates = await payrollRates();
+  return { parts: splitGross(e.monthlyGrossKobo, rates.components, e.salaryComponents as Record<string, number> | null), components: rates.components.filter((c) => c.active), base: rates.statutoryBase };
 }
 
 export async function removeAdjustment(id: string) {
@@ -239,13 +281,13 @@ export async function removeAdjustment(id: string) {
 
 // ---------- Totals ----------
 
-export function runTotals(items: { grossKobo: number; pensionKobo: number; nhfKobo: number; nhisKobo: number; taxKobo: number; penaltiesKobo: number; netKobo: number; held: boolean }[]) {
+export function runTotals(items: { grossKobo: number; pensionKobo: number; nhfKobo: number; nhisKobo: number; taxKobo: number; penaltiesKobo: number; bonusKobo?: number; netKobo: number; held: boolean }[]) {
   const sum = (f: (i: (typeof items)[number]) => number) => items.reduce((a, i) => a + f(i), 0);
   const payable = items.filter((i) => !i.held);
   return {
     staff: items.length, held: items.length - payable.length,
     gross: sum((i) => i.grossKobo), statutory: sum((i) => i.pensionKobo + i.nhfKobo + i.nhisKobo), tax: sum((i) => i.taxKobo),
-    penalties: sum((i) => i.penaltiesKobo), net: sum((i) => i.netKobo), netPayable: payable.reduce((a, i) => a + i.netKobo, 0),
+    penalties: sum((i) => i.penaltiesKobo), bonus: sum((i) => i.bonusKobo ?? 0), net: sum((i) => i.netKobo), netPayable: payable.reduce((a, i) => a + i.netKobo, 0),
   };
 }
 

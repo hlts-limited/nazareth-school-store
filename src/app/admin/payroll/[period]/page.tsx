@@ -14,10 +14,17 @@ export const metadata = { title: "Payroll run" };
 export const dynamic = "force-dynamic";
 
 type Lines = {
-  statutory: { annualGross: number; pension: number; nhf: number; nhis: number; rentRelief: number; taxable: number; off: string[] };
+  statutory: {
+    annualGross: number; pension: number; nhf: number; nhis: number; rentRelief: number; taxable: number; off: string[];
+    breakdown?: { id: string; name: string; monthly: number; custom: boolean }[];
+    base?: { mode: "gross" | "components"; pension: number; nhf: number };
+  };
   overrides: Overrides;
   tax?: { annual: number; monthly: number };
-  defaults?: { late: number; absence: number; manual: number; waived: number; carried: number; total: number; applied: number; carryForward: number; days: { late: number; absent: number; schoolDays: number } };
+  defaults?: {
+    late: number; absence: number; manual: number; waived: number; carried: number; total: number; applied: number; carryForward: number; days: { late: number; absent: number; schoolDays: number };
+    byCategory?: { name: string; amount: number }[]; bonus?: number; bonuses?: { amountKobo: number; reason: string; type: string }[];
+  };
 };
 
 const ITEMS: [keyof Overrides, string][] = [["pension", "Pension"], ["nhf", "NHF"], ["nhis", "NHIS"], ["rent", "Rent relief"]];
@@ -65,12 +72,34 @@ export default async function PayrollRunPage({ params }: { params: Promise<{ per
             <Kpi label="Staff" value={`${t.staff}${t.held ? ` (${t.held} held)` : ""}`} />
             <Kpi label="Gross" value={money(t.gross)} />
             <Kpi label="Statutory + tax" value={money(t.statutory + t.tax)} />
-            <Kpi label="Net to pay" value={pos >= 3 ? money(t.netPayable) : "—"} sub={t.held ? "excludes held staff" : undefined} />
+            <Kpi label="Net to pay" value={pos >= 3 ? money(t.netPayable) : "—"} sub={[t.bonus ? `includes ${money(t.bonus)} bonuses` : "", t.held ? "excludes held staff" : ""].filter(Boolean).join(" · ") || undefined} />
           </div>
         )}
         {rows.some((r) => r.it.held) && (
           <Note tone="warn" icon="alert">Held (not paid until fixed): {rows.filter((r) => r.it.held).map((r) => `${r.name}: ${r.it.heldReason}`).join("; ")}.</Note>
         )}
+
+        {rows.some((r) => r.l?.statutory?.breakdown?.length) && (() => {
+          // The parts each person's gross is made up of, in the order the run's rates list them
+          const cols = [...new Map(rows.flatMap((r) => r.l.statutory.breakdown ?? []).map((b) => [b.id, b.name])).entries()];
+          const base = rows.find((r) => r.l.statutory.base)?.l.statutory.base?.mode ?? "gross";
+          return (
+            <section className="card pad-0">
+              <div className="card-h"><h3>Gross breakdown</h3><span className="small muted">Pension and NHF on {base === "components" ? "the ticked components" : "the whole gross"}</span></div>
+              <div className="tbl-wrap"><table className="t rt">
+                <thead><tr><th>Staff</th>{cols.map(([id, name]) => <th key={id} className="r">{name}</th>)}<th className="r">Gross</th></tr></thead>
+                <tbody>{rows.map(({ it, l, name }) => (
+                  <tr key={it.id}>
+                    <td data-label="Staff"><b>{name}</b>{l.statutory.breakdown?.some((b) => b.custom) && <div className="small muted">own split</div>}</td>
+                    {cols.map(([id, cname]) => <td key={id} data-label={cname} className="r">{money(l.statutory.breakdown?.find((b) => b.id === id)?.monthly ?? 0)}</td>)}
+                    <td data-label="Gross" className="r"><b>{money(it.grossKobo)}</b></td>
+                  </tr>
+                ))}</tbody>
+                <tfoot><tr><td><b>Total</b></td>{cols.map(([id]) => <td key={id} className="r"><b>{money(rows.reduce((a, r) => a + (r.l.statutory.breakdown?.find((b) => b.id === id)?.monthly ?? 0), 0))}</b></td>)}<td className="r"><b>{money(t.gross)}</b></td></tr></tfoot>
+              </table></div>
+            </section>
+          );
+        })()}
 
         <Stage n={1} title="Statutory deductions" done={pos >= 1} calcAt={run.statutoryCalcAt} calcBy={run.statutoryCalcBy} revAt={run.statutoryRevAt} revBy={run.statutoryRevBy}>
           <div className="tbl-wrap"><table className="t rt">
@@ -120,9 +149,9 @@ export default async function PayrollRunPage({ params }: { params: Promise<{ per
           </table></div>
         </Stage>
 
-        <Stage n={3} title="Penalties" done={pos >= 3} calcAt={run.defaultsCalcAt} calcBy={run.defaultsCalcBy} revAt={run.defaultsRevAt} revBy={run.defaultsRevBy}>
+        <Stage n={3} title="Penalties and bonuses" done={pos >= 3} calcAt={run.defaultsCalcAt} calcBy={run.defaultsCalcBy} revAt={run.defaultsRevAt} revBy={run.defaultsRevBy}>
           <div className="tbl-wrap"><table className="t rt">
-            <thead><tr><th>Staff</th><th className="r">Late / absent days</th><th className="r">Lateness</th><th className="r">Absence</th><th className="r">Other − waived</th><th className="r">Taken</th><th className="r">Carried over</th><th className="r">Net pay</th></tr></thead>
+            <thead><tr><th>Staff</th><th className="r">Late / absent days</th><th className="r">Lateness</th><th className="r">Absence</th><th className="r">Other − waived</th><th className="r">Taken</th><th className="r">Carried over</th><th className="r">Bonus</th><th className="r">Net pay</th></tr></thead>
             <tbody>{rows.map(({ it, l, name }) => {
               const d = l.defaults;
               return (
@@ -131,15 +160,16 @@ export default async function PayrollRunPage({ params }: { params: Promise<{ per
                   <td data-label="Days" className="r">{d ? `${d.days.late} / ${d.days.absent}` : "—"}</td>
                   <td data-label="Lateness" className="r">{d ? money(d.late) : "—"}</td>
                   <td data-label="Absence" className="r">{d ? money(d.absence) : "—"}</td>
-                  <td data-label="Other" className="r">{d ? `${money(d.manual + d.carried)} − ${money(d.waived)}` : "—"}</td>
+                  <td data-label="Other" className="r">{d ? <>{`${money(d.manual + d.carried)} − ${money(d.waived)}`}{d.byCategory?.length ? <div className="small muted">{d.byCategory.map((c) => `${c.name} ${money(c.amount)}`).join(" · ")}</div> : null}</> : "—"}</td>
                   <td data-label="Taken" className="r">{money(it.penaltiesKobo)}</td>
                   <td data-label="Carried" className="r">{it.carryKobo ? money(it.carryKobo) : "—"}</td>
+                  <td data-label="Bonus" className="r">{it.bonusKobo ? <>{`+${money(it.bonusKobo)}`}{d?.bonuses?.length ? <div className="small muted">{d.bonuses.map((b) => b.type).join(", ")}</div> : null}</> : "—"}</td>
                   <td data-label="Net" className="r"><b>{money(it.netKobo)}</b></td>
                 </tr>
               );
             })}</tbody>
           </table></div>
-          <p className="pad small muted">Penalties come from the month&apos;s attendance and the entries under <Link href="/admin/payroll/penalties">Penalties &amp; waivers</Link>. They are taken after tax and don&apos;t reduce taxable income.</p>
+          <p className="pad small muted">Penalties come from the month&apos;s attendance and the entries under <Link href="/admin/payroll/penalties">Penalties &amp; bonuses</Link>. They are taken after tax and don&apos;t reduce taxable income. Bonuses are added last: not taxed, and penalties can&apos;t take them.</p>
         </Stage>
 
         {pos >= 3 && <ApproveAndPay runId={run.id} v={v} />}

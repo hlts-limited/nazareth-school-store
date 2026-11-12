@@ -12,9 +12,12 @@ const ngn = (kobo: number) => `NGN ${(kobo / 100).toLocaleString("en-NG", { mini
 const PAID_STATES = ["APPROVED", "PAID", "LOCKED"] as const;
 
 type Lines = {
-  statutory: { annualGross: number; pension: number; nhf: number; nhis: number; rentRelief: number; taxable: number; off: string[] };
+  statutory: { annualGross: number; pension: number; nhf: number; nhis: number; rentRelief: number; taxable: number; off: string[]; breakdown?: { id: string; name: string; monthly: number }[] };
   tax?: { annual: number; monthly: number };
-  defaults?: { late: number; absence: number; manual: number; waived: number; carried: number; total: number; applied: number; carryForward: number; days: { late: number; absent: number; schoolDays: number } };
+  defaults?: {
+    late: number; absence: number; manual: number; waived: number; carried: number; total: number; applied: number; carryForward: number; days: { late: number; absent: number; schoolDays: number };
+    byCategory?: { name: string; amount: number }[]; bonuses?: { amountKobo: number; reason: string; type: string }[];
+  };
 };
 
 async function logo(pdf: PDFDocument) {
@@ -87,6 +90,12 @@ export async function payslipPdf(itemId: string) {
     y -= 17;
   };
   section("Earnings");
+  // How gross is made up (Basic, Housing, Transport…)
+  for (const b of l.statutory.breakdown ?? []) {
+    text(page, b.name, L + 20, y, 9.5, f.r, MUTED);
+    right(page, ngn(b.monthly), R - 8, y, 9.5, f.r, MUTED);
+    y -= 14;
+  }
   row("Monthly gross salary", it.grossKobo, { bold: true });
   y -= 4;
   section("Stage 1: statutory deductions");
@@ -102,12 +111,19 @@ export async function payslipPdf(itemId: string) {
   if (d) {
     if (d.late) row(`Lateness (${d.days.late} day${d.days.late === 1 ? "" : "s"})`, d.late, { minus: true });
     if (d.absence) row(`Absence without permission (${d.days.absent} day${d.days.absent === 1 ? "" : "s"})`, d.absence, { minus: true });
-    if (d.manual) row("Other penalties", d.manual, { minus: true });
+    if (d.byCategory?.length) for (const c of d.byCategory) row(c.name, c.amount, { minus: true });
+    else if (d.manual) row("Other penalties", d.manual, { minus: true });
     if (d.carried) row("Carried from last month", d.carried, { minus: true });
     if (d.waived) row("Waived", d.waived);
     if (d.carryForward) row("Carried to next month", d.carryForward, { note: "not taken this month" });
   }
   row("Penalties taken", it.penaltiesKobo, { minus: true, bold: true });
+  if (it.bonusKobo) {
+    y -= 4;
+    section("Bonuses (paid after tax, not taxed)");
+    for (const b of d?.bonuses ?? []) row(b.type, b.amountKobo, { note: b.reason.length > 40 ? `${b.reason.slice(0, 40)}...` : b.reason });
+    row("Bonuses", it.bonusKobo, { bold: true });
+  }
   y -= 8;
   page.drawRectangle({ x: L, y: y - 10, width: R - L, height: 30, color: RED });
   text(page, "NET PAY", L + 10, y, 12, f.b, rgb(1, 1, 1));

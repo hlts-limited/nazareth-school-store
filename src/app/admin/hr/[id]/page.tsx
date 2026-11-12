@@ -11,6 +11,8 @@ import { requireStaff } from "@/modules/auth";
 import { employeeDetail, resendStaffInviteAction, sectionName, setEmployeeStatusAction, staffInviteText, updateEmployeeAction, whatsAppTo, sectionScope } from "@/modules/hr";
 import { RecordFields } from "../_fields";
 import { Bank, Checklist, Documents } from "../_parts";
+import { salaryBreakdown, saveSalarySplitAction } from "@/modules/payroll";
+import { SalarySplit } from "./_salary-split";
 
 export const metadata = { title: "Staff record" };
 
@@ -24,6 +26,7 @@ export default async function StaffRecordPage({ params }: { params: Promise<{ id
   if (own && own !== e.section) notFound(); // head teachers: their own section only
   const canManage = v.permissions.has("hr.manage");
   const salary = v.permissions.has("hr.salary");
+  const split = salary ? await salaryBreakdown(e) : null;
   const u = e.user;
   const invite = u.status === "INVITED" && u.inviteToken && u.inviteExpiresAt && u.inviteExpiresAt > new Date() ? u.inviteToken : null;
   const wa = invite ? whatsAppTo(e.phone, staffInviteText(u.firstName, invite)) : null;
@@ -82,6 +85,7 @@ export default async function StaffRecordPage({ params }: { params: Promise<{ id
 
         <aside className="stack">
           <Checklist e={e} />
+          {split && <SalarySplit key={`${e.monthlyGrossKobo}-${split.parts.map((p) => p.monthly).join(",")}`} action={saveSalarySplitAction} employeeId={e.id} grossKobo={e.monthlyGrossKobo} parts={split.parts} base={split.base} canEdit={salary} />}
           {(salary || v.permissions.has("hr.bank.approve")) && <Bank e={e} canEdit={canManage} canApprove={v.permissions.has("hr.bank.approve")} viewerId={v.user.id} />}
           <section className="card stack">
             <h3>Account</h3>

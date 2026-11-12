@@ -768,6 +768,7 @@ model Employee {
   employmentType     EmploymentType @default(FULL_TIME)
   status             EmployeeStatus @default(ACTIVE)
   monthlyGrossKobo   Int // money is integer kobo
+  salaryComponents   Json? // this person's split of gross by component id, in kobo (empty = the school's default shares)
   // Statutory identifiers for the tax and remittance schedules
   tin                String?
   pfaName            String?
@@ -981,6 +982,7 @@ model PayrollItem {
   nhisKobo      Int        @default(0)
   taxKobo       Int        @default(0)
   penaltiesKobo Int        @default(0)
+  bonusKobo     Int        @default(0) // paid after tax and penalties (not taxed)
   carryKobo     Int        @default(0) // penalties carried to next month
   netKobo       Int        @default(0)
   held          Boolean    @default(false) // not paid: bank not verified
@@ -998,7 +1000,8 @@ model PayrollAdjustment {
   employeeId String
   employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
   period     String // YYYY-MM
-  kind       String // penalty | waiver
+  kind       String // penalty | waiver | bonus
+  category   String? // penalty category or bonus type name
   amountKobo Int
   reason     String
   by         String
