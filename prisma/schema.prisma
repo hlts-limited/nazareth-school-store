@@ -328,6 +328,8 @@ model Order {
   amountReceived Int           @default(0)
   excess         Int           @default(0)
   pickupCode     String?
+  placedById     String? // member of staff who placed it at the school counter (null = the parent online)
+  placedBy       String?
   rejectReason   String?
   cancelledAt    DateTime?
   createdAt      DateTime      @default(now())
@@ -342,6 +344,7 @@ model Order {
 
   @@index([parentId, createdAt])
   @@index([status])
+  @@index([placedById])
 }
 
 enum LineStatus {

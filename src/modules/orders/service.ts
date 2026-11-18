@@ -36,17 +36,41 @@ export async function ordersForPupil(pupilId: string) {
   return db.order.findMany({ where: { lines: { some: { pupilId } } }, include: { lines: { where: { pupilId } } }, orderBy: { createdAt: "desc" }, take: 30 });
 }
 
+/** One thing to buy: which child, which size of which item, how many */
+export type OrderEntry = { pupilId: string; variantId: string; qty: number };
+
 /**
  * Turn the parent's cart into one order. The parent's wallet is always used first; only what it doesn't cover
  * goes to Paystack.
  */
 export async function checkout(parentId: string, method: "PAYSTACK" | "TRANSFER", actorName: string) {
+  const cart = await db.cartItem.findMany({ where: { parentId }, select: { pupilId: true, variantId: true, qty: true } });
+  if (!cart.length) throw new UserError("Your cart is empty.");
+  return placeOrder(parentId, cart, { method, actorName, clearCart: true });
+}
+
+/**
+ * Create an order for a parent: the online cart and the school counter both come here, so stock, piles, the
+ * wallet and the invoice work the same way. `placedBy` is the member of staff who placed it at the counter.
+ */
+export async function placeOrder(parentId: string, entries: OrderEntry[], opts: { method: "PAYSTACK" | "TRANSFER"; actorName: string; clearCart?: boolean; placedBy?: { id: string; name: string } }) {
+  const { method, actorName } = opts;
+  if (!entries.length) throw new UserError("Add at least one item.");
   const order = await db.$transaction(async (tx) => {
-    const cart = await tx.cartItem.findMany({
-      where: { parentId },
-      include: { pupil: true, variant: { include: { item: { include: { pileParts: { orderBy: { sortOrder: "asc" }, include: { book: { include: { variants: true } } } } } } } } },
-    });
-    if (!cart.length) throw new UserError("Your cart is empty.");
+    const kids = new Set((await tx.guardian.findMany({ where: { parentId }, select: { pupilId: true } })).map((g) => g.pupilId));
+    const cart = await Promise.all(entries.map(async (e) => {
+      if (!kids.has(e.pupilId)) throw new UserError("Items can only be bought for this parent's own children.");
+      if (!(e.qty >= 1)) throw new UserError("Each item needs a quantity of at least 1.");
+      const variant = await tx.itemVariant.findUnique({
+        where: { id: e.variantId },
+        include: { item: { include: { classes: true, inPiles: { include: { pile: { select: { name: true } } } }, pileParts: { orderBy: { sortOrder: "asc" }, include: { book: { include: { variants: true } } } } } } },
+      });
+      if (!variant) throw new UserError("One of the items is no longer available.");
+      const pupil = await tx.pupil.findUniqueOrThrow({ where: { id: e.pupilId } });
+      if (variant.item.inPiles.length) throw new UserError(`${variant.item.name} is only sold as part of "${variant.item.inPiles[0].pile.name}".`);
+      if (!variant.item.classes.some((c) => c.classId === pupil.classId)) throw new UserError(`${variant.item.name} isn't for ${pupil.firstName}'s class.`);
+      return { ...e, variant };
+    }));
     type Line = { pupilId: string; variantId: string; qty: number; unitPrice: number; itemName: string; variantLabel: string; pileItemId?: string; pileName?: string; reserved?: boolean };
     const lines: Line[] = [];
     for (const c of cart) {
@@ -70,11 +94,15 @@ export async function checkout(parentId: string, method: "PAYSTACK" | "TRANSFER"
     }
     const subtotal = lines.reduce((a, l) => a + l.unitPrice * l.qty, 0);
     const o = await tx.order.create({
-      data: { parentId, method, subtotal, lines: { create: lines }, invoice: { create: {} }, events: { create: { message: "Order placed", actorName } } },
+      data: {
+        parentId, method, subtotal, lines: { create: lines }, invoice: { create: {} },
+        placedById: opts.placedBy?.id ?? null, placedBy: opts.placedBy?.name ?? null,
+        events: { create: { message: opts.placedBy ? `Order placed at the school counter by ${opts.placedBy.name}` : "Order placed", actorName } },
+      },
     });
     // The wallet first, always
     const walletUsed = await spendUpTo(tx, parentId, subtotal, { orderId: o.id, actorName, reason: `Used for ${orderNo(o.number)}` });
-    await tx.cartItem.deleteMany({ where: { parentId } });
+    if (opts.clearCart) await tx.cartItem.deleteMany({ where: { parentId } });
     if (walletUsed === subtotal) {
       await addEvent(tx, o.id, "Paid in full from wallet");
       await tx.invoice.update({ where: { orderId: o.id }, data: { status: "APPROVED", approvedAt: new Date() } });
@@ -82,7 +110,7 @@ export async function checkout(parentId: string, method: "PAYSTACK" | "TRANSFER"
     }
     return tx.order.update({ where: { id: o.id }, data: { walletUsed } });
   });
-  if (order.status === "PAYMENT_APPROVED") await notify(parentId, `Order ${orderNo(order.number)} paid`, `Order ${orderNo(order.number)} was paid from your wallet. We'll message you on WhatsApp when it's ready for pick-up.`);
+  if (order.status === "PAYMENT_APPROVED") await notify(parentId, `Order ${orderNo(order.number)} paid`, `Order ${orderNo(order.number)} was paid from your wallet. We'll message you when it's ready for pick-up.`);
   return order;
 }
 

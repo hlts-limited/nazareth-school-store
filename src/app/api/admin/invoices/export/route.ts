@@ -19,6 +19,7 @@ export async function GET(req: Request) {
     to: u.searchParams.get("to") || undefined,
     status: (INVOICE_LABELS as string[]).includes(statusParam) ? (statusParam as InvoiceLabel) : undefined,
     q: u.searchParams.get("q") || undefined,
+    channel: (["online", "counter"] as const).find((c) => c === u.searchParams.get("channel")),
   };
   const rows = await invoiceRows(f);
   const cls = f.classId ? (await classById(f.classId))?.name : undefined;

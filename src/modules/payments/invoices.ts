@@ -6,7 +6,8 @@ import { fmtDate, invoiceNo, orderNo, parseOrderNo } from "@/shared/lib/format";
 import { SCHOOL } from "@/shared/config/school";
 import { invoiceLabel, statusesFor, type InvoiceLabel } from "@/modules/orders";
 
-export type InvoiceFilters = { classId?: string; from?: string; to?: string; status?: InvoiceLabel; q?: string };
+/** channel: "online" = the parent bought in the app, "counter" = placed for them at the school counter */
+export type InvoiceFilters = { classId?: string; from?: string; to?: string; status?: InvoiceLabel; q?: string; channel?: "online" | "counter" };
 
 /**
  * One row per child per order. Amount is what the child's items cost; Returned is what came back (credited to the
@@ -15,7 +16,7 @@ export type InvoiceFilters = { classId?: string; from?: string; to?: string; sta
  */
 export type InvoiceRow = {
   invoice: string; order: string; date: Date; parent: string; pupil: string; regNumber: string; className: string;
-  method: string; amount: number; returned: number; fromWallet: number; paystack: number; transfer: number; balance: number; status: InvoiceLabel;
+  method: string; channel: string; amount: number; returned: number; fromWallet: number; paystack: number; transfer: number; balance: number; status: InvoiceLabel;
 };
 
 /** Split `total` in proportion to `weights`, in whole naira, so the parts add up to exactly `total` */
@@ -37,6 +38,7 @@ export async function invoiceRows(f: InvoiceFilters): Promise<InvoiceRow[]> {
   if (f.from || f.to) where.createdAt = { ...(f.from ? { gte: dayStart(f.from) } : {}), ...(f.to ? { lte: dayEnd(f.to) } : {}) };
   if (f.status) where.status = { in: statusesFor(f.status) as OrderStatus[] };
   if (f.classId) where.lines = { some: { pupil: { classId: f.classId } } };
+  if (f.channel) where.placedById = f.channel === "counter" ? { not: null } : null;
   const q = f.q?.trim();
   if (q) {
     const n = /(\d{4,})/.exec(q)?.[1];
@@ -70,16 +72,17 @@ export async function invoiceRows(f: InvoiceFilters): Promise<InvoiceRow[]> {
         method: methods || (o.method === "PAYSTACK" ? "Paystack" : o.method === "WALLET" ? "Wallet" : "Transfer"),
         amount: weights[i], returned: ls.reduce((a, l) => a + l.returnedQty * l.unitPrice, 0),
         fromWallet: wallet[i], paystack: paystack[i], transfer: transfer[i], balance: balance[i], status: invoiceLabel(o.status),
+        channel: o.placedBy ? `Counter (${o.placedBy})` : "Online",
       });
     });
   }
   return rows;
 }
 
-const HEAD = ["Invoice", "Order", "Date", "Parent", "Pupil", "Reg no.", "Class", "Paid by", "Amount", "From wallet", "Paystack", "Transfer", "Balance", "Returned to wallet", "Status"];
+const HEAD = ["Invoice", "Order", "Date", "Parent", "Pupil", "Reg no.", "Class", "Paid by", "Amount", "From wallet", "Paystack", "Transfer", "Balance", "Returned to wallet", "Status", "Channel"];
 /** Columns holding money (0-based), for formatting and totals */
 const MONEY = [8, 9, 10, 11, 12, 13];
-const cells = (r: InvoiceRow) => [r.invoice, r.order, fmtDate(r.date), r.parent, r.pupil, r.regNumber, r.className, r.method, r.amount, r.fromWallet, r.paystack, r.transfer, r.balance, r.returned, r.status];
+const cells = (r: InvoiceRow) => [r.invoice, r.order, fmtDate(r.date), r.parent, r.pupil, r.regNumber, r.className, r.method, r.amount, r.fromWallet, r.paystack, r.transfer, r.balance, r.returned, r.status, r.channel];
 const totals = (rows: InvoiceRow[]) => ({
   amount: rows.reduce((a, r) => a + r.amount, 0), fromWallet: rows.reduce((a, r) => a + r.fromWallet, 0), paystack: rows.reduce((a, r) => a + r.paystack, 0),
   transfer: rows.reduce((a, r) => a + r.transfer, 0), balance: rows.reduce((a, r) => a + r.balance, 0), returned: rows.reduce((a, r) => a + r.returned, 0),
@@ -102,10 +105,10 @@ export async function toXlsx(rows: InvoiceRow[], title: string) {
   h.eachCell((c) => { c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFD7262D" } }; });
   rows.forEach((r) => ws.addRow(cells(r)));
   const t = totals(rows);
-  const total = ws.addRow(["", "", "", "", "", "", "", "Total", t.amount, t.fromWallet, t.paystack, t.transfer, t.balance, t.returned, ""]);
+  const total = ws.addRow(["", "", "", "", "", "", "", "Total", t.amount, t.fromWallet, t.paystack, t.transfer, t.balance, t.returned, "", ""]);
   total.font = { bold: true };
   MONEY.forEach((c) => (ws.getColumn(c + 1).numFmt = "#,##0"));
-  [12, 11, 13, 22, 22, 15, 13, 16, 12, 12, 12, 12, 12, 14, 11].forEach((w, i) => (ws.getColumn(i + 1).width = w));
+  [12, 11, 13, 22, 22, 15, 13, 16, 12, 12, 12, 12, 12, 14, 11, 22].forEach((w, i) => (ws.getColumn(i + 1).width = w));
   return Buffer.from(await wb.xlsx.writeBuffer());
 }
 
@@ -140,7 +143,7 @@ export async function toPdf(rows: InvoiceRow[], title: string) {
   const font = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const logo = await logoImage(pdf);
-  const cols = [50, 50, 50, 78, 78, 56, 48, 62, 52, 52, 52, 48, 48, 56, 50];
+  const cols = [46, 46, 46, 70, 70, 50, 44, 56, 48, 48, 48, 44, 44, 50, 46, 54];
   let page: PDFPage = pdf.addPage([842, 595]); // A4 landscape
   let y = 0;
   const header = () => {
@@ -192,6 +195,7 @@ export async function orderInvoicePdf(orderId: string) {
   kv("Date", fmtDate(o.createdAt));
   kv("Parent", `${o.parent.firstName} ${o.parent.lastName}`);
   kv("Status", invoiceLabel(o.status));
+  if (o.placedBy) kv("Placed", `At the school counter by ${o.placedBy}`);
   y -= 10;
   page.drawRectangle({ x: 36, y: y - 5, width: 523, height: 18, color: RED });
   ["Pupil", "Item", "Qty", "Price", "Amount"].forEach((h, i) => draw(page, h, { x: [40, 150, 390, 430, 500][i], y, size: 9, font: bold, color: rgb(1, 1, 1) }));
@@ -238,7 +242,10 @@ export async function orderInvoicePdf(orderId: string) {
     }
     sum("Credited to wallet", pdfMoney(returned.reduce((a, l) => a + l.returnedQty * l.unitPrice, 0)));
   }
-  draw(page, `Pick up at ${SCHOOL.pickupPlace}.`, { x: 40, y: 60, size: 8, font, color: MUTED });
+  if (o.pickupCode && (o.status === "READY" || o.status === "PARTIALLY_HANDED_OUT")) {
+    draw(page, `Pick-up code: ${o.pickupCode}`, { x: 40, y: 78, size: 14, font: bold, color: INK });
+  }
+  draw(page, `Pick up at ${SCHOOL.pickupPlace}. Bring this slip or the code from your SMS.`, { x: 40, y: 60, size: 8, font, color: MUTED });
   return { bytes: Buffer.from(await pdf.save()), name: `${paid ? "receipt" : "invoice"}-${orderNo(o.number)}.pdf` };
 }
 

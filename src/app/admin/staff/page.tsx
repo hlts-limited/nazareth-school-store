@@ -14,7 +14,7 @@ export const metadata = { title: "Staff & roles" };
 
 const PERM_LABELS: [string, string][] = [
   ["payments.review", "Approve payments & invoices"], ["invoices.export", "Export invoices"], ["wallets.adjust", "Adjust parent wallets"],
-  ["catalogue.manage", "Manage items & categories"], ["stock.manage", "Manage stock"], ["fulfilment.manage", "Pack & hand out orders"],
+  ["catalogue.manage", "Manage items & categories"], ["stock.manage", "Manage stock"], ["fulfilment.manage", "Pack & hand out orders"], ["store.counter", "Counter orders for parents without internet"],
   ["pupils.manage", "Add & import pupils"], ["pupils.delete", "Delete pupils (Alpha only)"], ["pupils.empty_bin", "Empty the bin (Alpha only)"], ["staff.delete", "Delete staff (Alpha only)"], ["catalogue.delete", "Delete items (Alpha only)"],
   ["viewas.use", "View as parent / pupil"], ["backup.manage", "Backup & restore"], ["staff.manage", "Manage staff"], ["settings.manage", "School settings"], ["audit.view", "Audit log (Alpha only)"],
   ["admissions.view", "See applications"], ["admissions.manage", "Handle applications & enrol"], ["admissions.publish", "Open admission & publish results"], ["website.manage", "Website notices, events, gallery & messages"],

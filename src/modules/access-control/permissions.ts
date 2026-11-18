@@ -7,6 +7,8 @@ export const PERMISSIONS = {
   CATALOGUE_MANAGE: "catalogue.manage",
   STOCK_MANAGE: "stock.manage",
   FULFILMENT_MANAGE: "fulfilment.manage",
+  /** Place School Store orders for parents at the school counter (parents without internet) */
+  STORE_COUNTER: "store.counter",
   PUPILS_VIEW: "pupils.view",
   PUPILS_MANAGE: "pupils.manage",
   PUPILS_DELETE: "pupils.delete",
@@ -76,7 +78,7 @@ export const ROLE_DEFS: { id: string; name: string; permissions: Permission[]; r
   },
   {
     id: "registrar", name: "Registrar", requires2fa: false,
-    permissions: [P.CATALOGUE_MANAGE, P.STOCK_MANAGE, P.FULFILMENT_MANAGE, P.PUPILS_VIEW],
+    permissions: [P.CATALOGUE_MANAGE, P.STOCK_MANAGE, P.FULFILMENT_MANAGE, P.STORE_COUNTER, P.PUPILS_VIEW],
   },
   {
     id: "secretary", name: "Secretary", requires2fa: false,
@@ -142,9 +144,10 @@ export const STAFF_SECTIONS: NavSection[] = [
     ],
   },
   {
-    id: "store", label: "Store", perm: [P.CATALOGUE_MANAGE, P.STOCK_MANAGE, P.FULFILMENT_MANAGE],
+    id: "store", label: "Store", perm: [P.CATALOGUE_MANAGE, P.STOCK_MANAGE, P.FULFILMENT_MANAGE, P.STORE_COUNTER],
     items: [
       { href: "/admin/store", label: "Overview", icon: "chart", perm: P.CATALOGUE_MANAGE },
+      { href: "/admin/store/counter", label: "Counter order", icon: "cart", perm: P.STORE_COUNTER },
       { href: "/admin/store/packing", label: "Orders to pack", icon: "list", badge: "pack", perm: P.FULFILMENT_MANAGE },
       { href: "/admin/store/pickup", label: "Pick-up desk", icon: "qr", perm: P.FULFILMENT_MANAGE },
       { href: "/admin/store/returns", label: "Returns", icon: "refresh", perm: P.FULFILMENT_MANAGE },

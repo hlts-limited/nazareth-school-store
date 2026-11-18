@@ -36,7 +36,7 @@ async function notifyApplied(order: Order, a: Applied, received: number) {
   const no = orderNo(order.number);
   if (a.outcome === "approved") {
     const extra = a.excess ? ` You paid ${naira(a.excess)} more than was due; it's in your wallet and will be used on your next order.` : "";
-    await notify(order.parentId, `Payment for ${no} approved`, `Payment for order ${no} is approved. We'll message you on WhatsApp when it's ready for pick-up.${extra}`);
+    await notify(order.parentId, `Payment for ${no} approved`, `Payment for order ${no} is approved. We'll message you when it's ready for pick-up.${extra}`);
   } else {
     await notify(order.parentId, `Balance due on ${no}`, `We received ${naira(received)} for order ${no}. Balance due: ${naira(a.balance)}. Pay the balance in the app to complete your order.`, ["whatsapp", "email"]);
   }

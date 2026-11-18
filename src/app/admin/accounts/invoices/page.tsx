@@ -14,7 +14,7 @@ const TONE: Record<InvoiceLabel, "ok" | "info" | "warn" | "err" | "plain"> = { A
 function monthStart() { const d = isoDay(); return d.slice(0, 8) + "01"; }
 function weekStart() { const d = new Date(); const day = (d.getDay() + 6) % 7; d.setDate(d.getDate() - day); return isoDay(d); }
 
-export default async function InvoicesPage({ searchParams }: { searchParams: Promise<{ cls?: string; from?: string; to?: string; status?: string; q?: string }> }) {
+export default async function InvoicesPage({ searchParams }: { searchParams: Promise<{ cls?: string; from?: string; to?: string; status?: string; q?: string; channel?: string }> }) {
   await requireStaff("invoices.manage");
   const sp = await searchParams;
   const today = isoDay();
@@ -24,10 +24,11 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
     to: sp.to ?? today,
     status: (INVOICE_LABELS as string[]).includes(sp.status ?? "") ? (sp.status as InvoiceLabel) : undefined,
     q: sp.q || undefined,
+    channel: (["online", "counter"] as const).find((c) => c === sp.channel),
   };
   const [classes, rows] = await Promise.all([listClasses(), invoiceRows(f)]);
   const total = rows.reduce((a, r) => a + r.amount, 0);
-  const qs = new URLSearchParams({ ...(f.classId ? { cls: f.classId } : {}), from: f.from, to: f.to, ...(f.status ? { status: f.status } : {}), ...(f.q ? { q: f.q } : {}) }).toString();
+  const qs = new URLSearchParams({ ...(f.classId ? { cls: f.classId } : {}), from: f.from, to: f.to, ...(f.status ? { status: f.status } : {}), ...(f.q ? { q: f.q } : {}), ...(f.channel ? { channel: f.channel } : {}) }).toString();
   const range = (from: string, to: string) => `/admin/accounts/invoices?${new URLSearchParams({ ...(f.classId ? { cls: f.classId } : {}), from, to, ...(f.status ? { status: f.status } : {}) })}`;
   const shown = rows.slice(0, 100);
 
@@ -49,6 +50,8 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
             <div className="field"><label htmlFor="f-to">End date</label><input className="input" type="date" id="f-to" name="to" defaultValue={f.to} max={today} /></div>
             <div className="field"><label htmlFor="f-st">Status</label>
               <select className="input" id="f-st" name="status" defaultValue={f.status ?? ""}><option value="">All statuses</option>{INVOICE_LABELS.map((s) => <option key={s} value={s}>{s}</option>)}</select></div>
+            <div className="field"><label htmlFor="f-ch">Bought</label>
+              <select className="input" id="f-ch" name="channel" defaultValue={f.channel ?? ""}><option value="">Online and at the counter</option><option value="online">Online by the parent</option><option value="counter">At the school counter</option></select></div>
           </div>
           <div className="row">
             <div className="search grow minw-220"><Icon name="search" size="sm" /><input className="input" name="q" defaultValue={f.q} placeholder="Invoice no, parent or pupil name, reg number" /></div>
@@ -72,7 +75,7 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
           {rows.length === 0 ? <Empty title="No invoices match">Widen the dates or clear the filters.</Empty> : (
             <div className="tbl-wrap">
               <table className="t rt">
-                <thead><tr><th>Invoice</th><th>Date</th><th>Parent</th><th>Pupil</th><th>Class</th><th className="r">Amount</th><th className="r">From wallet</th><th className="r">Paystack</th><th className="r">Balance</th><th className="r">Returned</th><th>Status</th></tr></thead>
+                <thead><tr><th>Invoice</th><th>Date</th><th>Parent</th><th>Pupil</th><th>Class</th><th className="r">Amount</th><th className="r">From wallet</th><th className="r">Paystack</th><th className="r">Balance</th><th className="r">Returned</th><th>Status</th><th>Bought</th></tr></thead>
                 <tbody>
                   {shown.map((r) => (
                     <tr key={`${r.invoice}-${r.regNumber}`}>
@@ -84,6 +87,7 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
                       <td data-label="Balance" className={`r tnum ${r.balance ? "c-err" : ""}`}>{r.balance ? naira(r.balance) : "—"}</td>
                       <td data-label="Returned" className="r tnum">{r.returned ? naira(r.returned) : "—"}</td>
                       <td data-label="Status"><Pill tone={TONE[r.status]}>{r.status}</Pill></td>
+                      <td data-label="Bought" className="small">{r.channel}</td>
                     </tr>
                   ))}
                 </tbody>
